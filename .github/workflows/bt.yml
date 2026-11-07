@@ -1,8 +1,0 @@
-name: 临时回测
-on: workflow_dispatch
-jobs:
-  bt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: cd scripts && python3 bt_sell.py
