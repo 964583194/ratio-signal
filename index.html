@@ -77,10 +77,6 @@ th{font-size:12px;color:var(--muted);font-weight:500}
 tr.hl td{font-weight:700}
 .chip{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px}
 .chip.l{background:var(--grow-soft);color:var(--grow)}.chip.h{background:var(--div-soft);color:var(--div)}.chip.m{background:var(--mid);color:var(--muted)}
-.years{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.years button{font:inherit;font-size:13px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
-.years button[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
-.years button:focus-visible{outline:2px solid var(--mark);outline-offset:2px}
 .heat td{text-align:center;font-family:var(--f-num)}
 .heat td.cur{outline:2px solid var(--mark);outline-offset:-2px}
 .note{font-size:12px;color:var(--muted);margin:10px 0 0}
@@ -175,9 +171,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 </section>
 
 <section class="panel">
-  <h2>每周信号记录</h2>
-  <div class="years" id="years" role="group" aria-label="按年份查看"></div>
-  <p class="note" id="weekSum" style="margin:0 0 8px"></p>
+  <h2>近 26 周信号</h2>
   <div class="scroll"><table>
     <thead><tr><th>周首交易日</th><th class="r">比值</th><th>区间</th><th>动作</th></tr></thead>
     <tbody id="weeks"></tbody>
@@ -286,20 +280,9 @@ function render(d){
     return `<td class="${cur?"cur":""}" style="background:color-mix(in srgb, var(--grow) ${Math.round(8+a*62)}%, var(--panel))">${v==null?"—":pc(v)}</td>`}).join("")+"</tr>"});
   $("heat").innerHTML=h;
 
-  // 每周信号：默认近 26 周，可按年份查看全部
-  const W=d.weekly, yrs=[...new Set(W.map(w=>w[0].slice(0,4)))].reverse();
-  const opts=[["recent","近26周"],...yrs.map(y=>[y,y+"年"]),["all","全部"]];
-  $("years").innerHTML=opts.map(([k,t])=>`<button type="button" data-k="${k}">${t}</button>`).join("");
-  function showWeeks(k){
-    const rows=k==="recent"?W.slice(-26):k==="all"?W:W.filter(w=>w[0].startsWith(k));
-    $("years").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===k));
-    const c={l:0,m:0,h:0};rows.forEach(w=>c[w[2]]++);
-    $("weekSum").textContent=`共 ${rows.length} 周：低区 ${c.l} 周（买创业板50）、中间区 ${c.m} 周（进现金池）、高区 ${c.h} 周（买红利低波100）`;
-    $("weeks").innerHTML=rows.slice().reverse().map(([dt,r,z])=>
-      `<tr><td class="num">${dt}</td><td class="r num">${f4(r)}</td><td><span class="chip ${z}">${ZN[z]}</span></td><td>${ACT_SHORT[z]}</td></tr>`).join("");
-  }
-  $("years").onclick=e=>{const b=e.target.closest("button");if(b)showWeeks(b.dataset.k)};
-  showWeeks("recent");
+  // 近期周信号
+  $("weeks").innerHTML=d.weekly.slice().reverse().map(([dt,r,z])=>
+    `<tr><td class="num">${dt}</td><td class="r num">${f4(r)}</td><td><span class="chip ${z}">${ZN[z]}</span></td><td>${ACT_SHORT[z]}</td></tr>`).join("");
 
   $("r1k").textContent="< "+LO;$("r2k").textContent=LO+"–"+HI;$("r3k").textContent="≥ "+HI;
   $("srcC").textContent=d.sources.cyb;$("srcH").textContent=d.sources.hl;
