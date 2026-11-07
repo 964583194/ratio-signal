@@ -295,6 +295,52 @@ def run(cyb_raw):
     if not rows:
         raise RuntimeError("没有算出任何评分")
 
+    # ------------------------------------------------ 关键价位：指数在 20 个交易日内匀速涨/跌到某个点位时，评分会落到哪条线
+    pe_hist = sorted(v for v in pe if v is not None)
+    sty_hist = sorted(v for v in style_ratio if v is not None)
+    last_i = rows[-1]["i"]
+
+    def score_after(k, days=20):
+        path = [close[last_i] * k ** ((t + 1) / days) for t in range(days)]
+        cl = close[:last_i + 1] + path
+        rr = rsi_wilder(cl[-400:])[-1]
+        b = pct_b(cl[-100:])[-1]
+        pe_n = pe[last_i] * k
+        dy_n = dy[last_i] / k
+        st_n = style_ratio[last_i] * k
+        v = 100 * (1 - bisect.bisect_left(pe_hist, pe_n) / len(pe_hist))
+        t = 100 * (clip((70 - rr) / 40) + clip(1 - b)) / 2
+        s = 100 * clip((dy_n * 100 - y_on[last_i]) / 4)
+        f = 100 * (1 - bisect.bisect_left(sty_hist, st_n) / len(sty_hist))
+        return 20 * (W["val"] * v + W["tech"] * t + W["spread"] * s + W["style"] * f) / 100
+
+    lines = []
+    for target, label in [(14, "加码线"), (12, "多买 · 买回线"), (10, "正常线"), (8, "少买线"),
+                          (6, "减仓 25%"), (4, "减仓 33%"), (2, "减仓 50%")]:
+        lo_k, hi_k = 0.5, 2.0
+        if not (score_after(hi_k) <= target <= score_after(lo_k)):
+            lines.append({"score": target, "label": label, "price": None, "chg": None})
+            continue
+        for _ in range(50):
+            mid = (lo_k + hi_k) / 2
+            if score_after(mid) > target:
+                lo_k = mid
+            else:
+                hi_k = mid
+        k = (lo_k + hi_k) / 2
+        lines.append({"score": target, "label": label, "price": round(close[last_i] * k, 0),
+                      "chg": round(k - 1, 4)})
+    print("关键价位：" + "，".join(f"{x['label']} {x['price']}" for x in lines))
+
+    # 历史检验：评分处于各区间时，之后 60 / 120 个交易日全收益指数的平均涨幅
+    def fwd(cond, h):
+        xs = [tri[r["i"] + h] / tri[r["i"]] - 1 for r in rows if cond(r["score"]) and r["i"] + h < len(tri)]
+        return (round(sum(xs) / len(xs), 4), len(xs)) if xs else (None, 0)
+    zones = [("≤6 减仓区", lambda x: x <= 6), ("6~8 空仓", lambda x: 6 < x < 8), ("8~12 少买/正常", lambda x: 8 <= x < 12),
+             ("≥12 多买/加码", lambda x: x >= 12), ("全部交易日", lambda x: True)]
+    fwd_stats = [{"zone": z, "f60": fwd(c, 60)[0], "f120": fwd(c, 120)[0], "n": fwd(c, 60)[1]} for z, c in zones]
+    print("分区后续收益：", fwd_stats)
+
     bt_dates = [dobj[r["i"]] for r in rows]
     bt_tr = [tri[r["i"]] for r in rows]
     bt_sc = [r["score"] for r in rows]
@@ -332,6 +378,8 @@ def run(cyb_raw):
             "cyb": {"ac20": round(autocorr20(cyb_close), 3), "mdd": round(max_dd(cyb_close), 3)},
             "since": dates[0],
         },
+        "lines": lines,
+        "forward": fwd_stats,
         "series": [[r["date"], round(r["score"], 2)] for r in rows],
     }
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
