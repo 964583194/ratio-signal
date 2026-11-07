@@ -265,7 +265,7 @@ def main():
         "stats": stats,
         "backtest": bt,
         "grid": {"lo": grid_lo, "hi": grid_hi, "xirr": grid},
-        "weekly": weekly[-26:],
+        "weekly": weekly,
         "series": [[d, round(r, 4)] for d, r in zip(common, ratio)],
     }
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
