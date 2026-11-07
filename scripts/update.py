@@ -54,7 +54,7 @@ def from_eastmoney(secid):
     """东方财富日K：0.399673 = 创业板50，2.930955 = 红利低波100"""
     q = urllib.parse.urlencode({
         "secid": secid, "fields1": "f1,f2,f3", "fields2": "f51,f52,f53",
-        "klt": "101", "fqt": "0", "beg": START, "end": "20500101",
+        "klt": "101", "fqt": "0", "beg": "20140101", "end": "20500101",
         "ut": "fa5fd1943c7b386f172d6893dbfba10b",
     })
     j = get_json("https://push2his.eastmoney.com/api/qt/stock/kline/get?" + q,
@@ -63,6 +63,19 @@ def from_eastmoney(secid):
     for line in (j.get("data") or {}).get("klines") or []:
         p = line.split(",")
         out[p[0]] = float(p[2])
+    return out
+
+
+def from_tencent(symbol):
+    """腾讯日线，按年分段取，作为东方财富的备用源"""
+    out = {}
+    for y in range(2014, dt.date.today().year + 1):
+        url = ("https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param="
+               f"{symbol},day,{y}-01-01,{y}-12-31,400,")
+        j = get_json(url, "https://gu.qq.com/")
+        node = (j.get("data") or {}).get(symbol) or {}
+        for row in node.get("day") or node.get("qfqday") or []:
+            out[row[0]] = float(row[2])
     return out
 
 
@@ -200,6 +213,7 @@ def main():
     else:
         cyb_raw, cyb_src = fetch("创业板50", [
             ("东方财富", lambda: from_eastmoney("0.399673")),
+            ("腾讯", lambda: from_tencent("sz399673")),
         ])
         hl_raw, hl_src = fetch("红利低波100", [
             ("中证指数官网", lambda: from_csindex("930955")),
@@ -272,6 +286,14 @@ def main():
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
     print(f"写入 {OUT}：{common[-1]} 比值 {now:.4f}，共 {n} 天")
+
+    # 红利低波100 每日打分：失败时保留上一次的 dividend.json，不影响比值数据
+    if not os.environ.get("CYB_CSV"):
+        try:
+            import dividend
+            dividend.run(cyb_raw)
+        except Exception as e:  # noqa: BLE001
+            print(f"红利打分更新失败，保留旧数据：{e}")
 
 
 if __name__ == "__main__":

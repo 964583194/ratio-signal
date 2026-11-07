@@ -26,7 +26,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/ratio.json
+          git add data/
           if git diff --cached --quiet; then
             echo "数据没有变化"
           else
