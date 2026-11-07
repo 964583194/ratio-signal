@@ -1,0 +1,8 @@
+name: 临时计算
+on: workflow_dispatch
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cd scripts && python3 kc.py
