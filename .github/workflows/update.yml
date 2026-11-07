@@ -1,0 +1,35 @@
+name: 更新比值数据
+
+on:
+  schedule:
+    - cron: "30 9 * * 1-5"   # 北京时间工作日 17:30
+    - cron: "0 1 * * 6"      # 北京时间周六 09:00，补红利低波100 隔日发布的数据
+  workflow_dispatch:          # 可在 Actions 页面手动运行
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 拉取数据并计算
+        run: python scripts/update.py
+
+      - name: 提交更新
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/ratio.json
+          if git diff --cached --quiet; then
+            echo "数据没有变化"
+          else
+            git commit -m "数据更新 $(TZ=Asia/Shanghai date +%F)"
+            git push
+          fi

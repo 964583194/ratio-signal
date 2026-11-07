@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>创业板50÷红利低波100 轮动信号</title>
+<meta name="description" content="创业板50与红利低波100比值轮动信号，每个交易日自动更新">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* 布局：单列仪表面板，信号 → 区间尺 → 走势 → 统计 → 回测 → 近期信号 → 规则 */
+:root{
+  --bg:#eef1f3; --panel:#ffffff; --ink:#1b2430; --muted:#5d6876; --line:#d5dbe1;
+  --grow:#2f8f5b; --grow-soft:#dcefe3; --div:#c98a12; --div-soft:#fbeec8; --mid:#e6e9ec; --mark:#c8372d;
+  --dark:#18202a; --dark-fg:#e9edf1;
+  --f-display:"Noto Serif SC","Songti SC",serif;
+  --f-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#11161c; --panel:#19212a; --ink:#e7ecf1; --muted:#99a5b2; --line:#2c3743;
+  --grow:#4cbf80; --grow-soft:#173326; --div:#e6a93a; --div-soft:#3a2d12; --mid:#252f3a; --mark:#ff6a5e;
+  --dark:#0b0f14; --dark-fg:#e9edf1; color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 40px max(16px,env(safe-area-inset-left))}
+.wrap{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:900;font-size:clamp(24px,6vw,34px);line-height:1.2;margin:4px 0 6px;text-wrap:balance}
+header p{margin:0;color:var(--muted);font-size:13px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+h2{font-family:var(--f-display);font-size:18px;margin:0 0 12px}
+.label{font-size:12px;color:var(--muted);letter-spacing:.04em}
+.readout{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;align-items:end}
+.big{font-size:clamp(48px,14vw,72px);font-weight:600;line-height:1}
+.delta{font-size:13px;margin-left:6px}
+.action{display:inline-block;margin-top:10px;padding:6px 12px;border-radius:999px;font-weight:700}
+.z-l .action{background:var(--grow-soft);color:var(--grow)}
+.z-h .action{background:var(--div-soft);color:var(--div)}
+.z-m .action{background:var(--mid);color:var(--ink)}
+.dist{display:flex;flex-direction:column;gap:10px}
+.drow .top{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.bar{height:8px;background:var(--mid);border-radius:4px;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;border-radius:4px}
+.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:14px}
+.kv div{background:var(--panel);padding:8px 10px;min-width:0}
+.kv .v{font-family:var(--f-num);font-weight:600;font-size:16px}
+.kv .s{font-size:11px;color:var(--muted)}
+.ruler{position:relative;margin:44px 0 6px}
+.track{display:flex;height:46px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.seg{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;text-align:center;line-height:1.2;padding:0 4px}
+.seg.l{background:var(--grow-soft);color:var(--grow)}
+.seg.m{background:var(--mid);color:var(--muted)}
+.seg.h{background:var(--div-soft);color:var(--div)}
+.pin{position:absolute;top:-36px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;font-size:11px;white-space:nowrap;line-height:1.3}
+.pin b{font-family:var(--f-num);font-size:12px}
+.pin::after{content:"";border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid currentColor;margin-top:2px}
+.pin.now{color:var(--mark);z-index:2}.pin.lo{color:var(--grow)}.pin.hi{color:var(--div)}
+.pin.lo,.pin.hi{top:auto;bottom:-38px}
+.pin.lo::after,.pin.hi::after{display:none}
+.pin.lo::before,.pin.hi::before{content:"";border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:8px solid currentColor;margin-bottom:2px}
+.ruler{margin-bottom:46px}
+.ticks{position:relative;height:18px;font-size:11px;color:var(--muted)}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.chart{width:100%;height:auto;display:block}
+.chart text{font-family:var(--f-num);font-size:11px;fill:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:middle;margin-right:4px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:500}
+.r{text-align:right}
+tr.hl td{font-weight:700}
+.chip{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px}
+.chip.l{background:var(--grow-soft);color:var(--grow)}.chip.h{background:var(--div-soft);color:var(--div)}.chip.m{background:var(--mid);color:var(--muted)}
+.heat td{text-align:center;font-family:var(--f-num)}
+.heat td.cur{outline:2px solid var(--mark);outline-offset:-2px}
+.note{font-size:12px;color:var(--muted);margin:10px 0 0}
+.rules{background:var(--dark);color:var(--dark-fg);border-color:var(--dark)}
+.rules h2{color:var(--div)}
+.rule{display:grid;grid-template-columns:100px 1fr;gap:10px;padding:8px 0;border-top:1px solid rgba(255,255,255,.1);font-size:14px}
+.rule:first-of-type{border-top:0}
+.rule .k{font-family:var(--f-num);font-weight:600}
+.err{border-color:var(--mark)}
+footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
+@media (max-width:600px){.readout{grid-template-columns:1fr}.kv{grid-template-columns:repeat(2,1fr)}.seg{font-size:11px}}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .5s ease}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">指数风格轮动 · 每周定投</div>
+  <h1>创业板50 ÷ 红利低波100 轮动信号</h1>
+  <p>比值 = 创业板50（399673）收盘 ÷ 红利低波100（930955）收盘 · 数据更新于 <span class="num" id="updated">—</span></p>
+</header>
+
+<section class="panel err" id="loadError" hidden>
+  <h2>读取数据失败</h2>
+  <p id="errMsg" class="note"></p>
+  <button type="button" id="retry" style="margin-top:10px;font:inherit;font-weight:700;padding:8px 16px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--panel);cursor:pointer">重新读取</button>
+</section>
+
+<section class="panel" id="stale" hidden style="border-color:var(--div);background:var(--div-soft)">
+  <b>显示的是 <span class="num" id="staleDate"></span> 的数据，已经 <span class="num" id="staleDays"></span> 天没有更新。</b>
+  <p class="note" style="margin-top:4px">可能是节假日休市，也可能是自动更新失败。如果不是假期，请到仓库的 Actions 页查看运行记录。</p>
+</section>
+
+<section class="panel z-m" id="readout">
+  <div class="readout">
+    <div>
+      <div class="label">当前比值 · <span class="num" id="asof">—</span></div>
+      <div><span class="big num" id="ratio">—</span><span class="delta num" id="delta"></span></div>
+      <span class="action" id="action">加载中</span>
+    </div>
+    <div class="dist">
+      <div class="drow"><div class="top"><span>距低区线 <span class="num" id="loTxt"></span>（买创业板50）</span><b class="num" id="dLo"></b></div><div class="bar"><i id="bLo" style="background:var(--grow)"></i></div></div>
+      <div class="drow"><div class="top"><span>距高区线 <span class="num" id="hiTxt"></span>（买红利低波100）</span><b class="num" id="dHi"></b></div><div class="bar"><i id="bHi" style="background:var(--div)"></i></div></div>
+      <div class="label">进度条按比值变化计，满格 50%</div>
+    </div>
+  </div>
+  <div class="kv">
+    <div><div class="label">创业板50</div><div class="v" id="cyb">—</div></div>
+    <div><div class="label">红利低波100</div><div class="v" id="hl">—</div></div>
+    <div><div class="label">近1500日分位</div><div class="v" id="p1500">—</div></div>
+    <div><div class="label">全样本分位</div><div class="v" id="pall">—</div></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>比值区间尺</h2>
+  <div class="ruler" id="ruler">
+    <div class="pin lo" id="pinLo"><span id="pinLoD"></span><b id="pinLoV"></b></div>
+    <div class="pin hi" id="pinHi"><span id="pinHiD"></span><b id="pinHiV"></b></div>
+    <div class="pin now" id="pinNow"><span>现在</span><b id="pinNowV"></b></div>
+    <div class="track" id="track"></div>
+  </div>
+  <div class="ticks" id="ticks"></div>
+</section>
+
+<section class="panel">
+  <h2>历年走势</h2>
+  <svg class="chart" id="chart" viewBox="0 0 720 300" role="img" aria-label="比值历史走势"></svg>
+  <div class="legend">
+    <span><i style="border-color:var(--ink)"></i>比值</span>
+    <span><i style="border-color:var(--mark);border-top-style:dashed"></i>均值 <b class="num" id="lgMean"></b></span>
+    <span><i style="border-color:var(--muted);border-top-style:dotted"></i>中位数 <b class="num" id="lgMed"></b></span>
+  </div>
+  <div class="kv">
+    <div><div class="label">P10 / P25</div><div class="v" id="p1025"></div></div>
+    <div><div class="label">P75 / P90</div><div class="v" id="p7590"></div></div>
+    <div><div class="label">近1500日均值</div><div class="v" id="m1500"></div></div>
+    <div><div class="label">低 / 中 / 高区天数</div><div class="v" id="share"></div></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>回测：每周定投</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>方案</th><th class="r">年化 XIRR</th><th class="r">最大回撤</th><th class="r">累计投入</th><th class="r">期末市值</th></tr></thead>
+    <tbody id="bt"></tbody>
+  </table></div>
+  <p class="note" id="btNote"></p>
+  <h2 style="margin-top:18px">阈值敏感性（轮动年化）</h2>
+  <div class="scroll"><table class="heat" id="heat"></table></div>
+  <p class="note">行是低区线，列是高区线，红框是当前使用的 0.16 / 0.28。颜色越深收益越高。如果红框附近颜色变化剧烈，说明结果依赖阈值的精确取值，要警惕过拟合。</p>
+</section>
+
+<section class="panel">
+  <h2>近 26 周信号</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>周首交易日</th><th class="r">比值</th><th>区间</th><th>动作</th></tr></thead>
+    <tbody id="weeks"></tbody>
+  </table></div>
+</section>
+
+<section class="panel rules">
+  <h2>规则速查</h2>
+  <div class="rule"><span class="k" id="r1k">&lt; 0.16</span><span>定投创业板50（159949），现金池一次性回补</span></div>
+  <div class="rule"><span class="k" id="r2k">0.16–0.28</span><span>空仓，定投额存入现金池等信号</span></div>
+  <div class="rule"><span class="k" id="r3k">≥ 0.28</span><span>定投红利低波100（515100），现金池一次性回补，股息复投</span></div>
+</section>
+
+<footer>
+  数据来源：创业板50 <span id="srcC">—</span>；红利低波100 <span id="srcH">—</span><br>
+  回测用价格指数加回股息率假设，未计跟踪误差与管理费。个人研究记录，不构成投资建议。
+</footer>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const f4=x=>x.toFixed(4);
+const pc=(x,d=1)=>(x*100).toFixed(d)+"%";
+const ZN={l:"低区",m:"中间区",h:"高区"};
+const ACT={l:"买创业板50 · 回补现金池",m:"空仓 · 进现金池",h:"买红利低波100 · 回补现金池"};
+const ACT_SHORT={l:"买创业板50",m:"进现金池",h:"买红利低波100"};
+
+function load(){
+  $("loadError").hidden=true;
+  fetch("data/ratio.json?t="+Date.now(),{cache:"no-store"})
+    .then(r=>{if(!r.ok)throw new Error(r.status===404?"NOFILE":"HTTP "+r.status);return r.json()})
+    .then(d=>{if(!d||!d.latest)throw new Error("数据格式不对");render(d)})
+    .catch(e=>{
+      $("loadError").hidden=false;
+      let msg;
+      if(location.protocol==="file:")msg="直接双击打开本地文件时，浏览器不允许读取数据文件。请部署到 GitHub Pages 后访问，或在项目目录运行 python -m http.server 后打开 http://localhost:8000。";
+      else if(e.message==="NOFILE")msg="还没有生成数据文件。请到仓库的 Actions 页面手动运行一次“更新比值数据”，完成后刷新本页。";
+      else msg="网络不稳定或数据文件损坏，请稍后点“重新读取”。（"+e.message+"）";
+      $("errMsg").textContent=msg;
+      if($("ratio").textContent==="—")$("action").textContent="暂无数据";
+    });
+}
+$("retry").addEventListener("click",load);
+load();
+
+function render(d){
+  const P=d.params,S=d.stats,L=d.latest,LO=P.lo,HI=P.hi;
+  $("updated").textContent=d.updated;
+  const now=new Date(Date.now()+8*3600e3), last=new Date(L.date+"T00:00:00Z");
+  const days=Math.floor((Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate())-last)/864e5);
+  if(days>4){$("stale").hidden=false;$("staleDate").textContent=L.date;$("staleDays").textContent=days;}
+  $("asof").textContent=L.date;
+  $("ratio").textContent=f4(L.ratio);
+  const dd=L.ratio/L.prev_ratio-1;
+  $("delta").textContent=(dd>=0?"▲ ":"▼ ")+pc(Math.abs(dd),2);
+  $("delta").style.color=dd>=0?"var(--grow)":"var(--mark)";
+  $("readout").className="panel z-"+L.zone;
+  $("action").textContent=ACT[L.zone];
+  $("loTxt").textContent=LO;$("hiTxt").textContent=HI;
+  const dl=LO/L.ratio-1,dh=HI/L.ratio-1;
+  $("dLo").textContent=dl>=0?"已进入":"还需跌 "+pc(-dl);
+  $("dHi").textContent=dh<=0?"已进入":"还需涨 "+pc(dh);
+  $("bLo").style.width=Math.max(4,100-Math.min(100,Math.max(0,-dl)/.5*100))+"%";
+  $("bHi").style.width=Math.max(4,100-Math.min(100,Math.max(0,dh)/.5*100))+"%";
+  $("cyb").textContent=L.cyb.toFixed(2);$("hl").textContent=L.hl.toFixed(2);
+  $("p1500").textContent=pc(S.pctile_1500);$("pall").textContent=pc(S.pctile_all);
+
+  // 区间尺
+  const MIN=0.10,MAX=Math.max(0.50,Math.ceil((S.max+0.02)*10)/10);
+  const at=v=>Math.min(100,Math.max(0,(v-MIN)/(MAX-MIN)*100));
+  $("track").innerHTML=
+    `<div class="seg l" style="width:${at(LO)}%">低区<br>&lt;${LO}</div>`+
+    `<div class="seg m" style="width:${at(HI)-at(LO)}%">中间区<br>空仓</div>`+
+    `<div class="seg h" style="width:${100-at(HI)}%">高区 ≥${HI}<br>买红利低波100</div>`;
+  ["pinLo","pinHi","pinNow"].forEach(id=>{const v=id==="pinLo"?S.min:id==="pinHi"?S.max:L.ratio,p=at(v),el=$(id);
+    el.style.transform=p<12?"translateX(-12px)":p>88?"translateX(calc(-100% + 12px))":"translateX(-50%)";
+    el.style.alignItems=p<12?"flex-start":p>88?"flex-end":"center"});
+  $("pinLo").style.left=at(S.min)+"%";$("pinLoV").textContent=f4(S.min);$("pinLoD").textContent="低谷 "+S.min_date;
+  $("pinHi").style.left=at(S.max)+"%";$("pinHiV").textContent=f4(S.max);$("pinHiD").textContent="峰值 "+S.max_date;
+  $("pinNow").style.left=at(L.ratio)+"%";$("pinNowV").textContent=f4(L.ratio);
+  let t="";for(let v=MIN;v<=MAX+1e-9;v+=0.1)t+=`<span style="left:${at(v)}%">${v.toFixed(2)}</span>`;
+  $("ticks").innerHTML=t;
+
+  // 走势图
+  drawChart(d.series,S,LO,HI);
+  $("lgMean").textContent=f4(S.mean);$("lgMed").textContent=f4(S.median);
+  $("p1025").textContent=S.p10.toFixed(3)+" / "+S.p25.toFixed(3);
+  $("p7590").textContent=S.p75.toFixed(3)+" / "+S.p90.toFixed(3);
+  $("m1500").textContent=f4(S.mean_1500);
+  $("share").textContent=[S.share.l,S.share.m,S.share.h].map(x=>Math.round(x*100)).join(" / ")+"%";
+
+  // 回测
+  const names={rot:`轮动 ${LO} / ${HI}`,cyb:"只定投创业板50",hl:"只定投红利低波100",mix:"两边各半定投"};
+  $("bt").innerHTML=["rot","cyb","mix","hl"].map(k=>{const b=d.backtest[k];
+    return `<tr class="${k==="rot"?"hl":""}"><td>${names[k]}</td><td class="r num">${b.xirr==null?"—":pc(b.xirr)}</td><td class="r num">${pc(b.mdd)}</td><td class="r num">${b.invested.toLocaleString()}</td><td class="r num">${b.final.toLocaleString()}</td></tr>`}).join("");
+  const w=d.backtest.rot.weeks;
+  $("btNote").textContent=`${S.start} 至 ${L.date}，每周首个交易日投 ${P.weekly} 元，买入费 ${pc(P.fee,2)}，现金池年化 ${pc(P.cash)}，股息率假设创业板50 ${pc(P.div_cyb)}、红利低波100 ${pc(P.div_hl)}。轮动方案共 ${w.l+w.m+w.h} 周：低区 ${w.l} 周、中间区 ${w.m} 周、高区 ${w.h} 周；现金池当前余额 ${d.backtest.rot.pool.toLocaleString()} 元。`;
+
+  // 敏感性热力
+  const G=d.grid,all=G.xirr.flat().filter(v=>v!=null),gmin=Math.min(...all),gmax=Math.max(...all);
+  let h=`<tr><th>低 \\ 高</th>${G.hi.map(v=>`<th style="text-align:center">${v.toFixed(2)}</th>`).join("")}</tr>`;
+  G.lo.forEach((lo,i)=>{h+=`<tr><th>${lo.toFixed(2)}</th>`+G.xirr[i].map((v,j)=>{
+    const a=v==null?0:(gmax>gmin?(v-gmin)/(gmax-gmin):.5);
+    const cur=Math.abs(lo-LO)<1e-9&&Math.abs(G.hi[j]-HI)<1e-9;
+    return `<td class="${cur?"cur":""}" style="background:color-mix(in srgb, var(--grow) ${Math.round(8+a*62)}%, var(--panel))">${v==null?"—":pc(v)}</td>`}).join("")+"</tr>"});
+  $("heat").innerHTML=h;
+
+  // 近期周信号
+  $("weeks").innerHTML=d.weekly.slice().reverse().map(([dt,r,z])=>
+    `<tr><td class="num">${dt}</td><td class="r num">${f4(r)}</td><td><span class="chip ${z}">${ZN[z]}</span></td><td>${ACT_SHORT[z]}</td></tr>`).join("");
+
+  $("r1k").textContent="< "+LO;$("r2k").textContent=LO+"–"+HI;$("r3k").textContent="≥ "+HI;
+  $("srcC").textContent=d.sources.cyb;$("srcH").textContent=d.sources.hl;
+}
+
+function drawChart(series,S,LO,HI){
+  const W=720,H=300,pl=44,pr=14,pt=12,pb=26,svg=$("chart");
+  const n=series.length,ymin=0.10,ymax=Math.max(0.45,Math.ceil((S.max+0.02)*20)/20);
+  const x=i=>pl+i/(n-1)*(W-pl-pr), y=v=>pt+(1-(v-ymin)/(ymax-ymin))*(H-pt-pb);
+  let s=`<rect x="${pl}" y="${y(ymax)}" width="${W-pl-pr}" height="${y(HI)-y(ymax)}" fill="var(--div-soft)"/>`+
+        `<rect x="${pl}" y="${y(LO)}" width="${W-pl-pr}" height="${y(ymin)-y(LO)}" fill="var(--grow-soft)"/>`;
+  for(let v=ymin;v<=ymax+1e-9;v+=0.05){s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end">${v.toFixed(2)}</text>`}
+  let lastYear="";series.forEach(([dt],i)=>{const yr=dt.slice(0,4);if(yr!==lastYear){lastYear=yr;if(i>0)s+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${yr}</text><line x1="${x(i)}" x2="${x(i)}" y1="${H-pb}" y2="${H-pb+4}" stroke="var(--muted)"/>`}});
+  s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(S.mean)}" y2="${y(S.mean)}" stroke="var(--mark)" stroke-dasharray="5 4" stroke-width="1.2"/>`;
+  s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(S.median)}" y2="${y(S.median)}" stroke="var(--muted)" stroke-dasharray="2 3" stroke-width="1.2"/>`;
+  const step=Math.max(1,Math.floor(n/700));let p="";
+  for(let i=0;i<n;i+=step)p+=(p?"L":"M")+x(i).toFixed(1)+" "+y(series[i][1]).toFixed(1);
+  p+="L"+x(n-1).toFixed(1)+" "+y(series[n-1][1]).toFixed(1);
+  s+=`<path d="${p}" fill="none" stroke="var(--ink)" stroke-width="1.4" stroke-linejoin="round"/>`;
+  s+=`<circle cx="${x(n-1)}" cy="${y(series[n-1][1])}" r="4.5" fill="var(--mark)" stroke="var(--panel)" stroke-width="2"/>`;
+  svg.innerHTML=s;
+}
+})();
+</script>
+</body>
+</html>
