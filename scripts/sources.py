@@ -57,8 +57,14 @@ def em_kline(secid, beg="19900101"):
     q = urllib.parse.urlencode({"secid": secid, "fields1": "f1,f2,f3", "fields2": "f51,f53",
                                 "klt": "101", "fqt": "0", "beg": beg, "end": "20500101",
                                 "ut": "fa5fd1943c7b386f172d6893dbfba10b"})
-    j = jget("https://push2his.eastmoney.com/api/qt/stock/kline/get?" + q, "https://quote.eastmoney.com/")
-    return {a.split(",")[0]: float(a.split(",")[1]) for a in (j.get("data") or {}).get("klines") or []}
+    last = None
+    for host in ("push2his", "33.push2his", "63.push2his", "91.push2his"):
+        try:
+            j = jget(f"https://{host}.eastmoney.com/api/qt/stock/kline/get?" + q, "https://quote.eastmoney.com/")
+            return {a.split(",")[0]: float(a.split(",")[1]) for a in (j.get("data") or {}).get("klines") or []}
+        except Exception as e:  # noqa: BLE001
+            last = e
+    raise last
 
 
 def tx_kline(symbol, start_year=2005):
@@ -76,7 +82,14 @@ def tx_kline(symbol, start_year=2005):
     return out
 
 
-def sina_kline(symbol, n=8000):
+def tx_kline2(symbol, n=640):
+    """腾讯日K（不复权，最近 n 天，ETF 用）"""
+    j = jget(f"https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param={symbol},day,,,{n}", "https://gu.qq.com/")
+    node = (j.get("data") or {}).get(symbol) or {}
+    return {r[0]: float(r[2]) for r in node.get("day") or []}
+
+
+def sina_kline(symbol, n=1000):
     """新浪日K（最多约几千天）"""
     url = ("https://quotes.sina.cn/cn/api/json_v2.php/CN_MarketData.getKLineData"
            f"?symbol={symbol}&scale=240&ma=no&datalen={n}")
@@ -121,7 +134,7 @@ def yahoo(sym):
 
 
 def fred(series):
-    txt = http(f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}")
+    txt = http(f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}", timeout=60)
     rd = csv.reader(io.StringIO(txt))
     next(rd)
     return {r[0]: float(r[1]) for r in rd if len(r) > 1 and r[1] not in (".", "")}
@@ -160,17 +173,51 @@ def ust_gov(years=2):
     return out
 
 
-def chinabond10(days=500):
-    """中债国债收益率曲线 10 年（最近一段）"""
+def chinabond10(days=360):
+    """中债国债收益率曲线（最近一段），取 10 年期"""
     end = dt.date.today()
     start = end - dt.timedelta(days=days)
     url = ("https://yield.chinabond.com.cn/cbweb-pbc-web/pbc/historyQuery"
-           f"?startDate={start}&endDate={end}&gjqx=10&qxId=ycqx&locale=cn_ZH")
+           f"?startDate={start}&endDate={end}&gjqx=0&qxId=ycqx&locale=cn_ZH")
     html = http(url, "https://yield.chinabond.com.cn/")
-    out = {}
-    for d, v in re.findall(r"(\d{4}-\d{2}-\d{2})</td>\s*<td[^>]*>\s*([\d.]+)", html):
-        out[d] = float(v)
+    rows = re.findall(r"<tr[^>]*>(.*?)</tr>", html, re.S)
+    head, out = None, {}
+    for r in rows:
+        cells = [re.sub(r"<[^>]+>|&nbsp;", "", c).strip() for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", r, re.S)]
+        if "10年" in cells:
+            head = cells
+            continue
+        if head and len(cells) == len(head):
+            d = next((c for c in cells if re.fullmatch(r"\d{4}-\d{2}-\d{2}", c)), None)
+            try:
+                if d:
+                    out[d] = float(cells[head.index("10年")])
+            except ValueError:
+                pass
     return out
+
+
+def nasdaq_api(sym="NDX", years=3):
+    """纳斯达克官网历史行情（最近几年）"""
+    end = dt.date.today()
+    url = (f"https://api.nasdaq.com/api/quote/{sym}/historical?assetclass=index"
+           f"&fromdate={end - dt.timedelta(days=365 * years)}&limit=9999&todate={end}")
+    j = jget(url, "https://www.nasdaq.com/")
+    rows = (((j.get("data") or {}).get("tradesTable") or {}).get("rows")) or []
+    out = {}
+    for r in rows:
+        m, d, y = r["date"].split("/")
+        out[f"{y}-{m}-{d}"] = float(str(r["close"]).replace(",", ""))
+    return out
+
+
+def sina_us(sym=".ndx"):
+    """新浪美股日K"""
+    txt = http(f"https://stock.finance.sina.com.cn/usstock/api/jsonp.php/var%20_x=/US_MinKService.getDailyK?symbol={sym}",
+               "https://finance.sina.com.cn/")
+    m = re.search(r"\((\[.*\])\)", txt, re.S)
+    rows = json.loads(m.group(1)) if m else []
+    return {r["d"]: float(r["c"]) for r in rows}
 
 
 def em_lsjz(code, pages=10):
@@ -216,8 +263,7 @@ CATALOG = {
     "hl100": ("红利低波100 收盘", [
         ("中证指数官网", lambda: cs_perf("930955")),
         ("东方财富", lambda: em_kline("2.930955")),
-        ("腾讯", lambda: tx_kline("sh930955", 2014)),
-        ("新浪", lambda: sina_kline("sh930955")),
+        ("中证指数官网(近一年)", lambda: cs_perf("930955", "close", f"{dt.date.today().year - 1}0101")),
     ]),
     "hl100_pe": ("红利低波100 市盈率", [
         ("中证指数官网", lambda: cs_perf("930955", "peg")),
@@ -259,13 +305,14 @@ CATALOG = {
     "ndx": ("纳指100 收盘", [
         ("腾讯", lambda: tx_kline("us.NDX", 2014)),
         ("东方财富", lambda: em_kline("100.NDX100")),
-        ("Stooq", lambda: stooq("^ndx")),
-        ("雅虎财经", lambda: yahoo("^NDX")),
+        ("新浪", lambda: sina_us(".ndx")),
+        ("纳斯达克官网", lambda: nasdaq_api("NDX")),
         ("美联储FRED", lambda: fred("NASDAQ100")),
+        ("雅虎财经", lambda: yahoo("^NDX")),
     ]),
     "etf513100": ("纳指ETF 513100 收盘", [
         ("东方财富", lambda: em_kline("1.513100", "20240101")),
-        ("腾讯", lambda: tx_kline("sh513100", 2024)),
+        ("腾讯", lambda: tx_kline2("sh513100")),
         ("新浪", lambda: sina_kline("sh513100", 600)),
     ]),
     "nav513100": ("纳指ETF 513100 净值", [
