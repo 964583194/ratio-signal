@@ -41,6 +41,7 @@ h2{font-family:var(--f-display);font-size:18px;margin:0 0 12px}
 .action{display:inline-block;margin-top:10px;padding:6px 12px;border-radius:999px;font-weight:700}
 .z-l .action{background:var(--grow-soft);color:var(--grow)}
 .z-h .action{background:var(--div-soft);color:var(--div)}
+.z-s .action{background:var(--mark);color:#fff}
 .z-m .action{background:var(--mid);color:var(--ink)}
 .dist{display:flex;flex-direction:column;gap:10px}
 .drow .top{display:flex;justify-content:space-between;gap:8px;font-size:13px}
@@ -51,6 +52,7 @@ h2{font-family:var(--f-display);font-size:18px;margin:0 0 12px}
 .kv .v{font-family:var(--f-num);font-weight:600;font-size:16px}
 .kv .s{font-size:11px;color:var(--muted)}
 .ruler{position:relative;margin:44px 0 6px}
+.sellmark{position:absolute;top:0;width:2px;height:46px;background:var(--mark);transform:translateX(-1px);z-index:1}
 .track{display:flex;height:46px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
 .seg{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;text-align:center;line-height:1.2;padding:0 4px}
 .seg.l{background:var(--grow-soft);color:var(--grow)}
@@ -77,6 +79,7 @@ th{font-size:12px;color:var(--muted);font-weight:500}
 .r{text-align:right}
 tr.hl td{font-weight:700}
 .chip{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px}
+.chip.s{background:var(--mark);color:#fff}
 .chip.l{background:var(--grow-soft);color:var(--grow)}.chip.h{background:var(--div-soft);color:var(--div)}.chip.m{background:var(--mid);color:var(--muted)}
 .heat td{text-align:center;font-family:var(--f-num)}
 .heat td.cur{outline:2px solid var(--mark);outline-offset:-2px}
@@ -90,7 +93,7 @@ tr.hl td{font-weight:700}
 footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 @media (max-width:600px){.readout{grid-template-columns:1fr}.kv{grid-template-columns:repeat(2,1fr)}.seg{font-size:11px}}
 .tabs{display:flex;gap:4px;padding:4px;background:var(--mid);border-radius:10px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
-.tabs button{flex:1;font:inherit;font-weight:700;font-size:15px;padding:9px 12px;border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}
+.tabs button{flex:1;font:inherit;font-weight:700;font-size:14px;padding:9px 6px;white-space:nowrap;border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .tabs button:focus-visible,.btn:focus-visible{outline:2px solid var(--mark);outline-offset:2px}
 .btn{font:inherit;font-weight:700;padding:8px 16px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--panel);cursor:pointer}
@@ -137,11 +140,13 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
   <div class="eyebrow">指数定投 · 个人信号看板</div>
   <h1 id="h1">创业板50 ÷ 红利低波100 轮动信号</h1>
   <p id="subRot">比值 = 创业板50（399673）收盘 ÷ 红利低波100（930955）收盘 · 数据更新于 <span class="num" id="updated">—</span></p>
+  <p id="subKc" hidden>比值 = 科创50（000688）收盘 ÷ 红利低波100（930955）收盘 · 数据更新于 <span class="num" id="k_updated">—</span></p>
   <p id="subDiv" hidden>每个交易日 200 元 · 四维打分 0~20 分决定买多少 · 数据更新于 <span class="num" id="dUpdated">—</span></p>
 </header>
 
 <nav class="tabs" role="tablist" aria-label="切换策略">
   <button type="button" role="tab" id="tabRot" data-view="rotation" aria-selected="true">比值轮动</button>
+  <button type="button" role="tab" id="tabKc" data-view="kc" aria-selected="false">科创50轮动</button>
   <button type="button" role="tab" id="tabDiv" data-view="dividend" aria-selected="false">红利打分</button>
 </nav>
 
@@ -165,8 +170,9 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
       <span class="action" id="action">加载中</span>
     </div>
     <div class="dist">
-      <div class="drow"><div class="top"><span>距低区线 <span class="num" id="loTxt"></span>（买创业板50）</span><b class="num" id="dLo"></b></div><div class="bar"><i id="bLo" style="background:var(--grow)"></i></div></div>
+      <div class="drow"><div class="top"><span>距低区线 <span class="num" id="loTxt"></span>（买<span class="gname">创业板50</span>）</span><b class="num" id="dLo"></b></div><div class="bar"><i id="bLo" style="background:var(--grow)"></i></div></div>
       <div class="drow"><div class="top"><span>距高区线 <span class="num" id="hiTxt"></span>（买红利低波100）</span><b class="num" id="dHi"></b></div><div class="bar"><i id="bHi" style="background:var(--div)"></i></div></div>
+      <div class="drow"><div class="top"><span>距卖出线 <span class="num" id="sTxt"></span>（卖 1/3 <span class="gname">创业板50</span>）</span><b class="num" id="dS"></b></div><div class="bar"><i id="bS" style="background:var(--mark)"></i></div></div>
       <div class="label">进度条按比值变化计，满格 50%</div>
     </div>
   </div>
@@ -187,6 +193,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
     <div class="track" id="track"></div>
   </div>
   <div class="ticks" id="ticks"></div>
+  <p class="note" id="sellNote"></p>
 </section>
 
 <section class="panel">
@@ -214,11 +221,11 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
   <p class="note" id="btNote"></p>
   <h2 style="margin-top:18px">阈值敏感性（轮动年化）</h2>
   <div class="scroll"><table class="heat" id="heat"></table></div>
-  <p class="note">行是低区线，列是高区线，红框是当前使用的 0.16 / 0.28。颜色越深收益越高。如果红框附近颜色变化剧烈，说明结果依赖阈值的精确取值，要警惕过拟合。</p>
+  <p class="note">行是低区线，列是高区线，红框是当前使用的 <span id="heatCur"></span>（不含卖点）。颜色越深收益越高。如果红框附近颜色变化剧烈，说明结果依赖阈值的精确取值，要警惕过拟合。</p>
 </section>
 
 <section class="panel">
-  <h2>近 26 周信号</h2>
+  <h2>近一年信号（52 周）</h2>
   <div class="scroll"><table>
     <thead><tr><th>周首交易日</th><th class="r">比值</th><th>区间</th><th>动作</th></tr></thead>
     <tbody id="weeks"></tbody>
@@ -230,8 +237,106 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
   <div class="rule"><span class="k" id="r1k">&lt; 0.16</span><span>定投创业板50（159949），现金池一次性回补</span></div>
   <div class="rule"><span class="k" id="r2k">0.16–0.28</span><span>空仓，定投额存入现金池等信号</span></div>
   <div class="rule"><span class="k" id="r3k">≥ 0.28</span><span>定投红利低波100（515100），现金池一次性回补，股息复投</span></div>
+  <div id="sellRules"></div>
 </section>
 </div>
+
+<div id="viewKc" hidden>
+<section class="panel err" id="k_loadError" hidden>
+  <h2>读取数据失败</h2>
+  <p id="k_errMsg" class="note"></p>
+  <button type="button" id="k_retry" style="margin-top:10px;font:inherit;font-weight:700;padding:8px 16px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--panel);cursor:pointer">重新读取</button>
+</section>
+
+<section class="panel" id="k_stale" hidden style="border-color:var(--div);background:var(--div-soft)">
+  <b>显示的是 <span class="num" id="k_staleDate"></span> 的数据，已经 <span class="num" id="k_staleDays"></span> 天没有更新。</b>
+  <p class="note" style="margin-top:4px">可能是节假日休市，也可能是自动更新失败。如果不是假期，请到仓库的 Actions 页查看运行记录。</p>
+</section>
+
+<section class="panel z-m" id="k_readout">
+  <div class="readout">
+    <div>
+      <div class="label">当前比值 · <span class="num" id="k_asof">—</span></div>
+      <div><span class="big num" id="k_ratio">—</span><span class="delta num" id="k_delta"></span></div>
+      <span class="action" id="k_action">加载中</span>
+    </div>
+    <div class="dist">
+      <div class="drow"><div class="top"><span>距低区线 <span class="num" id="k_loTxt"></span>（买<span class="gname">科创50</span>）</span><b class="num" id="k_dLo"></b></div><div class="bar"><i id="k_bLo" style="background:var(--grow)"></i></div></div>
+      <div class="drow"><div class="top"><span>距高区线 <span class="num" id="k_hiTxt"></span>（买红利低波100）</span><b class="num" id="k_dHi"></b></div><div class="bar"><i id="k_bHi" style="background:var(--div)"></i></div></div>
+      <div class="drow"><div class="top"><span>距卖出线 <span class="num" id="k_sTxt"></span>（卖 1/3 <span class="gname">科创50</span>）</span><b class="num" id="k_dS"></b></div><div class="bar"><i id="k_bS" style="background:var(--mark)"></i></div></div>
+      <div class="label">进度条按比值变化计，满格 50%</div>
+    </div>
+  </div>
+  <div class="kv">
+    <div><div class="label">科创50</div><div class="v" id="k_cyb">—</div></div>
+    <div><div class="label">红利低波100</div><div class="v" id="k_hl">—</div></div>
+    <div><div class="label">近1500日分位</div><div class="v" id="k_p1500">—</div></div>
+    <div><div class="label">全样本分位</div><div class="v" id="k_pall">—</div></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>比值区间尺</h2>
+  <div class="ruler" id="k_ruler">
+    <div class="pin lo" id="k_pinLo"><span id="k_pinLoD"></span><b id="k_pinLoV"></b></div>
+    <div class="pin hi" id="k_pinHi"><span id="k_pinHiD"></span><b id="k_pinHiV"></b></div>
+    <div class="pin now" id="k_pinNow"><span>现在</span><b id="k_pinNowV"></b></div>
+    <div class="track" id="k_track"></div>
+  </div>
+  <div class="ticks" id="k_ticks"></div>
+  <p class="note" id="k_sellNote"></p>
+</section>
+
+<section class="panel">
+  <h2>历年走势</h2>
+  <svg class="chart" id="k_chart" viewBox="0 0 720 300" role="img" aria-label="比值历史走势"></svg>
+  <div class="legend">
+    <span><i style="border-color:var(--ink)"></i>比值</span>
+    <span><i style="border-color:var(--mark);border-top-style:dashed"></i>均值 <b class="num" id="k_lgMean"></b></span>
+    <span><i style="border-color:var(--muted);border-top-style:dotted"></i>中位数 <b class="num" id="k_lgMed"></b></span>
+  </div>
+  <div class="kv">
+    <div><div class="label">P10 / P25</div><div class="v" id="k_p1025"></div></div>
+    <div><div class="label">P75 / P90</div><div class="v" id="k_p7590"></div></div>
+    <div><div class="label">近1500日均值</div><div class="v" id="k_m1500"></div></div>
+    <div><div class="label">低 / 中 / 高区天数</div><div class="v" id="k_share"></div></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>回测：每周定投</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>方案</th><th class="r">年化 XIRR</th><th class="r">最大回撤</th><th class="r">累计投入</th><th class="r">期末市值</th></tr></thead>
+    <tbody id="k_bt"></tbody>
+  </table></div>
+  <p class="note" id="k_btNote"></p>
+  <h2 style="margin-top:18px">阈值敏感性（轮动年化）</h2>
+  <div class="scroll"><table class="heat" id="k_heat"></table></div>
+  <p class="note">行是低区线，列是高区线，红框是当前使用的 <span id="k_heatCur"></span>（不含卖点）。颜色越深收益越高。如果红框附近颜色变化剧烈，说明结果依赖阈值的精确取值，要警惕过拟合。</p>
+</section>
+
+<section class="panel">
+  <h2>近一年信号（52 周）</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>周首交易日</th><th class="r">比值</th><th>区间</th><th>动作</th></tr></thead>
+    <tbody id="k_weeks"></tbody>
+  </table></div>
+</section>
+
+<section class="panel">
+  <h2>阈值说明</h2>
+  <p class="note" style="margin:0">科创50 ÷ 红利低波100 的比值量级和创业板50 不同，阈值按历史分位重新划定：低区线 0.09 约在 29% 分位，高区线 0.15 约在 80% 分位，与原规则 0.16 / 0.28（约 25% / 78% 分位）对应。卖出线 0.16 / 0.17 / 0.18 只在 2020～2021 年和 2026 年触发过，样本只有约 7 年，可信度低于创业板50 版本。</p>
+</section>
+
+<section class="panel rules">
+  <h2>规则速查</h2>
+  <div class="rule"><span class="k" id="k_r1k"></span><span>定投科创50（588000），现金池一次性回补</span></div>
+  <div class="rule"><span class="k" id="k_r2k"></span><span>空仓，定投额存入现金池等信号</span></div>
+  <div class="rule"><span class="k" id="k_r3k"></span><span>定投红利低波100（515100），现金池一次性回补，股息复投</span></div>
+  <div id="k_sellRules"></div>
+</section>
+</div>
+
 
 <div id="viewDiv" hidden>
 <section class="panel err" id="dErr" hidden>
@@ -335,7 +440,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 </div>
 
 <footer>
-  数据来源：创业板50 <span id="srcC">—</span>；红利低波100 <span id="srcH">—</span>；PE、全收益指数（推算股息率）来自中证指数官网，十年国债收益率来自东方财富<br>
+  数据来源：创业板50 <span id="srcC">—</span>；科创50 东方财富 / 腾讯；红利低波100 <span id="srcH">—</span>；PE、全收益指数（推算股息率）来自中证指数官网，十年国债收益率来自东方财富<br>
   回测用价格指数加回股息率假设，未计跟踪误差与管理费。个人研究记录，不构成投资建议。
 </footer>
 </div>
@@ -349,116 +454,144 @@ const ZN={l:"低区",m:"中间区",h:"高区"};
 const ACT={l:"买创业板50 · 回补现金池",m:"空仓 · 进现金池",h:"买红利低波100 · 回补现金池"};
 const ACT_SHORT={l:"买创业板50",m:"进现金池",h:"买红利低波100"};
 
+function Rot(p,file,cfg){
+const q=id=>document.getElementById(p+id);
+const G_=cfg.g;
+const ACT={l:`买${G_} · 回补现金池`,m:"空仓 · 进现金池",h:"买红利低波100 · 回补现金池"};
+const ACT_SHORT={l:`买${G_}`,m:"进现金池",h:"买红利低波100"};
 function load(){
-  $("loadError").hidden=true;
-  fetch("data/ratio.json?t="+Date.now(),{cache:"no-store"})
+  q("loadError").hidden=true;
+  fetch(file+"?t="+Date.now(),{cache:"no-store"})
     .then(r=>{if(!r.ok)throw new Error(r.status===404?"NOFILE":"HTTP "+r.status);return r.json()})
     .then(d=>{if(!d||!d.latest)throw new Error("数据格式不对");render(d)})
     .catch(e=>{
-      $("loadError").hidden=false;
+      q("loadError").hidden=false;
       let msg;
       if(location.protocol==="file:")msg="直接双击打开本地文件时，浏览器不允许读取数据文件。请部署到 GitHub Pages 后访问，或在项目目录运行 python -m http.server 后打开 http://localhost:8000。";
       else if(e.message==="NOFILE")msg="还没有生成数据文件。请到仓库的 Actions 页面手动运行一次“更新比值数据”，完成后刷新本页。";
       else msg="网络不稳定或数据文件损坏，请稍后点“重新读取”。（"+e.message+"）";
-      $("errMsg").textContent=msg;
-      if($("ratio").textContent==="—")$("action").textContent="暂无数据";
+      q("errMsg").textContent=msg;
+      if(q("ratio").textContent==="—")q("action").textContent="暂无数据";
     });
 }
-$("retry").addEventListener("click",load);
+q("retry").addEventListener("click",load);
 load();
 
 function render(d){
   const P=d.params,S=d.stats,L=d.latest,LO=P.lo,HI=P.hi;
-  $("updated").textContent=d.updated;
+  q("updated").textContent=d.updated;
   const now=new Date(Date.now()+8*3600e3), last=new Date(L.date+"T00:00:00Z");
   const days=Math.floor((Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate())-last)/864e5);
-  if(days>4){$("stale").hidden=false;$("staleDate").textContent=L.date;$("staleDays").textContent=days;}
-  $("asof").textContent=L.date;
-  $("ratio").textContent=f4(L.ratio);
+  if(days>4){q("stale").hidden=false;q("staleDate").textContent=L.date;q("staleDays").textContent=days;}
+  q("asof").textContent=L.date;
+  q("ratio").textContent=f4(L.ratio);
   const dd=L.ratio/L.prev_ratio-1;
-  $("delta").textContent=(dd>=0?"▲ ":"▼ ")+pc(Math.abs(dd),2);
-  $("delta").style.color=dd>=0?"var(--grow)":"var(--mark)";
-  $("readout").className="panel z-"+L.zone;
-  $("action").textContent=ACT[L.zone];
-  $("loTxt").textContent=LO;$("hiTxt").textContent=HI;
+  q("delta").textContent=(dd>=0?"▲ ":"▼ ")+pc(Math.abs(dd),2);
+  q("delta").style.color=dd>=0?"var(--grow)":"var(--mark)";
+  q("readout").className="panel z-"+L.zone;
+  const SL=P.sells||[];
+  const sIdx=SL.reduce((k,[th],i)=>L.ratio>=th?i:k,-1);
+  const SELLTXT=[`卖出 1/3 ${G_} 转红利`,`再卖一半 ${G_}`,`${G_} 全部转红利`];
+  q("action").textContent=sIdx>=0?`卖出区 · ${SELLTXT[sIdx]}`:ACT[L.zone];
+  if(sIdx>=0)q("readout").className="panel z-s";
+  if(SL.length){const s1=SL[0][0],ds=s1/L.ratio-1;q("sTxt").textContent=s1;
+    q("dS").textContent=ds<=0?"已进入":"还需涨 "+pc(ds);
+    q("bS").style.width=Math.max(4,100-Math.min(100,Math.max(0,ds)/.5*100))+"%";
+    q("sellNote").textContent=`红色竖线为分档卖出线：比值 ≥${SL[0][0]} 卖 1/3 ${G_} 转红利，≥${SL[1][0]} 再卖剩下的一半，≥${SL[2][0]} 全部转出。每段行情每档只卖一次，比值回到 ${HI} 以下后重新计数。`;}
+  q("loTxt").textContent=LO;q("hiTxt").textContent=HI;
   const dl=LO/L.ratio-1,dh=HI/L.ratio-1;
-  $("dLo").textContent=dl>=0?"已进入":"还需跌 "+pc(-dl);
-  $("dHi").textContent=dh<=0?"已进入":"还需涨 "+pc(dh);
-  $("bLo").style.width=Math.max(4,100-Math.min(100,Math.max(0,-dl)/.5*100))+"%";
-  $("bHi").style.width=Math.max(4,100-Math.min(100,Math.max(0,dh)/.5*100))+"%";
-  $("cyb").textContent=L.cyb.toFixed(2);$("hl").textContent=L.hl.toFixed(2);
-  $("p1500").textContent=pc(S.pctile_1500);$("pall").textContent=pc(S.pctile_all);
+  q("dLo").textContent=dl>=0?"已进入":"还需跌 "+pc(-dl);
+  q("dHi").textContent=dh<=0?"已进入":"还需涨 "+pc(dh);
+  q("bLo").style.width=Math.max(4,100-Math.min(100,Math.max(0,-dl)/.5*100))+"%";
+  q("bHi").style.width=Math.max(4,100-Math.min(100,Math.max(0,dh)/.5*100))+"%";
+  q("cyb").textContent=L.cyb.toFixed(2);q("hl").textContent=L.hl.toFixed(2);
+  q("p1500").textContent=pc(S.pctile_1500);q("pall").textContent=pc(S.pctile_all);
 
   // 区间尺
-  const MIN=0.10,MAX=Math.max(0.50,Math.ceil((S.max+0.02)*10)/10);
+  const MIN=cfg.min,MAX=Math.max(cfg.max,Math.ceil((S.max+0.02)/cfg.tick)*cfg.tick);
   const at=v=>Math.min(100,Math.max(0,(v-MIN)/(MAX-MIN)*100));
-  $("track").innerHTML=
+  q("track").innerHTML=
     `<div class="seg l" style="width:${at(LO)}%">低区<br>&lt;${LO}</div>`+
     `<div class="seg m" style="width:${at(HI)-at(LO)}%">中间区<br>空仓</div>`+
-    `<div class="seg h" style="width:${100-at(HI)}%">高区 ≥${HI}<br>买红利低波100</div>`;
-  ["pinLo","pinHi","pinNow"].forEach(id=>{const v=id==="pinLo"?S.min:id==="pinHi"?S.max:L.ratio,p=at(v),el=$(id);
+    `<div class="seg h" style="width:${100-at(HI)}%">高区 ≥${HI}<br>买红利低波100</div>`+
+    SL.map(([th])=>`<i class="sellmark" style="left:${at(th)}%"></i>`).join("");
+  ["pinLo","pinHi","pinNow"].forEach(id=>{const v=id==="pinLo"?S.min:id==="pinHi"?S.max:L.ratio,p=at(v),el=q(id);
     el.style.transform=p<12?"translateX(-12px)":p>88?"translateX(calc(-100% + 12px))":"translateX(-50%)";
     el.style.alignItems=p<12?"flex-start":p>88?"flex-end":"center"});
-  $("pinLo").style.left=at(S.min)+"%";$("pinLoV").textContent=f4(S.min);$("pinLoD").textContent="低谷 "+S.min_date;
-  $("pinHi").style.left=at(S.max)+"%";$("pinHiV").textContent=f4(S.max);$("pinHiD").textContent="峰值 "+S.max_date;
-  $("pinNow").style.left=at(L.ratio)+"%";$("pinNowV").textContent=f4(L.ratio);
-  let t="";for(let v=MIN;v<=MAX+1e-9;v+=0.1)t+=`<span style="left:${at(v)}%">${v.toFixed(2)}</span>`;
-  $("ticks").innerHTML=t;
+  q("pinLo").style.left=at(S.min)+"%";q("pinLoV").textContent=f4(S.min);q("pinLoD").textContent="低谷 "+S.min_date;
+  q("pinHi").style.left=at(S.max)+"%";q("pinHiV").textContent=f4(S.max);q("pinHiD").textContent="峰值 "+S.max_date;
+  q("pinNow").style.left=at(L.ratio)+"%";q("pinNowV").textContent=f4(L.ratio);
+  let t="";for(let v=MIN;v<=MAX+1e-9;v+=cfg.tick)t+=`<span style="left:${at(v)}%">${v.toFixed(2)}</span>`;
+  q("ticks").innerHTML=t;
 
   // 走势图
-  drawChart(d.series,S,LO,HI);
-  $("lgMean").textContent=f4(S.mean);$("lgMed").textContent=f4(S.median);
-  $("p1025").textContent=S.p10.toFixed(3)+" / "+S.p25.toFixed(3);
-  $("p7590").textContent=S.p75.toFixed(3)+" / "+S.p90.toFixed(3);
-  $("m1500").textContent=f4(S.mean_1500);
-  $("share").textContent=[S.share.l,S.share.m,S.share.h].map(x=>Math.round(x*100)).join(" / ")+"%";
+  drawChart(d.series,S,LO,HI,SL);
+  q("lgMean").textContent=f4(S.mean);q("lgMed").textContent=f4(S.median);
+  q("p1025").textContent=S.p10.toFixed(3)+" / "+S.p25.toFixed(3);
+  q("p7590").textContent=S.p75.toFixed(3)+" / "+S.p90.toFixed(3);
+  q("m1500").textContent=f4(S.mean_1500);
+  q("share").textContent=[S.share.l,S.share.m,S.share.h].map(x=>Math.round(x*100)).join(" / ")+"%";
 
   // 回测
-  const names={rot:`轮动 ${LO} / ${HI}`,cyb:"只定投创业板50",hl:"只定投红利低波100",mix:"两边各半定投"};
-  $("bt").innerHTML=["rot","cyb","mix","hl"].map(k=>{const b=d.backtest[k];
-    return `<tr class="${k==="rot"?"hl":""}"><td>${names[k]}</td><td class="r num">${b.xirr==null?"—":pc(b.xirr)}</td><td class="r num">${pc(b.mdd)}</td><td class="r num">${b.invested.toLocaleString()}</td><td class="r num">${b.final.toLocaleString()}</td></tr>`}).join("");
+  const names={rot:`轮动 ${LO} / ${HI}`,sell:"轮动 + 分档卖出",cyb:`只定投${G_}`,hl:"只定投红利低波100",mix:"两边各半定投"};
+  q("bt").innerHTML=["rot","sell","cyb","mix","hl"].filter(k=>d.backtest[k]).map(k=>{const b=d.backtest[k];
+    return `<tr class="${k==="rot"||k==="sell"?"hl":""}"><td>${names[k]}</td><td class="r num">${b.xirr==null?"—":pc(b.xirr)}</td><td class="r num">${pc(b.mdd)}</td><td class="r num">${b.invested.toLocaleString()}</td><td class="r num">${b.final.toLocaleString()}</td></tr>`}).join("");
   const w=d.backtest.rot.weeks;
-  $("btNote").textContent=`${S.start} 至 ${L.date}，每周首个交易日投 ${P.weekly} 元，买入费 ${pc(P.fee,2)}，现金池年化 ${pc(P.cash)}，股息率假设创业板50 ${pc(P.div_cyb)}、红利低波100 ${pc(P.div_hl)}。轮动方案共 ${w.l+w.m+w.h} 周：低区 ${w.l} 周、中间区 ${w.m} 周、高区 ${w.h} 周；现金池当前余额 ${d.backtest.rot.pool.toLocaleString()} 元。`;
+  q("btNote").textContent=`${S.start} 至 ${L.date}，每周首个交易日投 ${P.weekly} 元，买入费 ${pc(P.fee,2)}，现金池年化 ${pc(P.cash)}，股息率假设${G_} ${pc(P.div_cyb)}、红利低波100 ${pc(P.div_hl)}。轮动方案共 ${w.l+w.m+w.h} 周：低区 ${w.l} 周、中间区 ${w.m} 周、高区 ${w.h} 周；现金池当前余额 ${d.backtest.rot.pool.toLocaleString()} 元。`;
 
   // 敏感性热力
   const G=d.grid,all=G.xirr.flat().filter(v=>v!=null),gmin=Math.min(...all),gmax=Math.max(...all);
-  let h=`<tr><th>低 \\ 高</th>${G.hi.map(v=>`<th style="text-align:center">${v.toFixed(2)}</th>`).join("")}</tr>`;
-  G.lo.forEach((lo,i)=>{h+=`<tr><th>${lo.toFixed(2)}</th>`+G.xirr[i].map((v,j)=>{
+  let h=`<tr><th>低 \\ 高</th>${G.hi.map(v=>`<th style="text-align:center">${+v.toFixed(3)}</th>`).join("")}</tr>`;
+  G.lo.forEach((lo,i)=>{h+=`<tr><th>${+lo.toFixed(3)}</th>`+G.xirr[i].map((v,j)=>{
     const a=v==null?0:(gmax>gmin?(v-gmin)/(gmax-gmin):.5);
     const cur=Math.abs(lo-LO)<1e-9&&Math.abs(G.hi[j]-HI)<1e-9;
     return `<td class="${cur?"cur":""}" style="background:color-mix(in srgb, var(--grow) ${Math.round(8+a*62)}%, var(--panel))">${v==null?"—":pc(v)}</td>`}).join("")+"</tr>"});
-  $("heat").innerHTML=h;
+  q("heat").innerHTML=h;q("heatCur").textContent=LO+" / "+HI;
 
-  // 近期周信号
-  $("weeks").innerHTML=d.weekly.slice().reverse().map(([dt,r,z])=>
-    `<tr><td class="num">${dt}</td><td class="r num">${f4(r)}</td><td><span class="chip ${z}">${ZN[z]}</span></td><td>${ACT_SHORT[z]}</td></tr>`).join("");
+  // 近一年周信号（含分档卖出提示）
+  const hitW=new Set(),WK=d.weekly.map(([dt,r,z])=>{
+    if(r<HI)hitW.clear();
+    let a=ACT_SHORT[z];const fired=[];
+    SL.forEach(([th],i)=>{if(r>=th&&!hitW.has(th)){hitW.add(th);fired.push(i)}});
+    if(fired.length)a+=" + "+SELLTXT[fired[fired.length-1]];
+    else if(sIdxOf(r)>=0)a+="（已卖过本档）";
+    return [dt,r,z,a,fired.length>0]});
+  function sIdxOf(r){return SL.reduce((k,[th],i)=>r>=th?i:k,-1)}
+  q("weeks").innerHTML=WK.slice(-52).reverse().map(([dt,r,z,a,sell])=>
+    `<tr><td class="num">${dt}</td><td class="r num">${f4(r)}</td><td><span class="chip ${sell?"s":z}">${sell?"卖出":ZN[z]}</span></td><td>${a}</td></tr>`).join("");
 
-  $("r1k").textContent="< "+LO;$("r2k").textContent=LO+"–"+HI;$("r3k").textContent="≥ "+HI;
-  $("srcC").textContent=d.sources.cyb;$("srcH").textContent=d.sources.hl;
+  q("sellRules").innerHTML=SL.map(([th],i)=>`<div class="rule"><span class="k">≥ ${th}</span><span>${["卖出 1/3 ","再卖剩下的一半 ","全部卖出 "][i]}${G_}，转入红利低波100（每段行情每档只卖一次）</span></div>`).join("");
+  q("r1k").textContent="< "+LO;q("r2k").textContent=LO+"–"+HI;q("r3k").textContent="≥ "+HI;
+  if(!p){q("srcC").textContent=d.sources.cyb;q("srcH").textContent=d.sources.hl;}
 }
 
-function drawChart(series,S,LO,HI){
-  const W=720,H=300,pl=44,pr=14,pt=12,pb=26,svg=$("chart");
-  const n=series.length,ymin=0.10,ymax=Math.max(0.45,Math.ceil((S.max+0.02)*20)/20);
+function drawChart(series,S,LO,HI,SL){
+  const W=720,H=300,pl=44,pr=14,pt=12,pb=26,svg=q("chart");
+  const n=series.length,ymin=cfg.cmin,ymax=Math.max(cfg.cmax,Math.ceil((S.max+0.01)/cfg.grid)*cfg.grid);
   const x=i=>pl+i/(n-1)*(W-pl-pr), y=v=>pt+(1-(v-ymin)/(ymax-ymin))*(H-pt-pb);
   let s=`<rect x="${pl}" y="${y(ymax)}" width="${W-pl-pr}" height="${y(HI)-y(ymax)}" fill="var(--div-soft)"/>`+
         `<rect x="${pl}" y="${y(LO)}" width="${W-pl-pr}" height="${y(ymin)-y(LO)}" fill="var(--grow-soft)"/>`;
-  for(let v=ymin;v<=ymax+1e-9;v+=0.05){s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end">${v.toFixed(2)}</text>`}
+  for(let v=ymin;v<=ymax+1e-9;v+=cfg.grid){s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end">${v.toFixed(2)}</text>`}
   let lastYear="";series.forEach(([dt],i)=>{const yr=dt.slice(0,4);if(yr!==lastYear){lastYear=yr;if(i>0)s+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${yr}</text><line x1="${x(i)}" x2="${x(i)}" y1="${H-pb}" y2="${H-pb+4}" stroke="var(--muted)"/>`}});
   s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(S.mean)}" y2="${y(S.mean)}" stroke="var(--mark)" stroke-dasharray="5 4" stroke-width="1.2"/>`;
   s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(S.median)}" y2="${y(S.median)}" stroke="var(--muted)" stroke-dasharray="2 3" stroke-width="1.2"/>`;
-  const step=Math.max(1,Math.floor(n/700));let p="";
-  for(let i=0;i<n;i+=step)p+=(p?"L":"M")+x(i).toFixed(1)+" "+y(series[i][1]).toFixed(1);
-  p+="L"+x(n-1).toFixed(1)+" "+y(series[n-1][1]).toFixed(1);
-  s+=`<path d="${p}" fill="none" stroke="var(--ink)" stroke-width="1.4" stroke-linejoin="round"/>`;
+  (SL||[]).forEach(([th])=>{s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(th)}" y2="${y(th)}" stroke="var(--mark)" stroke-dasharray="3 3" stroke-width="1"/><text x="${W-pr-2}" y="${y(th)-3}" text-anchor="end" style="fill:var(--mark)">卖 ${th}</text>`});
+  const step=Math.max(1,Math.floor(n/700));let pp="";
+  for(let i=0;i<n;i+=step)pp+=(pp?"L":"M")+x(i).toFixed(1)+" "+y(series[i][1]).toFixed(1);
+  pp+="L"+x(n-1).toFixed(1)+" "+y(series[n-1][1]).toFixed(1);
+  s+=`<path d="${pp}" fill="none" stroke="var(--ink)" stroke-width="1.4" stroke-linejoin="round"/>`;
   s+=`<circle cx="${x(n-1)}" cy="${y(series[n-1][1])}" r="4.5" fill="var(--mark)" stroke="var(--panel)" stroke-width="2"/>`;
   svg.innerHTML=s;
 }
+}
+Rot("","data/ratio.json",{g:"创业板50",min:.10,max:.50,tick:.10,cmin:.10,cmax:.45,grid:.05});
+Rot("k_","data/kc.json",{g:"科创50",min:.05,max:.25,tick:.05,cmin:.05,cmax:.22,grid:.02});
 // ---------------- 页签
 const VIEWS={rotation:["viewRot","tabRot","subRot","创业板50 ÷ 红利低波100 轮动信号"],
+             kc:["viewKc","tabKc","subKc","科创50 ÷ 红利低波100 轮动信号"],
              dividend:["viewDiv","tabDiv","subDiv","红利低波100 · 每日定投打分"]};
 function showView(){
-  const k=location.hash==="#dividend"?"dividend":"rotation";
+  const k=location.hash==="#dividend"?"dividend":location.hash==="#kc"?"kc":"rotation";
   Object.entries(VIEWS).forEach(([key,[v,t,s]])=>{const on=key===k;$(v).hidden=!on;$(s).hidden=!on;$(t).setAttribute("aria-selected",on)});
   $("h1").textContent=VIEWS[k][3];
 }

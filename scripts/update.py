@@ -23,6 +23,10 @@ OUT = os.path.join(ROOT, "data", "ratio.json")
 
 START = "20160923"   # 与原作者口径一致：2016-09-23 起
 LO, HI = 0.16, 0.28  # 两条操作线
+SELLS = ((0.32, 1 / 3), (0.36, 0.5), (0.40, 1.0))  # 高位分档卖出：比值≥阈值时把成长端持仓的该比例转到红利
+KC_LO, KC_HI = 0.09, 0.15                         # 科创50 ÷ 红利低波100 的两条操作线
+KC_SELLS = ((0.16, 1 / 3), (0.17, 0.5), (0.18, 1.0))
+DIV_KC = 0.004
 WEEKLY = 1000        # 每周定投额（元）
 FEE = 0.0005         # 买入费率
 CASH_YIELD = 0.015   # 现金池年化（货基）
@@ -146,10 +150,11 @@ def xirr(cashflows):
     return (lo + hi) / 2
 
 
-def backtest(dates, cyb, hl, ratio, mode, lo=LO, hi=HI):
+def backtest(dates, cyb, hl, ratio, mode, lo=LO, hi=HI, sells=(), div_g=DIV_CYB):
     """
-    每周第一个交易日定投 WEEKLY 元。
+    每周第一个交易日定投 WEEKLY 元。cyb 为成长端指数（创业板50 或 科创50）。
     mode: rot 轮动(中间区进现金池，进低/高区时一次性回补) | cyb | hl | mix
+    sells: 分档卖出 [(阈值, 比例)]，每段行情每档只触发一次，比值回到高区线以下重置
     返回 xirr、最大回撤(剔除申购的时间加权净值)、期末市值、累计投入、低/中/高周数
     """
     vc = vh = pool = 0.0
@@ -158,9 +163,10 @@ def backtest(dates, cyb, hl, ratio, mode, lo=LO, hi=HI):
     weeks = {"l": 0, "m": 0, "h": 0}
     last_week = None
     prev_total = 0.0
+    hit = set()
     for i, d in enumerate(dates):
         if i > 0:
-            vc *= cyb[i] / cyb[i - 1] * (1 + DIV_CYB / 252)
+            vc *= cyb[i] / cyb[i - 1] * (1 + div_g / 252)
             vh *= hl[i] / hl[i - 1] * (1 + DIV_HL / 252)
             pool *= 1 + CASH_YIELD / 252
         before = vc + vh + pool
@@ -191,6 +197,14 @@ def backtest(dates, cyb, hl, ratio, mode, lo=LO, hi=HI):
                 elif z == "h":
                     vh += pool * (1 - FEE)
                     pool = 0.0
+                if r < hi:
+                    hit.clear()
+                for th, frac in sells:
+                    if r >= th and th not in hit and vc > 0:
+                        amt = vc * frac
+                        vc -= amt
+                        vh += amt * (1 - FEE) ** 2
+                        hit.add(th)
         prev_total = vc + vh + pool
     final = vc + vh + pool
     cfs.append((dates[-1], final))
@@ -205,28 +219,15 @@ def backtest(dates, cyb, hl, ratio, mode, lo=LO, hi=HI):
     }
 
 
-# ---------------------------------------------------------------- 主流程
-def main():
-    if os.environ.get("CYB_CSV") and os.environ.get("HL_CSV"):
-        cyb_raw, cyb_src = from_csv(os.environ["CYB_CSV"]), "本地CSV"
-        hl_raw, hl_src = from_csv(os.environ["HL_CSV"]), "本地CSV"
-    else:
-        cyb_raw, cyb_src = fetch("创业板50", [
-            ("东方财富", lambda: from_eastmoney("0.399673")),
-            ("腾讯", lambda: from_tencent("sz399673")),
-        ])
-        hl_raw, hl_src = fetch("红利低波100", [
-            ("中证指数官网", lambda: from_csindex("930955")),
-            ("东方财富", lambda: from_eastmoney("2.930955")),
-        ])
-
-    common = sorted(set(cyb_raw) & set(hl_raw))
-    common = [d for d in common if d >= f"{START[:4]}-{START[4:6]}-{START[6:]}"]
+def build(g_raw, hl_raw, g_src, hl_src, out, lo, hi, sells, div_g, start, grid_lo, grid_hi):
+    """生成一组比值轮动数据（成长端 ÷ 红利低波100）。字段名沿用 cyb 表示成长端。"""
+    common = sorted(set(g_raw) & set(hl_raw))
+    common = [d for d in common if d >= start]
     if len(common) < 500:
         raise SystemExit(f"两个指数重合的交易日太少：{len(common)}")
 
     dates = [dt.date.fromisoformat(d) for d in common]
-    cyb = [cyb_raw[d] for d in common]
+    cyb = [g_raw[d] for d in common]
     hl = [hl_raw[d] for d in common]
     ratio = [c / h for c, h in zip(cyb, hl)]
 
@@ -236,7 +237,7 @@ def main():
     i_max = max(range(n), key=lambda i: ratio[i])
     recent = ratio[-1500:]
     now = ratio[-1]
-    zone_of = lambda r: "l" if r < LO else ("h" if r >= HI else "m")  # noqa: E731
+    zone_of = lambda r: "l" if r < lo else ("h" if r >= hi else "m")  # noqa: E731
 
     stats = {
         "days": n,
@@ -254,13 +255,13 @@ def main():
         "share": {z: round(sum(zone_of(r) == z for r in ratio) / n, 4) for z in "lmh"},
     }
 
-    bt = {m: backtest(dates, cyb, hl, ratio, m) for m in ("rot", "cyb", "hl", "mix")}
-    grid_lo = [0.14, 0.15, 0.16, 0.17, 0.18]
-    grid_hi = [0.26, 0.28, 0.30, 0.32]
-    grid = [[backtest(dates, cyb, hl, ratio, "rot", a, b)["xirr"] for b in grid_hi]
+    kw = dict(lo=lo, hi=hi, div_g=div_g)
+    bt = {m: backtest(dates, cyb, hl, ratio, m, **kw) for m in ("rot", "cyb", "hl", "mix")}
+    bt["sell"] = backtest(dates, cyb, hl, ratio, "rot", sells=sells, **kw)
+    grid = [[backtest(dates, cyb, hl, ratio, "rot", a, b, div_g=div_g)["xirr"] for b in grid_hi]
             for a in grid_lo]
 
-    # 每周首个交易日的信号，最近 26 周
+    # 每周首个交易日的信号，最近一年（52 周）
     weekly, seen = [], set()
     for i, d in enumerate(dates):
         wk = d.isocalendar()[:2]
@@ -270,30 +271,65 @@ def main():
 
     data = {
         "updated": dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M"),
-        "sources": {"cyb": cyb_src, "hl": hl_src},
-        "params": {"lo": LO, "hi": HI, "weekly": WEEKLY, "fee": FEE, "cash": CASH_YIELD,
-                   "div_cyb": DIV_CYB, "div_hl": DIV_HL},
+        "sources": {"cyb": g_src, "hl": hl_src},
+        "params": {"lo": lo, "hi": hi, "sells": [[a, round(b, 4)] for a, b in sells],
+                   "weekly": WEEKLY, "fee": FEE, "cash": CASH_YIELD,
+                   "div_cyb": div_g, "div_hl": DIV_HL},
         "latest": {"date": common[-1], "cyb": cyb[-1], "hl": hl[-1],
                    "ratio": round(now, 4), "zone": zone_of(now),
                    "prev_ratio": round(ratio[-2], 4)},
         "stats": stats,
         "backtest": bt,
         "grid": {"lo": grid_lo, "hi": grid_hi, "xirr": grid},
-        "weekly": weekly[-26:],
+        "weekly": weekly[-60:],
         "series": [[d, round(r, 4)] for d, r in zip(common, ratio)],
     }
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    with open(OUT, "w", encoding="utf-8") as f:
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
-    print(f"写入 {OUT}：{common[-1]} 比值 {now:.4f}，共 {n} 天")
+    print(f"写入 {out}：{common[-1]} 比值 {now:.4f}，共 {n} 天")
+
+
+# ---------------------------------------------------------------- 主流程
+def main():
+    if os.environ.get("CYB_CSV") and os.environ.get("HL_CSV"):
+        cyb_raw, cyb_src = from_csv(os.environ["CYB_CSV"]), "本地CSV"
+        hl_raw, hl_src = from_csv(os.environ["HL_CSV"]), "本地CSV"
+    else:
+        cyb_raw, cyb_src = fetch("创业板50", [
+            ("东方财富", lambda: from_eastmoney("0.399673")),
+            ("腾讯", lambda: from_tencent("sz399673")),
+        ])
+        hl_raw, hl_src = fetch("红利低波100", [
+            ("中证指数官网", lambda: from_csindex("930955")),
+            ("东方财富", lambda: from_eastmoney("2.930955")),
+        ])
+
+    build(cyb_raw, hl_raw, cyb_src, hl_src, OUT, LO, HI, SELLS, DIV_CYB,
+          f"{START[:4]}-{START[4:6]}-{START[6:]}",
+          [0.14, 0.15, 0.16, 0.17, 0.18], [0.26, 0.28, 0.30, 0.32])
+
+    if os.environ.get("CYB_CSV"):
+        return
+
+    # 科创50 ÷ 红利低波100：失败时保留上一次的 kc.json
+    try:
+        kc_raw, kc_src = fetch("科创50", [
+            ("东方财富", lambda: from_eastmoney("1.000688")),
+            ("腾讯", lambda: from_tencent("sh000688")),
+        ])
+        build(kc_raw, hl_raw, kc_src, hl_src, os.path.join(ROOT, "data", "kc.json"),
+              KC_LO, KC_HI, KC_SELLS, DIV_KC, "2019-12-31",
+              [0.08, 0.085, 0.09, 0.095, 0.10], [0.13, 0.14, 0.15, 0.16])
+    except BaseException as e:  # noqa: BLE001
+        print(f"科创50 数据更新失败，保留旧数据：{e}")
 
     # 红利低波100 每日打分：失败时保留上一次的 dividend.json，不影响比值数据
-    if not os.environ.get("CYB_CSV"):
-        try:
-            import dividend
-            dividend.run(cyb_raw)
-        except Exception as e:  # noqa: BLE001
-            print(f"红利打分更新失败，保留旧数据：{e}")
+    try:
+        import dividend
+        dividend.run(cyb_raw)
+    except Exception as e:  # noqa: BLE001
+        print(f"红利打分更新失败，保留旧数据：{e}")
 
 
 if __name__ == "__main__":
