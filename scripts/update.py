@@ -331,6 +331,13 @@ def main():
     except Exception as e:  # noqa: BLE001
         print(f"红利打分更新失败，保留旧数据：{e}")
 
+    # 中证A500、纳指100 估值与回撤指标：各自失败时保留旧数据
+    try:
+        import value
+        value.run()
+    except Exception as e:  # noqa: BLE001
+        print(f"A500/纳指更新失败，保留旧数据：{e}")
+
 
 if __name__ == "__main__":
     sys.exit(main())
