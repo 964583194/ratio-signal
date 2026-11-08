@@ -470,6 +470,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 
 <footer>
   数据来源：创业板50 <span id="srcC">—</span>；科创50 东方财富 / 腾讯；红利低波100 <span id="srcH">—</span>；PE、全收益指数（推算股息率）来自中证指数官网，十年国债收益率来自东方财富<br>
+  <span id="health">数据源状态读取中</span><br>
   回测用价格指数加回股息率假设，未计跟踪误差与管理费。个人研究记录，不构成投资建议。
 </footer>
 </div>
@@ -768,6 +769,14 @@ function Val(view,file,kind){
 }
 Val("viewA","data/a500.json","a500");
 Val("viewN","data/ndx.json","ndx");
+// ---------------- 数据源状态
+fetch("data/health.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(hh=>{
+  const it=Object.values(hh.items||{}),cache=it.filter(v=>v.source==="本地缓存"),stale=it.filter(v=>v.stale_days==null||v.stale_days>12);
+  $("health").textContent=stale.length?`数据源异常：${stale.map(v=>v.name).join("、")} 已超过 12 天没更新`
+    :cache.length?`数据源：${cache.map(v=>v.name).join("、")} 今天所有接口都失败，暂用缓存（${hh.updated}）`
+    :`数据源：${it.length} 项全部正常（${hh.updated} 体检）`;
+  if(stale.length||cache.length)$("health").style.color="var(--mark)";
+}).catch(()=>{$("health").textContent=""});
 // ---------------- 页签
 const VIEWS={rotation:["viewRot","tabRot","subRot","创业板50 ÷ 红利低波100 轮动信号"],
              kc:["viewKc","tabKc","subKc","科创50 ÷ 红利低波100 轮动信号"],
