@@ -223,7 +223,7 @@ def main():
         return
 
     changed = S.refresh_all()
-    outputs = ["ratio.json", "kc.json", "dividend.json", "a500.json", "ndx.json"]
+    outputs = ["ratio.json", "kc.json", "dividend.json", "a500.json", "hs300.json", "ndx.json"]
     missing = [f for f in outputs if not os.path.exists(os.path.join(ROOT, "data", f))]
     if not changed and not missing and os.environ.get("FORCE") != "1":
         print("数据没有变化（非交易日或接口还没更新），跳过计算")
@@ -238,7 +238,7 @@ def main():
                                      os.path.join(ROOT, "data", "kc.json"), KC_LO, KC_HI, KC_SELLS, DIV_KC,
                                      "2019-12-31", [0.08, 0.085, 0.09, 0.095, 0.10], [0.13, 0.14, 0.15, 0.16])),
         ("红利打分", lambda: __import__("dividend").run(S.get_series("cyb50")[0])),
-        ("中证A500 / 纳指100", lambda: __import__("value").run()),
+        ("中证A500 / 沪深300 / 纳指100", lambda: __import__("value").run()),
     ]
     for name, job in jobs:
         try:

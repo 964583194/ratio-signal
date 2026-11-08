@@ -253,6 +253,12 @@ CATALOG = {
         ("新浪(近1000天)", lambda s: sina_kline("sh000510", 120 if s else 1000)),
         ("腾讯(2024年起)", lambda s: tx_kline("sh000510", _year(s, 2024))),
     ]),
+    "hs300": ("沪深300 收盘", 4000, [
+        ("东方财富", lambda s: em_kline("1.000300", _ymd(s, "20050101"))),
+        ("中证指数官网", lambda s: cs_perf("000300", "close", _ymd(s, "20050101"))),
+        ("腾讯", lambda s: tx_kline("sh000300", _year(s, 2005))),
+        ("新浪(近1000天)", lambda s: sina_kline("sh000300", 120 if s else 1000)),
+    ]),
     "pe300": ("沪深300 市盈率", 2500, [
         ("中证指数官网", lambda s: cs_perf("000300", "peg", _ymd(s, "20100101"))),
     ]),

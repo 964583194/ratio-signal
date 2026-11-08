@@ -149,8 +149,8 @@ def a_zone(c):
             return m, n, a
 
 
-def run_a500():
-    px_raw, _ = S.get_series("a500", 3000)
+def run_a500(price_key="a500", name="中证A500", kind="a500", out="a500.json"):
+    px_raw, _ = S.get_series(price_key)
     pe_raw, _ = S.get_series("pe300", 2500)
     try:
         pe_a, _ = S.get_series("pe_a500", 100)
@@ -193,7 +193,7 @@ def run_a500():
     m, zn, act = a_zone(cheap[i])
     last_pe_a = pe_a[max(pe_a)] if pe_a else None
     data = {
-        "updated": now_str(), "name": "中证A500", "kind": "a500",
+        "updated": now_str(), "name": name, "kind": kind,
         "latest": {"date": dates[i], "close": px[i], "pe300": pe[i], "pe_a500": last_pe_a,
                    "y10": y10[i], "erp": round(erp[i], 2), "pe_pct": round(pe_pct[i], 3),
                    "erp_pct": round(erp_pct[i], 3), "cheap": round(cheap[i], 1), "zone": zn,
@@ -208,7 +208,7 @@ def run_a500():
         "dev_series": [[dates[k], round(px[k] / m250[k] - 1, 4)] for k in range(len(dates)) if m250[k]],
         "erp_series": [[dates[k], round(erp[k], 2)] for k in range(len(dates)) if erp[k] is not None],
     }
-    dump("a500.json", data)
+    dump(out, data)
 
 
 # ================================================================ 纳指100
@@ -288,11 +288,11 @@ def run_ndx():
 
 
 def run():
-    for f in (run_a500, run_ndx):
+    for f in (run_a500, lambda: run_a500("hs300", "沪深300", "hs300", "hs300.json"), run_ndx):
         try:
             f()
         except Exception as e:  # noqa: BLE001
-            print(f"{f.__name__} 失败，保留旧数据：{e}")
+            print(f"{getattr(f, '__name__', '沪深300')} 失败，保留旧数据：{e}")
 
 
 if __name__ == "__main__":

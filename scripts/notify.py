@@ -54,7 +54,7 @@ def rotation(d, g, tab):
         gap.append(f"距高区线 {hi} 还需涨 {pc(hi / r - 1)}")
     if sells and r < sells[0][0]:
         gap.append(f"距卖出线 {sells[0][0]} 还需涨 {pc(sells[0][0] / r - 1)}")
-    return state, f"比值 {r:.4f}（{state}）", act + ("；" + "，".join(gap) if gap else ""), tab
+    return state, f"信号值 {r:.4f}（{state}）", act + ("；" + "，".join(gap) if gap else ""), tab
 
 
 def dividend(d):
@@ -86,10 +86,11 @@ def ndx(d, prev_prem):
 
 def collect(prev):
     out = {}
-    pairs = [("创业板50轮动", "ratio.json", lambda d: rotation(d, "创业板50", "rotation")),
-             ("科创50轮动", "kc.json", lambda d: rotation(d, "科创50", "kc")),
+    pairs = [("创业板轮动", "ratio.json", lambda d: rotation(d, "创业板50", "rotation")),
+             ("科创板轮动", "kc.json", lambda d: rotation(d, "科创50", "kc")),
              ("红利打分", "dividend.json", dividend),
              ("中证A500", "a500.json", a500),
+             ("沪深300", "hs300.json", lambda d: a500(d)[:3] + ("hs300",)),
              ("纳指100", "ndx.json", lambda d: ndx(d, (prev.get("纳指100") or {}).get("prem")))]
     for name, f, fn in pairs:
         d = load(f)
@@ -160,7 +161,7 @@ def main():
 
     if os.environ.get("REPORT") == "1" and not first:
         post(f"【周报】{TODAY} 本周操作", "数据截至各指数最近一个交易日。创业板50、科创50 轮动按周操作，"
-             "红利打分按日操作，A500、纳指每周定投。\n\n" + table(cur), "【周报】")
+             "红利打分按日操作，A500、沪深300、纳指每周定投。\n\n" + table(cur), "【周报】")
 
     with open(STATE, "w", encoding="utf-8") as f:
         json.dump(cur, f, ensure_ascii=False, indent=1)
