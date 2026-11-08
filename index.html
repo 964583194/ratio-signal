@@ -144,6 +144,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 .hint{margin:4px 0 0}
 .vz-good{background:var(--grow);color:#fff}.vz-ok{background:var(--grow-soft);color:var(--grow)}
 .vz-mid{background:var(--mid);color:var(--ink)}.vz-warn{background:var(--mark-soft);color:var(--mark)}.vz-bad{background:var(--mark);color:#fff}
+.lv.g2{background:var(--grow);color:#fff}.lv.g1{background:var(--grow-soft);color:var(--grow)}.lv.r1{background:var(--mark-soft);color:var(--mark)}.lv.r2{background:var(--mark);color:#fff}
 .alert{border:1px solid var(--mark);background:var(--mark-soft);border-radius:8px;padding:10px 12px;font-size:14px;margin-top:12px}
 .alert b{color:var(--mark)}
 @media (prefers-reduced-motion:no-preference){.bar i{transition:width .5s ease}}
@@ -721,11 +722,11 @@ function Val(view,file,kind){
       q("kv").innerHTML=[["中证A500",L.close.toFixed(2)+` <small style="color:${chg>=0?"var(--mark)":"var(--grow)"}">${sign(chg)}</small>`],["年线 MA250",L.ma250.toFixed(0)],
         ["沪深300 市盈率",L.pe300.toFixed(2)],["十年国债",L.y10.toFixed(2)+"%"]].map(([a,b])=>`<div><div class="label">${a}</div><div class="v">${b}</div></div>`).join("");
       q("dimNote").textContent="每项 0~100，越高越便宜。";
-      const lv=v=>v>=80?["很便宜","c2"]:v>=60?["偏便宜","c1"]:v>=40?["中性","c0"]:v>=20?["偏贵","d1"]:["很贵","d2"];
+      const lv=v=>v>=80?["很便宜","g2"]:v>=60?["偏便宜","g1"]:v>=40?["中性","c0"]:v>=20?["偏贵","r1"]:["很贵","r2"];
       const dims=[["市盈率",(1-L.pe_pct)*100,`沪深300 PE ${L.pe300.toFixed(2)} 倍（A500 自身 ${L.pe_a500??"—"} 倍），比历史 ${pc(L.pe_pct,0)} 的时间都贵`],
         ["股债利差",L.erp_pct*100,`1/PE − 国债 = ${(100/L.pe300).toFixed(2)}% − ${L.y10.toFixed(2)}% = ${L.erp.toFixed(2)}%，高于历史 ${pc(L.erp_pct,0)} 的时间`]];
       q("dims").innerHTML=dims.map(([n,v,det])=>{const [lt,lc]=lv(v);return `<div class="dim"><div class="top"><span class="name">${n}</span><span class="w">权重 50%</span></div><div class="row"><span class="sv">${v.toFixed(1)}<small> /100</small></span><span class="lv ${lc}">${lt}</span></div><div class="meter"><i style="width:${Math.max(2,v)}%;background:var(--grow)"></i></div><div class="ends"><span>贵</span><span>便宜</span></div><div class="det">${det}</div></div>`}).join("")+
-        `<div class="dim"><div class="top"><span class="name">年线（趋势）</span><span class="w">只作参考</span></div><div class="row"><span class="sv" style="font-size:20px">${L.below?"跌破":"上方"}</span><span class="lv ${L.below?"d1":"c0"}">${sign(L.dev)}</span></div><div class="det">${maTxt}。A股跌破年线后，历史上之后一年反而平均涨得更多，所以这里不作为卖出信号。</div></div>`;
+        `<div class="dim"><div class="top"><span class="name">年线（趋势）</span><span class="w">只作参考</span></div><div class="row"><span class="sv" style="font-size:20px">${L.below?"跌破":"上方"}</span><span class="lv ${L.below?"r1":"c0"}">${sign(L.dev)}</span></div><div class="det">${maTxt}。历史上跌破年线后一年的表现和平时差不多，跌破就卖的回测收益更差，所以不作为卖出信号。</div></div>`;
       c1.set(d.series,{tip:(dt,v)=>`${dt}<br>便宜指数 <b>${v.toFixed(1)}</b> · ${v>=80?"很便宜":v>=60?"偏便宜":v>=40?"正常":v>=20?"偏贵":"很贵"}`});
       q("c1n").textContent="绿色区域（≥60）偏便宜，多买；红色区域（<20）很贵，少买。";
     }else{
@@ -740,9 +741,9 @@ function Val(view,file,kind){
       q("dimNote").textContent="纳指拿不到免费的历史市盈率，这里用回撤、年线和溢价率判断。";
       const dd=L.dd*100;
       q("dims").innerHTML=
-        `<div class="dim"><div class="top"><span class="name">回撤</span><span class="w">决定加码</span></div><div class="row"><span class="sv">−${dd.toFixed(1)}<small> %</small></span><span class="lv ${dd>=20?"c2":dd>=10?"c1":"c0"}">${L.zone}</span></div><div class="meter"><i style="width:${Math.min(100,dd/40*100)}%;background:var(--grow)"></i></div><div class="ends"><span>0%</span><span>−40%</span></div><div class="det">回撤 10% / 20% / 30% 分别为回调、大幅回撤、深度回撤。</div></div>`+
-        `<div class="dim"><div class="top"><span class="name">年线（趋势）</span><span class="w">只作预警</span></div><div class="row"><span class="sv" style="font-size:20px">${L.below?"跌破":"上方"}</span><span class="lv ${L.below?"d1":"c0"}">${sign(L.dev)}</span></div><div class="det">${maTxt}。回测里跌破就卖、跌破就暂停加码都更差，所以只作风险提示。</div></div>`+
-        (pr?`<div class="dim"><div class="top"><span class="name">ETF 溢价率</span><span class="w">决定买哪种</span></div><div class="row"><span class="sv">${(pr.value*100).toFixed(1)}<small> %</small></span><span class="lv ${pr.value>.05?"d2":pr.value>.03?"d1":"c1"}">${pr.value>.05?"别买场内":pr.value>.03?"偏高":"正常"}</span></div><div class="meter"><i style="width:${Math.min(100,pr.value/.25*100)}%;background:var(--mark)"></i></div><div class="ends"><span>0%</span><span>25%</span></div><div class="det">513100 收盘价 ÷ 净值 − 1，${pr.date}。3% 以内正常买，超过 5% 改买场外联接基金。</div></div>`:"");
+        `<div class="dim"><div class="top"><span class="name">回撤</span><span class="w">决定加码</span></div><div class="row"><span class="sv">−${dd.toFixed(1)}<small> %</small></span><span class="lv ${dd>=20?"g2":dd>=10?"g1":"c0"}">${L.zone}</span></div><div class="meter"><i style="width:${Math.min(100,dd/40*100)}%;background:var(--grow)"></i></div><div class="ends"><span>0%</span><span>−40%</span></div><div class="det">回撤 10% / 20% / 30% 分别为回调、大幅回撤、深度回撤。</div></div>`+
+        `<div class="dim"><div class="top"><span class="name">年线（趋势）</span><span class="w">只作预警</span></div><div class="row"><span class="sv" style="font-size:20px">${L.below?"跌破":"上方"}</span><span class="lv ${L.below?"r1":"c0"}">${sign(L.dev)}</span></div><div class="det">${maTxt}。回测里跌破就卖、跌破就暂停加码都更差，所以只作风险提示。</div></div>`+
+        (pr?`<div class="dim"><div class="top"><span class="name">ETF 溢价率</span><span class="w">决定买哪种</span></div><div class="row"><span class="sv">${(pr.value*100).toFixed(1)}<small> %</small></span><span class="lv ${pr.value>.05?"r2":pr.value>.03?"r1":"g1"}">${pr.value>.05?"别买场内":pr.value>.03?"偏高":"正常"}</span></div><div class="meter"><i style="width:${Math.min(100,pr.value/.25*100)}%;background:var(--mark)"></i></div><div class="ends"><span>0%</span><span>25%</span></div><div class="det">513100 收盘价 ÷ 净值 − 1，${pr.date}。3% 以内正常买，超过 5% 改买场外联接基金。</div></div>`:"");
       c1.set(d.series,{tip:(dt,v)=>`${dt}<br>回撤 <b>${v.toFixed(1)}%</b>`});
       q("c1n").textContent="虚线为回撤 10% 和 30%，绿色区域为回撤 20% 以上。";
     }
