@@ -94,7 +94,8 @@ tr.hl td{font-weight:700}
 footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 @media (max-width:600px){.readout{grid-template-columns:1fr}.kv{grid-template-columns:repeat(2,1fr)}.seg{font-size:11px}}
 .tabs{display:flex;gap:4px;padding:4px;background:var(--mid);border-radius:10px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
-.tabs button{flex:1;font:inherit;font-weight:700;font-size:14px;padding:9px 6px;white-space:nowrap;border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}
+.tabs{overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:1 0 auto;font:inherit;font-weight:700;font-size:14px;padding:9px 6px;white-space:nowrap;border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .tabs button:focus-visible,.btn:focus-visible{outline:2px solid var(--mark);outline-offset:2px}
 .btn{font:inherit;font-weight:700;padding:8px 16px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--panel);cursor:pointer}
@@ -141,6 +142,10 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 .tip{position:absolute;top:0;pointer-events:none;background:var(--ink);color:var(--panel);font-size:12px;line-height:1.45;padding:6px 9px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.18);z-index:3}
 .tip b{font-family:var(--f-num);font-size:14px}
 .hint{margin:4px 0 0}
+.vz-good{background:var(--grow);color:#fff}.vz-ok{background:var(--grow-soft);color:var(--grow)}
+.vz-mid{background:var(--mid);color:var(--ink)}.vz-warn{background:var(--mark-soft);color:var(--mark)}.vz-bad{background:var(--mark);color:#fff}
+.alert{border:1px solid var(--mark);background:var(--mark-soft);border-radius:8px;padding:10px 12px;font-size:14px;margin-top:12px}
+.alert b{color:var(--mark)}
 @media (prefers-reduced-motion:no-preference){.bar i{transition:width .5s ease}}
 </style>
 </head>
@@ -151,6 +156,8 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
   <h1 id="h1">创业板50 ÷ 红利低波100 轮动信号</h1>
   <p id="subRot">比值 = 创业板50（399673）收盘 ÷ 红利低波100（930955）收盘 · 数据更新于 <span class="num" id="updated">—</span></p>
   <p id="subKc" hidden>比值 = 科创50（000688）收盘 ÷ 红利低波100（930955）收盘 · 数据更新于 <span class="num" id="k_updated">—</span></p>
+  <p id="subA" hidden>价格：中证A500（000510）· 估值：沪深300 市盈率与十年国债 · 数据更新于 <span class="num" id="a_updated">—</span></p>
+  <p id="subN" hidden>纳斯达克100 指数（美元计价）· 回撤、年线与国内 ETF 溢价率 · 数据更新于 <span class="num" id="n_updated">—</span></p>
   <p id="subDiv" hidden>每个交易日 200 元 · 四维打分 0~20 分决定买多少 · 数据更新于 <span class="num" id="dUpdated">—</span></p>
 </header>
 
@@ -158,6 +165,8 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
   <button type="button" role="tab" id="tabRot" data-view="rotation" aria-selected="true">创业板50轮动</button>
   <button type="button" role="tab" id="tabKc" data-view="kc" aria-selected="false">科创50轮动</button>
   <button type="button" role="tab" id="tabDiv" data-view="dividend" aria-selected="false">红利打分</button>
+  <button type="button" role="tab" id="tabA" data-view="a500" aria-selected="false">中证A500</button>
+  <button type="button" role="tab" id="tabN" data-view="ndx" aria-selected="false">纳指100</button>
 </nav>
 
 <div id="viewRot">
@@ -351,6 +360,9 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 </section>
 </div>
 
+
+<div id="viewA" hidden></div>
+<div id="viewN" hidden></div>
 
 <div id="viewDiv" hidden>
 <section class="panel err" id="dErr" hidden>
@@ -657,12 +669,112 @@ function render(d){
 }
 Rot("","data/ratio.json",{g:"创业板50",min:.10,max:.50,tick:.10,cmin:.10,cmax:.45,grid:.05});
 Rot("k_","data/kc.json",{g:"科创50",min:.05,max:.25,tick:.05,cmin:.05,cmax:.22,grid:.02});
+
+// ---------------- 中证A500 / 纳指100
+function Val(view,file,kind){
+  const root=$(view),P=kind==="a500"?"a_":"n_";
+  const sec=(t,body,cls="")=>`<section class="panel ${cls}">${t?`<h2>${t}</h2>`:""}${body}</section>`;
+  const chartBox=(id,h)=>`<div class="ranges" role="group" aria-label="时间范围" data-for="${id}"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y">近3年</button><button type="button" data-r="all" aria-pressed="true">全部</button></div>
+    <div class="chartwrap"><svg class="chart" id="${id}" viewBox="0 0 720 ${h}" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+    <p class="note hint">手指按住或鼠标移到图上查看每天的数值</p>`;
+  root.innerHTML=
+    `<section class="panel err" id="${P}err" hidden><h2>读取数据失败</h2><p class="note" id="${P}errMsg"></p><button type="button" class="btn" id="${P}retry" style="margin-top:10px">重新读取</button></section>
+     <section class="panel" id="${P}stale" hidden style="border-color:var(--div);background:var(--div-soft)"><b id="${P}staleTxt"></b><p class="note" style="margin-top:4px">可能是节假日休市，也可能是自动更新失败。</p></section>
+     <section class="panel"><div class="readout"><div>
+        <div class="label" id="${P}lab">加载中</div>
+        <div><span class="big num" id="${P}big">—</span><span class="num of" id="${P}of"></span></div>
+        <span class="action" id="${P}act">加载中</span></div>
+        <div><p class="note" id="${P}why" style="margin:0"></p></div></div>
+      <div class="kv" id="${P}kv"></div><div id="${P}alert"></div></section>`+
+    sec("指标体检",`<p class="note" style="margin:-6px 0 12px" id="${P}dimNote"></p><div class="dims" id="${P}dims"></div>`)+
+    sec(kind==="a500"?"便宜指数走势":"离最高点的回撤",chartBox(P+"c1",260)+`<p class="note" id="${P}c1n"></p>`)+
+    sec("偏离年线（MA250）",chartBox(P+"c2",220)+`<p class="note">0 线以下表示收盘价低于年线。连续 2 天收在年线下方才算“有效跌破”。</p>`)+
+    sec("历史检验：在这个位置买入，之后一年怎样",`<div class="scroll"><table><thead><tr><th>当时所处位置</th><th class="r">样本天数</th><th class="r">一年后平均</th><th class="r">上涨概率</th><th class="r">最差</th></tr></thead><tbody id="${P}fwd"></tbody></table></div><p class="note" id="${P}fwdNote"></p>`)+
+    sec("回测：每周 1000 元",`<div class="scroll"><table><thead><tr><th>方案</th><th class="r">年化 XIRR</th><th class="r">最大回撤</th><th class="r">期末市值</th><th class="r">未投现金</th></tr></thead><tbody id="${P}bt"></tbody></table></div><p class="note" id="${P}btNote"></p>`)+
+    sec("近几次有效跌破年线",`<div class="scroll"><table><thead><tr><th>跌破</th><th>站回</th><th class="r">持续交易日</th></tr></thead><tbody id="${P}ma"></tbody></table></div>`)+
+    sec("规则速查",`<div id="${P}rules"></div>`,"rules");
+  const q=id=>document.getElementById(P+id);
+  const c1=LineChart(q("c1"),kind==="a500"
+      ?{W:720,H:260,fixedY:[0,100],ticks:[0,20,40,60,80,100],bands:[{from:60,fill:"var(--grow-soft)"},{to:20,fill:"var(--mark-soft)"}]}
+      :{W:720,H:260,fixedY:[-40,0],ticks:[-40,-30,-20,-10,0],bands:[{to:-20,fill:"var(--grow-soft)"}],lines:[{v:-10,c:"var(--grow)",dash:"3 3",w:1},{v:-30,c:"var(--grow)",dash:"3 3",w:1}]});
+  const c2=LineChart(q("c2"),{W:720,H:220,lines:[{v:0,c:"var(--mark)",w:1.4}]});
+  function load(){
+    q("err").hidden=true;
+    fetch(file+"?t="+Date.now(),{cache:"no-store"})
+      .then(r=>{if(!r.ok)throw new Error(r.status===404?"NOFILE":"HTTP "+r.status);return r.json()})
+      .then(d=>{if(!d||!d.latest)throw new Error("数据格式不对");render(d)})
+      .catch(e=>{q("err").hidden=false;q("errMsg").textContent=e.message==="NOFILE"?"还没有生成数据。请到仓库的 Actions 页面手动运行一次“更新比值数据”。":"网络不稳定或数据文件损坏，请稍后点“重新读取”。（"+e.message+"）"});
+  }
+  q("retry").addEventListener("click",load);load();
+  const sign=x=>(x>0?"+":"")+pc(x);
+  function render(d){
+    const L=d.latest;q("updated")&&(q("updated").textContent=d.updated);
+    const now=new Date(Date.now()+8*3600e3),days=Math.floor((Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate())-new Date(L.date+"T00:00:00Z"))/864e5);
+    if(days>4){q("stale").hidden=false;q("staleTxt").textContent=`显示的是 ${L.date} 的数据，已经 ${days} 天没有更新。`}
+    const chg=L.close/L.prev_close-1;
+    const maTxt=L.below?`有效跌破年线（偏离 ${sign(L.dev)}）`:`年线上方（偏离 ${sign(L.dev)}）`;
+    if(kind==="a500"){
+      q("lab").textContent="便宜指数 · "+L.date;q("big").textContent=L.cheap.toFixed(1);q("of").textContent="/ 100";
+      const cls=L.cheap>=80?"vz-good":L.cheap>=60?"vz-ok":L.cheap>=40?"vz-mid":L.cheap>=20?"vz-warn":"vz-bad";
+      q("act").className="action "+cls;q("act").textContent=L.zone+" · "+L.action;
+      q("why").textContent=`便宜指数 = 市盈率便宜程度和股债利差便宜程度各占一半，越高越便宜。现在沪深300 市盈率 ${L.pe300.toFixed(2)} 倍，比历史 ${pc(L.pe_pct,0)} 的时间都贵；股债利差 ${L.erp.toFixed(2)}%，高于历史 ${pc(L.erp_pct,0)} 的时间。`;
+      q("kv").innerHTML=[["中证A500",L.close.toFixed(2)+` <small style="color:${chg>=0?"var(--mark)":"var(--grow)"}">${sign(chg)}</small>`],["年线 MA250",L.ma250.toFixed(0)],
+        ["沪深300 市盈率",L.pe300.toFixed(2)],["十年国债",L.y10.toFixed(2)+"%"]].map(([a,b])=>`<div><div class="label">${a}</div><div class="v">${b}</div></div>`).join("");
+      q("dimNote").textContent="每项 0~100，越高越便宜。";
+      const lv=v=>v>=80?["很便宜","c2"]:v>=60?["偏便宜","c1"]:v>=40?["中性","c0"]:v>=20?["偏贵","d1"]:["很贵","d2"];
+      const dims=[["市盈率",(1-L.pe_pct)*100,`沪深300 PE ${L.pe300.toFixed(2)} 倍（A500 自身 ${L.pe_a500??"—"} 倍），比历史 ${pc(L.pe_pct,0)} 的时间都贵`],
+        ["股债利差",L.erp_pct*100,`1/PE − 国债 = ${(100/L.pe300).toFixed(2)}% − ${L.y10.toFixed(2)}% = ${L.erp.toFixed(2)}%，高于历史 ${pc(L.erp_pct,0)} 的时间`]];
+      q("dims").innerHTML=dims.map(([n,v,det])=>{const [lt,lc]=lv(v);return `<div class="dim"><div class="top"><span class="name">${n}</span><span class="w">权重 50%</span></div><div class="row"><span class="sv">${v.toFixed(1)}<small> /100</small></span><span class="lv ${lc}">${lt}</span></div><div class="meter"><i style="width:${Math.max(2,v)}%;background:var(--grow)"></i></div><div class="ends"><span>贵</span><span>便宜</span></div><div class="det">${det}</div></div>`}).join("")+
+        `<div class="dim"><div class="top"><span class="name">年线（趋势）</span><span class="w">只作参考</span></div><div class="row"><span class="sv" style="font-size:20px">${L.below?"跌破":"上方"}</span><span class="lv ${L.below?"d1":"c0"}">${sign(L.dev)}</span></div><div class="det">${maTxt}。A股跌破年线后，历史上之后一年反而平均涨得更多，所以这里不作为卖出信号。</div></div>`;
+      c1.set(d.series,{tip:(dt,v)=>`${dt}<br>便宜指数 <b>${v.toFixed(1)}</b> · ${v>=80?"很便宜":v>=60?"偏便宜":v>=40?"正常":v>=20?"偏贵":"很贵"}`});
+      q("c1n").textContent="绿色区域（≥60）偏便宜，多买；红色区域（<20）很贵，少买。";
+    }else{
+      q("lab").textContent="离最高点的回撤 · "+L.date;q("big").textContent="−"+(L.dd*100).toFixed(1)+"%";q("of").textContent="";
+      const cls=L.dd>=.3?"vz-good":L.dd>=.2?"vz-good":L.dd>=.1?"vz-ok":"vz-mid";
+      q("act").className="action "+cls;q("act").textContent=L.zone+" · "+L.action;
+      q("why").textContent=`最高点 ${L.high.toFixed(0)}（${L.high_date}），现在 ${L.close.toFixed(0)}。纳指长期向上，回测里任何“少买等跌”的做法都跑不赢普通定投，所以每周照常买；回撤越深，有余钱时越值得额外加。`;
+      q("kv").innerHTML=[["纳指100",L.close.toFixed(0)+` <small style="color:${chg>=0?"var(--mark)":"var(--grow)"}">${sign(chg)}</small>`],["年线 MA250",L.ma250.toFixed(0)],
+        ["美国十年国债",L.ust10!=null?L.ust10.toFixed(2)+"%":"—"],["ETF 溢价率",d.premium?pc(d.premium.value):"—"]].map(([a,b])=>`<div><div class="label">${a}</div><div class="v">${b}</div></div>`).join("");
+      const pr=d.premium;
+      q("alert").innerHTML=pr&&pr.value>.05?`<div class="alert"><b>场内纳指ETF 溢价 ${pc(pr.value)}，暂停买入场内 ETF。</b> 以 513100 为例，${pr.date} 收盘价 ${pr.price}，净值 ${pr.nav}。溢价回落时，即使纳指不跌，也会亏掉这部分。要买就改成场外联接基金（按净值申购），或者等溢价降到 3% 以内。</div>`:"";
+      q("dimNote").textContent="纳指拿不到免费的历史市盈率，这里用回撤、年线和溢价率判断。";
+      const dd=L.dd*100;
+      q("dims").innerHTML=
+        `<div class="dim"><div class="top"><span class="name">回撤</span><span class="w">决定加码</span></div><div class="row"><span class="sv">−${dd.toFixed(1)}<small> %</small></span><span class="lv ${dd>=20?"c2":dd>=10?"c1":"c0"}">${L.zone}</span></div><div class="meter"><i style="width:${Math.min(100,dd/40*100)}%;background:var(--grow)"></i></div><div class="ends"><span>0%</span><span>−40%</span></div><div class="det">回撤 10% / 20% / 30% 分别为回调、大幅回撤、深度回撤。</div></div>`+
+        `<div class="dim"><div class="top"><span class="name">年线（趋势）</span><span class="w">只作预警</span></div><div class="row"><span class="sv" style="font-size:20px">${L.below?"跌破":"上方"}</span><span class="lv ${L.below?"d1":"c0"}">${sign(L.dev)}</span></div><div class="det">${maTxt}。回测里跌破就卖、跌破就暂停加码都更差，所以只作风险提示。</div></div>`+
+        (pr?`<div class="dim"><div class="top"><span class="name">ETF 溢价率</span><span class="w">决定买哪种</span></div><div class="row"><span class="sv">${(pr.value*100).toFixed(1)}<small> %</small></span><span class="lv ${pr.value>.05?"d2":pr.value>.03?"d1":"c1"}">${pr.value>.05?"别买场内":pr.value>.03?"偏高":"正常"}</span></div><div class="meter"><i style="width:${Math.min(100,pr.value/.25*100)}%;background:var(--mark)"></i></div><div class="ends"><span>0%</span><span>25%</span></div><div class="det">513100 收盘价 ÷ 净值 − 1，${pr.date}。3% 以内正常买，超过 5% 改买场外联接基金。</div></div>`:"");
+      c1.set(d.series,{tip:(dt,v)=>`${dt}<br>回撤 <b>${v.toFixed(1)}%</b>`});
+      q("c1n").textContent="虚线为回撤 10% 和 30%，绿色区域为回撤 20% 以上。";
+    }
+    c2.set(d.dev_series.map(([a,b])=>[a,b*100]),{tip:(dt,v)=>`${dt}<br>偏离年线 <b>${v>0?"+":""}${v.toFixed(1)}%</b>`});
+    q("fwd").innerHTML=d.forward.map(r=>`<tr><td>${r.zone}</td><td class="r num">${r.n}</td><td class="r num">${r.avg==null?"—":sign(r.avg)}</td><td class="r num">${r.win==null?"—":pc(r.win,0)}</td><td class="r num">${r.worst==null?"—":sign(r.worst)}</td></tr>`).join("");
+    q("fwdNote").textContent=`按每个交易日买入、持有 250 个交易日后的价格涨幅统计（不含分红），样本从 ${d.bt_start} 开始。同一段行情里的天数互相重叠，样本天数多不代表独立次数多。`;
+    const names=kind==="a500"
+      ?{plain:"普通定投",value:"按便宜指数调整金额",value_ma:"同上，跌破年线时不加码",timing:"跌破年线清仓，站回再买"}
+      :{plain:"普通定投",value:"平时 0.8 倍，回撤时加码",value_ma:"同上，跌破年线时不加码",timing:"跌破年线清仓，站回再买"};
+    const best=Object.entries(d.backtest).sort((a,b)=>b[1].xirr-a[1].xirr)[0][0];
+    q("bt").innerHTML=Object.entries(names).filter(([k])=>d.backtest[k]).map(([k,n])=>{const b=d.backtest[k];
+      return `<tr class="${k===best?"hl":""}"><td>${n}</td><td class="r num">${pc(b.xirr,2)}</td><td class="r num">${pc(b.mdd)}</td><td class="r num">${b.final.toLocaleString()}</td><td class="r num">${b.pool.toLocaleString()}</td></tr>`}).join("");
+    q("btNote").textContent=(kind==="a500"
+      ?`${d.bt_start} 起，每周首个交易日拿出 1000 元；便宜指数 ≥80 / 60~80 / 40~60 / 20~40 / <20 分别买 3 / 2 / 1 / 0.6 / 0.3 倍，钱不够就买池子里有的，没买的进现金池（年化 1.5%）。股息率按 2.5% 加回。按便宜指数调整金额，收益和普通定投接近，最大回撤明显更小。`
+      :`${d.bt_start} 起，美元计价，未计汇率与溢价。股息率按 0.7% 加回。纳指过去十年强势上涨，攒钱等回撤反而少赚，普通定投最好；跌破年线就清仓会错过反弹，收益最差。`);
+    q("ma").innerHTML=d.ma_events.slice().reverse().map(([a,b,n])=>`<tr><td class="num">${a}</td><td class="num">${b||"至今未站回"}</td><td class="r num">${n}</td></tr>`).join("");
+    q("rules").innerHTML=(kind==="a500"
+      ?[["≥ 80","很便宜，3 倍定投"],["60–80","偏便宜，2 倍定投"],["40–60","正常定投"],["20–40","偏贵，0.6 倍定投"],["< 20","很贵，0.3 倍定投，其余进现金池"],["年线","跌破不卖，仅作参考"]]
+      :[["每周","照常定投，不择时"],["回撤 ≥10%","有余钱可额外加 0.5 倍"],["回撤 ≥20%","有余钱可额外加 1 倍"],["回撤 ≥30%","有余钱可额外加 2 倍"],["溢价 > 5%","停买场内 ETF，改买场外联接基金"],["年线","跌破不卖，仅作风险提示"]])
+      .map(([k,v])=>`<div class="rule"><span class="k">${k}</span><span>${v}</span></div>`).join("");
+  }
+}
+Val("viewA","data/a500.json","a500");
+Val("viewN","data/ndx.json","ndx");
 // ---------------- 页签
 const VIEWS={rotation:["viewRot","tabRot","subRot","创业板50 ÷ 红利低波100 轮动信号"],
              kc:["viewKc","tabKc","subKc","科创50 ÷ 红利低波100 轮动信号"],
-             dividend:["viewDiv","tabDiv","subDiv","红利低波100 · 每日定投打分"]};
+             dividend:["viewDiv","tabDiv","subDiv","红利低波100 · 每日定投打分"],
+             a500:["viewA","tabA","subA","中证A500 · 便宜还是贵"],
+             ndx:["viewN","tabN","subN","纳指100 · 什么时候能买"]};
 function showView(){
-  const k=location.hash==="#dividend"?"dividend":location.hash==="#kc"?"kc":"rotation";
+  const hk=location.hash.slice(1),k=VIEWS[hk]?hk:"rotation";
   Object.entries(VIEWS).forEach(([key,[v,t,s]])=>{const on=key===k;$(v).hidden=!on;$(s).hidden=!on;$(t).setAttribute("aria-selected",on)});
   $("h1").textContent=VIEWS[k][3];
 }

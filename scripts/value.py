@@ -198,8 +198,8 @@ def dump(name, data):
 
 
 # ================================================================ 中证A500
-A_ZONES = [(80, 2.0, "很便宜", "2 倍定投"), (60, 1.5, "偏便宜", "1.5 倍定投"), (40, 1.0, "正常", "正常定投"),
-           (20, 0.5, "偏贵", "半额定投"), (-1, 0.0, "很贵", "暂停，钱进现金池")]
+A_ZONES = [(80, 3.0, "很便宜", "3 倍定投"), (60, 2.0, "偏便宜", "2 倍定投"), (40, 1.0, "正常", "正常定投"),
+           (20, 0.6, "偏贵", "0.6 倍定投"), (-1, 0.3, "很贵", "0.3 倍定投，其余进现金池")]
 
 
 def a_zone(c):
@@ -223,8 +223,11 @@ def run_a500():
     pe = [on_or_before(pe_raw, pk, d) for d in dates]
     y10 = [on_or_before(cgb, ck, d) for d in dates]
     erp = [None if (p is None or y is None) else 100 / p - y for p, y in zip(pe, y10)]
+    import dividend as Dv
+    old_w, Dv.WARMUP = Dv.WARMUP, 750       # 至少 3 年历史才算分位
     pe_pct = expanding_share(pe, "lt")      # 比现在便宜的天数占比
     erp_pct = expanding_share(erp, "lt")    # 利差低于现在的天数占比（越高越便宜）
+    Dv.WARMUP = old_w
     m250 = ma(px, 250)
     below = below_flags(px, m250)
     cheap = [None if (a is None or b is None) else 50 * (1 - a) + 50 * b for a, b in zip(pe_pct, erp_pct)]
@@ -238,6 +241,7 @@ def run_a500():
     # 年线：跌破时暂停加码（倍数封顶 1）
     mult_ma = [min(m, 1.0) if b else m for m, b in zip(mult, below[i0:])]
     bt["value_ma"] = backtest(D, P, DIV, mult_ma)
+    bt["timing"] = backtest(D, P, DIV, exit_flags=below[i0:])
     fwd = forward(P, [(f"{n}（便宜指数 {'≥'+str(th) if th>=0 else '<20'}）", (lambda i, th=th, nx=nx: C[i] >= th and C[i] < nx))
                       for (th, _, n, _), nx in zip(A_ZONES, [101, 80, 60, 40, 20])])
     fwd += forward(P, [("年线上方", lambda i: not below[i0 + i]), ("有效跌破年线", lambda i: below[i0 + i]),
@@ -266,8 +270,9 @@ def run_a500():
 
 
 # ================================================================ 纳指100
-N_ZONES = [(0.30, 3.0, "深度回撤", "3 倍定投"), (0.20, 2.0, "大幅回撤", "2 倍定投"),
-           (0.10, 1.5, "回调", "1.5 倍定投"), (-1, 1.0, "接近高点", "正常定投")]
+# 回测里的预算中性加码方案：平时 0.8 倍省下钱，回撤时加码。实测跑不赢普通定投，页面上作为对照
+N_ZONES = [(0.30, 3.0, "深度回撤", "正常定投；有余钱可额外加 2 倍"), (0.20, 2.0, "大幅回撤", "正常定投；有余钱可额外加 1 倍"),
+           (0.10, 1.5, "回调", "正常定投；有余钱可额外加 0.5 倍"), (-1, 0.8, "接近高点", "正常定投")]
 
 
 def n_zone(dd):
