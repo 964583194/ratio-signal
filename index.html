@@ -507,23 +507,24 @@ function LineChart(svg,opt){
     let ymin,ymax,ticks;
     if(opt.fixedY){[ymin,ymax]=opt.fixedY;ticks=opt.ticks}
     else{let lo=Math.min(...cur.map(p=>p[1])),hi=Math.max(...cur.map(p=>p[1]));const pad=(hi-lo)*.08||.01;
-      const st=niceStep(hi-lo+2*pad);ymin=Math.floor((lo-pad)/st)*st;ymax=Math.ceil((hi+pad)/st)*st;ticks=[];
+      const st=niceStep((hi-lo+2*pad)*(H<250?1.4:1));ymin=Math.floor((lo-pad)/st)*st;ymax=Math.ceil((hi+pad)/st)*st;ticks=[];
       for(let v=ymin;v<=ymax+st/2;v+=st)ticks.push(+v.toFixed(6))}
-    const yl=ticks.map(v=>opt.fixedY?String(v):v.toFixed(opt.fixedY?0:Math.max(2,-Math.floor(Math.log10(ticks[1]-ticks[0]+1e-12)))));
+    const st0=ticks[1]-ticks[0],yl=ticks.map(v=>opt.fixedY||st0>=1?String(Math.round(v)):v.toFixed(Math.max(2,-Math.floor(Math.log10(st0+1e-12)))));
     pl=Math.round(Math.max(...yl.map(t=>t.length))*fs*.62+fs*.8);
     X=i=>pl+i/(n-1)*(W-pl-pr);Y=v=>pt+(1-(v-ymin)/(ymax-ymin))*(H-pt-pb);
     const cy=v=>Math.min(H-pb,Math.max(pt,Y(v)));
     let s="";
     (opt.bands||[]).forEach(b=>{const y1=cy(b.to==null?ymax:b.to),y2=cy(b.from==null?ymin:b.from);if(y2-y1>0)s+=`<rect x="${pl}" y="${y1}" width="${W-pl-pr}" height="${y2-y1}" fill="${b.fill}"/>`});
-    const dec=opt.fixedY?0:Math.max(2,-Math.floor(Math.log10(ticks[1]-ticks[0]+1e-12)));
+    const stp=ticks[1]-ticks[0],dec=opt.fixedY||stp>=1?0:Math.max(2,-Math.floor(Math.log10(stp+1e-12)));
     ticks.forEach(v=>{s+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="${opt.strong===v?1.6:1}"/><text x="${pl-fs*.45}" y="${Y(v)+fs*.36}" text-anchor="end">${opt.fixedY?v:v.toFixed(dec)}</text>`});
     (opt.lines||[]).forEach(l=>{if(l.v<ymin||l.v>ymax)return;s+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(l.v)}" y2="${Y(l.v)}" stroke="${l.c}" stroke-dasharray="${l.dash||""}" stroke-width="${l.w||1.2}"/>`;
       if(l.label)s+=`<text x="${W-pr-2}" y="${Y(l.v)-3}" text-anchor="end" style="fill:${l.c}">${l.label}</text>`});
     // 横轴：跨度 ≤ 15 个月按月标注，否则按年
-    const span=(new Date(cur[n-1][0])-new Date(cur[0][0]))/864e5,monthly=span<460;let last="";
+    const span=(new Date(cur[n-1][0])-new Date(cur[0][0]))/864e5,monthly=span<460;let last="",lastX=-1e9;
     cur.forEach(([dt],i)=>{const k=monthly?dt.slice(0,7):dt.slice(0,4);if(k!==last){const first=last==="";last=k;
       if(first)return;const mm=+dt.slice(5,7);if(monthly&&mm%2===0)return;
       const lab=monthly?(mm===1?dt.slice(0,4):mm+"月"):k;
+      if(X(i)-lastX<fs*3.2)return;lastX=X(i);
       s+=`<text x="${X(i)}" y="${H-fs*.45}" text-anchor="middle">${lab}</text><line x1="${X(i)}" x2="${X(i)}" y1="${H-pb}" y2="${H-pb+4}" stroke="var(--muted)"/>`}});
     const step=Math.max(1,Math.floor(n/700));let d="";
     for(let i=0;i<n;i+=step)d+=(d?"L":"M")+X(i).toFixed(1)+" "+Y(cur[i][1]).toFixed(1);
