@@ -33,3 +33,6 @@ jobs:
             git commit -m "数据更新 $(TZ=Asia/Shanghai date +%F)"
             git push
           fi
+
+      - name: 数据源体检（有数据长期没更新时让任务失败，GitHub 会发邮件提醒）
+        run: python -c "import json,sys; h=json.load(open('data/health.json')); bad=[v['name']+'（'+str(v.get('stale_days'))+' 天）' for v in h['items'].values() if not v.get('stale_days') is not None or v['stale_days']>12]; print('需要处理：'+'、'.join(bad) if bad else '全部正常'); sys.exit(1 if bad else 0)"

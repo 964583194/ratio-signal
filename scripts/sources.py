@@ -173,30 +173,6 @@ def ust_gov(years=2):
     return out
 
 
-def chinabond10(days=360):
-    """中债国债收益率曲线（最近一段），取 10 年期"""
-    end = dt.date.today()
-    start = end - dt.timedelta(days=days)
-    url = ("https://yield.chinabond.com.cn/cbweb-pbc-web/pbc/historyQuery"
-           f"?startDate={start}&endDate={end}&gjqx=0&qxId=ycqx&locale=cn_ZH")
-    html = http(url, "https://yield.chinabond.com.cn/")
-    rows = re.findall(r"<tr[^>]*>(.*?)</tr>", html, re.S)
-    head, out = None, {}
-    for r in rows:
-        cells = [re.sub(r"<[^>]+>|&nbsp;", "", c).strip() for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", r, re.S)]
-        if "10年" in cells:
-            head = cells
-            continue
-        if head and len(cells) == len(head):
-            d = next((c for c in cells if re.fullmatch(r"\d{4}-\d{2}-\d{2}", c)), None)
-            try:
-                if d:
-                    out[d] = float(cells[head.index("10年")])
-            except ValueError:
-                pass
-    return out
-
-
 def nasdaq_api(sym="NDX", years=3):
     """纳斯达克官网历史行情（最近几年）"""
     end = dt.date.today()
@@ -256,59 +232,58 @@ def danjuan_pe(sym):
 CATALOG = {
     "cyb50": ("创业板50 收盘", [
         ("东方财富", lambda: em_kline("0.399673", "20140101")),
-        ("腾讯", lambda: tx_kline("sz399673", 2014)),
-        ("新浪", lambda: sina_kline("sz399673")),
         ("国证指数官网", lambda: cni_kline("399673", "2014-01-01")),
+        ("腾讯", lambda: tx_kline("sz399673", 2014)),
+        ("新浪(近1000天)", lambda: sina_kline("sz399673")),
     ]),
     "hl100": ("红利低波100 收盘", [
         ("中证指数官网", lambda: cs_perf("930955")),
         ("东方财富", lambda: em_kline("2.930955")),
-        ("中证指数官网(近一年)", lambda: cs_perf("930955", "close", f"{dt.date.today().year - 1}0101")),
+        ("中证指数官网(近两年)", lambda: cs_perf("930955", "close", f"{dt.date.today().year - 1}0101")),
     ]),
     "hl100_pe": ("红利低波100 市盈率", [
         ("中证指数官网", lambda: cs_perf("930955", "peg")),
-        ("中证指数官网(近一年)", lambda: cs_perf("930955", "peg", f"{dt.date.today().year - 1}0101")),
+        ("中证指数官网(近两年)", lambda: cs_perf("930955", "peg", f"{dt.date.today().year - 1}0101")),
     ]),
     "hl100_tr": ("红利低波100 全收益", [
         ("中证指数官网", lambda: cs_perf("H20955")),
         ("东方财富", lambda: em_kline("2.H20955")),
-        ("中证指数官网(近一年)", lambda: cs_perf("H20955", "close", f"{dt.date.today().year - 1}0101")),
+        ("中证指数官网(近两年)", lambda: cs_perf("H20955", "close", f"{dt.date.today().year - 1}0101")),
     ]),
     "kc50": ("科创50 收盘", [
         ("东方财富", lambda: em_kline("1.000688")),
-        ("腾讯", lambda: tx_kline("sh000688", 2019)),
-        ("新浪", lambda: sina_kline("sh000688")),
         ("中证指数官网", lambda: cs_perf("000688")),
+        ("腾讯", lambda: tx_kline("sh000688", 2019)),
+        ("新浪(近1000天)", lambda: sina_kline("sh000688")),
     ]),
     "a500": ("中证A500 收盘", [
         ("东方财富", lambda: em_kline("1.000510", "20050101")),
-        ("腾讯", lambda: tx_kline("sh000510", 2005)),
-        ("新浪", lambda: sina_kline("sh000510")),
         ("中证指数官网", lambda: cs_perf("000510")),
+        ("新浪(近1000天)", lambda: sina_kline("sh000510")),
+        ("腾讯(2024年起)", lambda: tx_kline("sh000510", 2024)),
     ]),
     "pe300": ("沪深300 市盈率", [
         ("中证指数官网", lambda: cs_perf("000300", "peg")),
-        ("中证指数官网(近一年)", lambda: cs_perf("000300", "peg", f"{dt.date.today().year - 1}0101")),
+        ("中证指数官网(近两年)", lambda: cs_perf("000300", "peg", f"{dt.date.today().year - 1}0101")),
     ]),
     "pe_a500": ("中证A500 市盈率", [
         ("中证指数官网", lambda: cs_perf("000510", "peg")),
+        ("中证指数官网(近两年)", lambda: cs_perf("000510", "peg", f"{dt.date.today().year - 1}0101")),
     ]),
     "cn10y": ("中国十年国债", [
         ("东方财富", lambda: em_treasury("EMM00166466")),
-        ("中债官网", lambda: chinabond10()),
     ]),
     "us10y": ("美国十年国债", [
         ("东方财富", lambda: em_treasury("EMG00001310")),
-        ("美联储FRED", lambda: fred("DGS10")),
         ("美国财政部", lambda: ust_gov()),
+        ("美联储FRED", lambda: fred("DGS10")),
     ]),
     "ndx": ("纳指100 收盘", [
         ("腾讯", lambda: tx_kline("us.NDX", 2014)),
-        ("东方财富", lambda: em_kline("100.NDX100")),
         ("新浪", lambda: sina_us(".ndx")),
-        ("纳斯达克官网", lambda: nasdaq_api("NDX")),
+        ("东方财富", lambda: em_kline("100.NDX100")),
+        ("纳斯达克官网(近三年)", lambda: nasdaq_api("NDX")),
         ("美联储FRED", lambda: fred("NASDAQ100")),
-        ("雅虎财经", lambda: yahoo("^NDX")),
     ]),
     "etf513100": ("纳指ETF 513100 收盘", [
         ("东方财富", lambda: em_kline("1.513100", "20240101")),
@@ -316,8 +291,8 @@ CATALOG = {
         ("新浪", lambda: sina_kline("sh513100", 600)),
     ]),
     "nav513100": ("纳指ETF 513100 净值", [
-        ("东方财富", lambda: em_lsjz("513100")),
         ("天天基金", lambda: em_pzd("513100")),
+        ("东方财富", lambda: em_lsjz("513100")),
         ("新浪", lambda: sina_nav("513100")),
     ]),
 }

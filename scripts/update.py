@@ -18,6 +18,8 @@ import time
 import urllib.parse
 import urllib.request
 
+import sources as S
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "data", "ratio.json")
 
@@ -296,14 +298,8 @@ def main():
         cyb_raw, cyb_src = from_csv(os.environ["CYB_CSV"]), "本地CSV"
         hl_raw, hl_src = from_csv(os.environ["HL_CSV"]), "本地CSV"
     else:
-        cyb_raw, cyb_src = fetch("创业板50", [
-            ("东方财富", lambda: from_eastmoney("0.399673")),
-            ("腾讯", lambda: from_tencent("sz399673")),
-        ])
-        hl_raw, hl_src = fetch("红利低波100", [
-            ("中证指数官网", lambda: from_csindex("930955")),
-            ("东方财富", lambda: from_eastmoney("2.930955")),
-        ])
+        cyb_raw, cyb_src = S.get_series("cyb50", 2500)
+        hl_raw, hl_src = S.get_series("hl100", 2500)
 
     build(cyb_raw, hl_raw, cyb_src, hl_src, OUT, LO, HI, SELLS, DIV_CYB,
           f"{START[:4]}-{START[4:6]}-{START[6:]}",
@@ -314,10 +310,7 @@ def main():
 
     # 科创50 ÷ 红利低波100：失败时保留上一次的 kc.json
     try:
-        kc_raw, kc_src = fetch("科创50", [
-            ("东方财富", lambda: from_eastmoney("1.000688")),
-            ("腾讯", lambda: from_tencent("sh000688")),
-        ])
+        kc_raw, kc_src = S.get_series("kc50", 1500)
         build(kc_raw, hl_raw, kc_src, hl_src, os.path.join(ROOT, "data", "kc.json"),
               KC_LO, KC_HI, KC_SELLS, DIV_KC, "2019-12-31",
               [0.08, 0.085, 0.09, 0.095, 0.10], [0.13, 0.14, 0.15, 0.16])
@@ -337,6 +330,9 @@ def main():
         value.run()
     except Exception as e:  # noqa: BLE001
         print(f"A500/纳指更新失败，保留旧数据：{e}")
+
+    ok = S.write_health()
+    print("数据源体检：" + ("正常" if ok else "有数据超过 12 天没更新，请检查 data/health.json"))
 
 
 if __name__ == "__main__":

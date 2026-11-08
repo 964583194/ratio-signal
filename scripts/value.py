@@ -21,6 +21,7 @@ import json
 import os
 import urllib.parse
 
+import sources as S
 import update as U
 from dividend import expanding_share, xirr
 
@@ -209,12 +210,13 @@ def a_zone(c):
 
 
 def run_a500():
-    px_raw = em_kline("1.000510", "20050101")
-    if len(px_raw) < 2000:
-        px_raw = {k: v[0] for k, v in __import__("dividend").csindex("000510").items()}
-    pe_raw = csindex_pe("000300")
-    pe_a = csindex_pe("000510")
-    cgb = treasury("EMM00166466")
+    px_raw, _ = S.get_series("a500", 3000)
+    pe_raw, _ = S.get_series("pe300", 2500)
+    try:
+        pe_a, _ = S.get_series("pe_a500", 100)
+    except Exception:  # noqa: BLE001
+        pe_a = {}
+    cgb, _ = S.get_series("cn10y", 2500)
     print(f"A500 价格 {len(px_raw)} 天，沪深300 PE {len(pe_raw)} 天，A500 PE {len(pe_a)} 天，国债 {len(cgb)} 天")
 
     dates = sorted(d for d in px_raw if d >= min(pe_raw))
@@ -282,14 +284,11 @@ def n_zone(dd):
 
 
 def run_ndx():
-    raw = U.from_tencent("us.NDX")
-    em = em_kline("100.NDX100")
-    k = sorted(set(raw) & set(em))[-1:] if em else []
-    if not raw or (k and abs(raw[k[0]] / em[k[0]] - 1) > 0.02):
-        raise RuntimeError(f"腾讯 us.NDX 与纳指100 对不上：{k}")
-    for d, v in em.items():
-        raw.setdefault(d, v)
-    ust = treasury("EMG00001310")
+    raw, _ = S.get_series("ndx", 2500)
+    try:
+        ust, _ = S.get_series("us10y", 400)
+    except Exception:  # noqa: BLE001
+        ust = {}
     dates = sorted(raw)
     px = [raw[d] for d in dates]
     print(f"纳指100 {len(dates)} 天（{dates[0]} 起），美债 {len(ust)} 天")
@@ -318,8 +317,8 @@ def run_ndx():
     # 513100 溢价率：同一天收盘价 ÷ 净值 − 1
     prem = None
     try:
-        nav = fund_nav("513100")
-        etf = em_kline("1.513100", "20240101")
+        nav, _ = S.get_series("nav513100", 100)
+        etf, _ = S.get_series("etf513100", 100)
         both = sorted(set(nav) & set(etf))
         prem = {"date": both[-1], "price": etf[both[-1]], "nav": nav[both[-1]],
                 "value": round(etf[both[-1]] / nav[both[-1]] - 1, 4),
