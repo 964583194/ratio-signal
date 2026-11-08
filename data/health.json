@@ -1,10 +1,11 @@
 {
- "updated": "2026-11-08 12:07",
+ "updated": "2026-11-08 13:30",
  "ok": true,
  "items": {
   "cyb50": {
    "name": "创业板50 收盘",
    "source": "东方财富",
+   "mode": "增量",
    "last": "2026-11-06",
    "days": 3012,
    "failed": [],
@@ -13,24 +14,16 @@
   "hl100": {
    "name": "红利低波100 收盘",
    "source": "中证指数官网",
+   "mode": "增量",
    "last": "2026-11-06",
    "days": 4091,
    "failed": [],
    "stale_days": 2
   },
-  "kc50": {
-   "name": "科创50 收盘",
-   "source": "中证指数官网",
-   "last": "2026-11-06",
-   "days": 1660,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 2
-  },
   "hl100_pe": {
    "name": "红利低波100 市盈率",
    "source": "中证指数官网",
+   "mode": "增量",
    "last": "2026-11-06",
    "days": 2310,
    "failed": [],
@@ -39,32 +32,34 @@
   "hl100_tr": {
    "name": "红利低波100 全收益",
    "source": "中证指数官网",
+   "mode": "增量",
    "last": "2026-11-06",
    "days": 4091,
    "failed": [],
    "stale_days": 2
   },
-  "cn10y": {
-   "name": "中国十年国债",
+  "kc50": {
+   "name": "科创50 收盘",
    "source": "东方财富",
+   "mode": "增量",
    "last": "2026-11-06",
-   "days": 4216,
+   "days": 1660,
    "failed": [],
    "stale_days": 2
   },
   "a500": {
    "name": "中证A500 收盘",
-   "source": "中证指数官网",
+   "source": "东方财富",
+   "mode": "增量",
    "last": "2026-11-06",
    "days": 4088,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 2
   },
   "pe300": {
    "name": "沪深300 市盈率",
    "source": "中证指数官网",
+   "mode": "增量",
    "last": "2026-11-06",
    "days": 3665,
    "failed": [],
@@ -73,44 +68,56 @@
   "pe_a500": {
    "name": "中证A500 市盈率",
    "source": "中证指数官网",
+   "mode": "增量",
    "last": "2026-11-06",
    "days": 524,
    "failed": [],
    "stale_days": 2
   },
-  "ndx": {
-   "name": "纳指100 收盘",
-   "source": "腾讯",
+  "cn10y": {
+   "name": "中国十年国债",
+   "source": "东方财富",
+   "mode": "增量",
    "last": "2026-11-06",
-   "days": 3222,
+   "days": 4216,
    "failed": [],
    "stale_days": 2
   },
   "us10y": {
    "name": "美国十年国债",
    "source": "东方财富",
+   "mode": "增量",
    "last": "2026-11-06",
    "days": 4221,
+   "failed": [],
+   "stale_days": 2
+  },
+  "ndx": {
+   "name": "纳指100 收盘",
+   "source": "腾讯",
+   "mode": "增量",
+   "last": "2026-11-06",
+   "days": 3222,
+   "failed": [],
+   "stale_days": 2
+  },
+  "etf513100": {
+   "name": "纳指ETF 513100 收盘",
+   "source": "东方财富",
+   "mode": "增量",
+   "last": "2026-11-06",
+   "days": 640,
    "failed": [],
    "stale_days": 2
   },
   "nav513100": {
    "name": "纳指ETF 513100 净值",
    "source": "天天基金",
+   "mode": "增量",
    "last": "2026-11-05",
    "days": 3247,
    "failed": [],
    "stale_days": 3
-  },
-  "etf513100": {
-   "name": "纳指ETF 513100 收盘",
-   "source": "腾讯",
-   "last": "2026-11-06",
-   "days": 640,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 2
   }
  }
 }
