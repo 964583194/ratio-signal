@@ -12,11 +12,11 @@ GitHub Actions 每个交易日自动拉取收盘价并更新数据，网页通�
 |---|---|
 | `index.html` | 网页本体，读取 `data/ratio.json` 显示 |
 | `scripts/update.py` | 拉取两个指数日线，计算比值、统计和回测，写入 `data/ratio.json` |
-| `.github/workflows/update.yml` | 定时任务：工作日 17:30、21:07，周六 09:13（北京时间）自动运行 |
+| `.github/workflows/update.yml` | 定时任务：工作日 17:30、21:07，周五 08:13（发周报）、周六 09:13（北京时间）自动运行 |
 | `scripts/dividend.py` | 红利低波100 打分：PE、全收益指数推算股息率、十年国债、RSI/布林，写入 `data/dividend.json` |
 | `scripts/sources.py` | 所有取数接口、备用顺序、增量更新与缓存 |
 | `scripts/value.py` | 中证A500、纳指100 指标与回测 |
-| `scripts/notify.py` | 信号变化提醒、周六周报（GitHub 通知邮件） |
+| `scripts/notify.py` | 信号变化提醒、周五周报（GitHub 通知邮件） |
 | `data/*.json` | 页面读取的结果文件，Actions 自动生成 |
 | `data/raw/*.csv` | 原始数据缓存，每天一行 |
 | `data/state.json` | 上次提醒时的信号状态 |
@@ -59,7 +59,7 @@ GitHub Actions 每个交易日自动拉取收盘价并更新数据，网页通�
 `scripts/notify.py` 在仓库里新建 Issue 并 @ 仓库主人，GitHub 会把它发到主人的通知邮箱：
 
 - 信号有变化时（比值跨线、卖出档、红利换档、A500 换区间、纳指回撤档 / 年线 / 溢价率、数据源异常）当天提醒；
-- 每周六早上发一封周报，汇总五个页签的现状和本周操作；
+- 每周五早上发一封周报（A股按周四收盘、纳指按美股周四收盘），汇总各页签的现状和本周操作；
 - 同类旧提醒会自动关闭，只保留最新一条，邮件不受影响。
 
 收不到邮件时检查：GitHub → Settings → Notifications，确认 Email 通知已开启、通知邮箱正确。

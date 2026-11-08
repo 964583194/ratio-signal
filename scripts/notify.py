@@ -2,7 +2,7 @@
 信号提醒与周报：在仓库里新建 Issue 并 @ 仓库主人，GitHub 会把它发到主人的通知邮箱。
 
 - 信号变化提醒：和上次保存的状态（data/state.json）比较，有变化才发。
-- 周报：环境变量 REPORT=1 时发（工作流在周六早上设置）。
+- 周报：环境变量 REPORT=1 时发（工作流在周五早上设置）。
 - 第一次运行（还没有 state.json）发一封“提醒已开启”，附当前状态，用来确认邮箱能收到。
 只在 GitHub Actions 里真正发送；本地运行只打印。
 """
@@ -150,7 +150,7 @@ def main():
     changes = [(n, prev[n]["state"], v["state"]) for n, v in cur.items()
                if n in prev and prev[n].get("state") != v["state"]]
     if first:
-        post(f"【提醒已开启】{TODAY} 信号看板", "以后信号有变化时会发这样的邮件，每周六早上还会发一封周报。下面是当前状态：\n\n"
+        post(f"【提醒已开启】{TODAY} 信号看板", "以后信号有变化时会发这样的邮件，每周五早上还会发一封周报。下面是当前状态：\n\n"
              + table(cur), "【提醒已开启】")
     elif changes:
         names = "、".join(n for n, _, _ in changes)
@@ -160,7 +160,7 @@ def main():
         print("信号没有变化，不发提醒")
 
     if os.environ.get("REPORT") == "1" and not first:
-        post(f"【周报】{TODAY} 本周操作", "数据截至各指数最近一个交易日。创业板50、科创50 轮动按周操作，"
+        post(f"【周报】{TODAY} 本周操作", "数据截至各指数最近一个交易日（A股为周四收盘）。创业板轮动、科创板轮动每周五按周四收盘的信号操作，"
              "红利打分按日操作，A500、沪深300、纳指每周定投。\n\n" + table(cur), "【周报】")
 
     with open(STATE, "w", encoding="utf-8") as f:

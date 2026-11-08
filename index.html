@@ -157,8 +157,8 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 <header>
   <div class="eyebrow">指数定投 · 个人信号看板</div>
   <h1 id="h1">创业板50 ÷ 红利低波100 轮动信号</h1>
-  <p id="subRot" hidden>数据每个交易日更新，按周操作（每周一按上周信号下单）· 更新于 <span class="num" id="updated">—</span></p>
-  <p id="subKc" hidden>数据每个交易日更新，按周操作（每周一按上周信号下单）· 更新于 <span class="num" id="k_updated">—</span></p>
+  <p id="subRot" hidden>数据每个交易日更新，按周操作（每周五按周四收盘的信号下单）· 更新于 <span class="num" id="updated">—</span></p>
+  <p id="subKc" hidden>数据每个交易日更新，按周操作（每周五按周四收盘的信号下单）· 更新于 <span class="num" id="k_updated">—</span></p>
   <p id="subO">所有页签的现状和本周操作 · <span id="o_next"></span></p>
   <p id="subH" hidden>沪深300（000300）· 2005 年以来真实行情 · 估值：市盈率与十年国债 · 数据更新于 <span class="num" id="h_updated">—</span></p>
   <p id="subA" hidden>价格：中证A500（000510）· 估值：沪深300 市盈率与十年国债 · 数据更新于 <span class="num" id="a_updated">—</span></p>
@@ -182,7 +182,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
   <p class="note" id="o_note"></p>
 </section>
 <section class="panel"><h2>怎么看</h2>
-  <p class="note" style="margin:0">创业板轮动、科创板轮动按周操作，周一按上周信号下单；红利打分按交易日操作；中证A500、沪深300、纳指100 每周定投，按页签里的倍数调整金额。点表格里的名称可以看详情。</p>
+  <p class="note" style="margin:0">创业板轮动、科创板轮动按周操作，每周五按周四收盘的信号下单；红利打分按交易日操作；中证A500、沪深300、纳指100 每周定投，按页签里的倍数调整金额。点表格里的名称可以看详情。</p>
 </section>
 </div>
 
@@ -796,7 +796,7 @@ fetch("data/health.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).the
 function nextUpdate(){
   const n=new Date(Date.now()+8*3600e3),slots=[];   // 北京时间
   for(let k=0;k<8;k++){const d=new Date(Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate()+k)),w=d.getUTCDay();
-    if(w>=1&&w<=5)slots.push([d,17,30],[d,21,7]);if(w===6)slots.push([d,9,13])}
+    if(w===5)slots.push([d,8,13]);if(w>=1&&w<=5)slots.push([d,17,30],[d,21,7]);if(w===6)slots.push([d,9,13])}
   for(const [d,h,m] of slots){const t=new Date(d.getTime()+(h*60+m)*6e4);if(t>n){
     const same=t.getUTCDate()===n.getUTCDate(),tom=t.getUTCDate()===new Date(n.getTime()+864e5).getUTCDate();
     const wd="日一二三四五六"[t.getUTCDay()];
@@ -810,7 +810,7 @@ function loadOverview(){
     $("o_rows").innerHTML=Object.entries(st).map(([n,v])=>{
       const name=v.tab?`<a href="#${v.tab}">${n}</a>`:n;
       return `<tr><td>${name}<div class="note" style="margin:2px 0 0">${v.date||""}</div></td><td><span class="lv ${cls(v.state)}">${v.state.split("|")[0]}</span><div style="margin-top:4px">${v.now}</div></td><td>${v.act}</td></tr>`}).join("");
-    $("o_note").textContent="和每周六的周报邮件内容一致；日期是各指数最近一个交易日。";
+    $("o_note").textContent="和每周五早上的周报邮件内容一致；日期是各指数最近一个交易日。";
   }).catch(e=>{$("o_rows").innerHTML=`<tr><td colspan="3" class="note">读取失败，请稍后刷新（${e.message}）</td></tr>`});
 }
 // ---------------- 页签

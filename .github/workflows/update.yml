@@ -4,7 +4,8 @@ on:
   schedule:
     - cron: "30 9 * * 1-5"    # 北京时间工作日 17:30
     - cron: "7 13 * * 1-5"    # 北京时间工作日 21:07，补中证官网晚发布的数据
-    - cron: "13 1 * * 6"      # 北京时间周六 09:13，补齐美股周五收盘并发周报
+    - cron: "13 0 * * 5"      # 北京时间周五 08:13，补上美股周四收盘并发周报
+    - cron: "13 1 * * 6"      # 北京时间周六 09:13，补齐周五 A 股与美股收盘
   workflow_dispatch:
     inputs:
       force:
@@ -43,7 +44,7 @@ jobs:
       - name: 信号提醒与周报
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPORT: ${{ (github.event.schedule == '13 1 * * 6' || inputs.report) && '1' || '0' }}
+          REPORT: ${{ (github.event.schedule == '13 0 * * 5' || inputs.report) && '1' || '0' }}
         run: python scripts/notify.py
 
       - name: 提交更新
