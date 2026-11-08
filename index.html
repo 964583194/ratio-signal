@@ -5,17 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>创业板50÷红利低波100 轮动信号</title>
 <meta name="description" content="创业板50与红利低波100比值轮动信号，每个交易日自动更新">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
 /* 布局：顶部两个页签（比值轮动 / 红利打分），各自是一列仪表面板：信号 → 区间尺 → 明细 → 走势 → 回测 → 规则 */
 :root{
   --bg:#eef1f3; --panel:#ffffff; --ink:#1b2430; --muted:#5d6876; --line:#d5dbe1;
   --grow:#2f8f5b; --grow-soft:#dcefe3; --div:#c98a12; --div-soft:#fbeec8; --mid:#e6e9ec; --mark:#c8372d; --mark-soft:#f7dcd8; --y1:#fdf3d6; --y2:#f8e39a; --y3:#efc95a;
   --dark:#18202a; --dark-fg:#e9edf1;
-  --f-display:"Noto Serif SC","Songti SC",serif;
-  --f-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
-  --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --f-display:"Songti SC","STSong","Noto Serif CJK SC","Source Han Serif SC","SimSun",serif;
+  --f-body:system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --f-num:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
@@ -574,7 +572,7 @@ function load(){
     });
 }
 q("retry").addEventListener("click",load);
-load();
+return {load};
 
 function render(d){
   const P=d.params,S=d.stats,L=d.latest,LO=P.lo,HI=P.hi;
@@ -670,8 +668,8 @@ function render(d){
 }
 
 }
-Rot("","data/ratio.json",{g:"创业板50",min:.10,max:.50,tick:.10,cmin:.10,cmax:.45,grid:.05});
-Rot("k_","data/kc.json",{g:"科创50",min:.05,max:.25,tick:.05,cmin:.05,cmax:.22,grid:.02});
+const rotView=Rot("","data/ratio.json",{g:"创业板50",min:.10,max:.50,tick:.10,cmin:.10,cmax:.45,grid:.05});
+const kcView=Rot("k_","data/kc.json",{g:"科创50",min:.05,max:.25,tick:.05,cmin:.05,cmax:.22,grid:.02});
 
 // ---------------- 中证A500 / 纳指100
 function Val(view,file,kind){
@@ -708,7 +706,7 @@ function Val(view,file,kind){
       .then(d=>{if(!d||!d.latest)throw new Error("数据格式不对");render(d)})
       .catch(e=>{q("err").hidden=false;q("errMsg").textContent=e.message==="NOFILE"?"还没有生成数据。请到仓库的 Actions 页面手动运行一次“更新比值数据”。":"网络不稳定或数据文件损坏，请稍后点“重新读取”。（"+e.message+"）"});
   }
-  q("retry").addEventListener("click",load);load();
+  q("retry").addEventListener("click",load);
   const sign=x=>(x>0?"+":"")+pc(x);
   function render(d){
     const L=d.latest;q("updated")&&(q("updated").textContent=d.updated);
@@ -767,9 +765,10 @@ function Val(view,file,kind){
       :[["每周","照常定投，不择时"],["回撤 ≥10%","有余钱可额外加 0.5 倍"],["回撤 ≥20%","有余钱可额外加 1 倍"],["回撤 ≥30%","有余钱可额外加 2 倍"],["溢价 > 5%","停买场内 ETF，改买场外联接基金"],["年线","跌破不卖，仅作风险提示"]])
       .map(([k,v])=>`<div class="rule"><span class="k">${k}</span><span>${v}</span></div>`).join("");
   }
+  return {load};
 }
-Val("viewA","data/a500.json","a500");
-Val("viewN","data/ndx.json","ndx");
+const aView=Val("viewA","data/a500.json","a500");
+const nView=Val("viewN","data/ndx.json","ndx");
 // ---------------- 数据源状态
 fetch("data/health.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(hh=>{
   const it=Object.values(hh.items||{}),cache=it.filter(v=>v.source==="本地缓存"),stale=it.filter(v=>v.stale_days==null||v.stale_days>12);
@@ -784,10 +783,12 @@ const VIEWS={rotation:["viewRot","tabRot","subRot","创业板50 ÷ 红利低波1
              dividend:["viewDiv","tabDiv","subDiv","红利低波100 · 每日定投打分"],
              a500:["viewA","tabA","subA","中证A500 · 便宜还是贵"],
              ndx:["viewN","tabN","subN","纳指100 · 什么时候能买"]};
+const LOADERS={rotation:rotView.load,kc:kcView.load,dividend:loadDiv,a500:aView.load,ndx:nView.load},LOADED={};
 function showView(){
   const hk=location.hash.slice(1),k=VIEWS[hk]?hk:"rotation";
   Object.entries(VIEWS).forEach(([key,[v,t,s]])=>{const on=key===k;$(v).hidden=!on;$(s).hidden=!on;$(t).setAttribute("aria-selected",on)});
   $("h1").textContent=VIEWS[k][3];
+  if(!LOADED[k]){LOADED[k]=true;LOADERS[k]()}
 }
 document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{location.hash=b.dataset.view;showView()}));
 window.addEventListener("hashchange",showView);
@@ -820,7 +821,6 @@ function loadDiv(){
     });
 }
 $("dRetry").addEventListener("click",loadDiv);
-loadDiv();
 
 function renderDiv(d){
   const L=d.latest,S=d.stats,B=d.backtest,P=d.params;

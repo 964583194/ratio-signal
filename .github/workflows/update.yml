@@ -2,37 +2,71 @@ name: 更新比值数据
 
 on:
   schedule:
-    - cron: "30 9 * * 1-5"   # 北京时间工作日 17:30
-    - cron: "0 1 * * 6"      # 北京时间周六 09:00，补红利低波100 隔日发布的数据
-  workflow_dispatch:          # 可在 Actions 页面手动运行
+    - cron: "30 9 * * 1-5"    # 北京时间工作日 17:30
+    - cron: "7 13 * * 1-5"    # 北京时间工作日 21:07，补中证官网晚发布的数据
+    - cron: "13 1 * * 6"      # 北京时间周六 09:13，补齐美股周五收盘并发周报
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "数据没变化也重新计算"
+        type: boolean
+        default: false
+      report:
+        description: "发送周报邮件"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
+  issues: write
+
+# 同一时间只跑一个，后来的排队等前一个结束，避免提交冲突
+concurrency:
+  group: update-data
+  cancel-in-progress: false
 
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: 拉取数据并计算
+        env:
+          FORCE: ${{ inputs.force && '1' || '0' }}
         run: python scripts/update.py
+
+      - name: 信号提醒与周报
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORT: ${{ (github.event.schedule == '13 1 * * 6' || inputs.report) && '1' || '0' }}
+        run: python scripts/notify.py
 
       - name: 提交更新
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/
-          if git diff --cached --quiet; then
-            echo "数据没有变化"
+          # 只有体检时间变了不提交，减少无意义的提交记录
+          if git diff --cached --quiet -- . ':(exclude)data/health.json'; then
+            echo "数据没有变化，不提交"
           else
-            git commit -m "数据更新 $(TZ=Asia/Shanghai date +%F)"
+            git commit -m "数据更新 $(TZ=Asia/Shanghai date '+%F %H:%M')"
+            git pull --rebase origin main
             git push
           fi
 
-      - name: 数据源体检（有数据长期没更新时让任务失败，GitHub 会发邮件提醒）
-        run: python -c "import json,sys; h=json.load(open('data/health.json')); bad=[v['name']+'（'+str(v.get('stale_days'))+' 天）' for v in h['items'].values() if not v.get('stale_days') is not None or v['stale_days']>12]; print('需要处理：'+'、'.join(bad) if bad else '全部正常'); sys.exit(1 if bad else 0)"
+      - name: 数据源体检（有数据超过 12 天没更新时让任务失败，GitHub 会发邮件提醒）
+        run: |
+          python - <<'EOF'
+          import json, sys
+          h = json.load(open("data/health.json"))
+          bad = [f"{v['name']}（{v.get('stale_days')} 天）" for v in h["items"].values()
+                 if v.get("stale_days") is None or v["stale_days"] > 12]
+          print("需要处理：" + "、".join(bad) if bad else "全部正常")
+          sys.exit(1 if bad else 0)
+          EOF

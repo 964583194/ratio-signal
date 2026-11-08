@@ -16,14 +16,10 @@ import datetime as dt
 import json
 import math
 import os
-import time
-import urllib.parse
-import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "data", "dividend.json")
 
-FETCH_START = "20130101"
 BASE = 200            # 每个交易日基数（元）
 FEE = 0.0005          # 买卖费率
 CASH = 0.017          # 现金池 / 卖出池年化
@@ -33,60 +29,6 @@ TIERS = [(18, 5, "加码"), (16, 4, "加码"), (14, 3, "加码"), (12, 2, "多�
 SELLS = [(6, .25), (4, 1 / 3), (2, .5)]
 WARMUP = 250          # 分位至少需要的历史交易日
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                  "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-    "Accept": "application/json,text/plain,*/*",
-}
-
-
-def get_json(url, referer):
-    req = urllib.request.Request(url, headers={**HEADERS, "Referer": referer})
-    last = None
-    for i in range(3):
-        try:
-            with urllib.request.urlopen(req, timeout=30) as r:
-                return json.loads(r.read().decode("utf-8"))
-        except Exception as e:  # noqa: BLE001
-            last = e
-            time.sleep(3 * (i + 1))
-    raise last
-
-
-def csindex(code):
-    end = dt.date.today().strftime("%Y%m%d")
-    url = ("https://www.csindex.com.cn/csindex-home/perf/index-perf"
-           f"?indexCode={code}&startDate={FETCH_START}&endDate={end}")
-    rows = get_json(url, "https://www.csindex.com.cn/").get("data") or []
-    out = {}
-    for r in rows:
-        d = str(r["tradeDate"])
-        if r.get("close") is None:
-            continue
-        out[f"{d[:4]}-{d[4:6]}-{d[6:]}"] = (float(r["close"]),
-                                             float(r["peg"]) if r.get("peg") else None)
-    return out
-
-
-def cgb10():
-    out, page = {}, 1
-    while page < 40:
-        q = urllib.parse.urlencode({
-            "reportName": "RPTA_WEB_TREASURYYIELD", "columns": "SOLAR_DATE,EMM00166466",
-            "sortColumns": "SOLAR_DATE", "sortTypes": "-1", "pageNumber": page,
-            "pageSize": "500", "source": "WEB", "client": "WEB"})
-        j = get_json("https://datacenter.eastmoney.com/api/data/v1/get?" + q,
-                     "https://data.eastmoney.com/")
-        data = (j.get("result") or {}).get("data") or []
-        if not data:
-            break
-        for r in data:
-            if r.get("EMM00166466") is not None:
-                out[r["SOLAR_DATE"][:10]] = float(r["EMM00166466"])
-        if data[-1]["SOLAR_DATE"][:4] < FETCH_START[:4]:
-            break
-        page += 1
-    return out
 
 
 # ---------------------------------------------------------------- 指标

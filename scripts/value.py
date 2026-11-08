@@ -19,10 +19,8 @@ import bisect
 import datetime as dt
 import json
 import os
-import urllib.parse
 
 import sources as S
-import update as U
 from dividend import expanding_share, xirr
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,64 +31,6 @@ CASH = 0.015
 
 def now_str():
     return dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")
-
-
-def treasury(col):
-    """东方财富中美国债收益率：EMM00166466 中国10年，EMG00001310 美国10年"""
-    out, page = {}, 1
-    while page < 60:
-        q = urllib.parse.urlencode({
-            "reportName": "RPTA_WEB_TREASURYYIELD", "columns": f"SOLAR_DATE,{col}",
-            "sortColumns": "SOLAR_DATE", "sortTypes": "-1", "pageNumber": page,
-            "pageSize": "500", "source": "WEB", "client": "WEB"})
-        j = U.get_json("https://datacenter.eastmoney.com/api/data/v1/get?" + q, "https://data.eastmoney.com/")
-        data = (j.get("result") or {}).get("data") or []
-        if not data:
-            break
-        for r in data:
-            if r.get(col) is not None:
-                out[r["SOLAR_DATE"][:10]] = float(r[col])
-        if data[-1]["SOLAR_DATE"][:4] < "2012":
-            break
-        page += 1
-    return out
-
-
-def csindex_pe(code):
-    url = ("https://www.csindex.com.cn/csindex-home/perf/index-perf"
-           f"?indexCode={code}&startDate=20100101&endDate={dt.date.today():%Y%m%d}")
-    rows = U.get_json(url, "https://www.csindex.com.cn/").get("data") or []
-    out = {}
-    for r in rows:
-        if r.get("peg"):
-            d = str(r["tradeDate"])
-            out[f"{d[:4]}-{d[4:6]}-{d[6:]}"] = float(r["peg"])
-    return out
-
-
-def em_kline(secid, beg="19900101"):
-    q = urllib.parse.urlencode({
-        "secid": secid, "fields1": "f1,f2,f3", "fields2": "f51,f53", "klt": "101", "fqt": "0",
-        "beg": beg, "end": "20500101", "ut": "fa5fd1943c7b386f172d6893dbfba10b"})
-    j = U.get_json("https://push2his.eastmoney.com/api/qt/stock/kline/get?" + q, "https://quote.eastmoney.com/")
-    out = {}
-    for line in (j.get("data") or {}).get("klines") or []:
-        a = line.split(",")
-        out[a[0]] = float(a[1])
-    return out
-
-
-def fund_nav(code, pages=8):
-    out = {}
-    for p in range(1, pages + 1):
-        u = f"https://api.fund.eastmoney.com/f10/lsjz?fundCode={code}&pageIndex={p}&pageSize=20"
-        rows = (U.get_json(u, "https://fundf10.eastmoney.com/").get("Data") or {}).get("LSJZList") or []
-        if not rows:
-            break
-        for r in rows:
-            if r.get("DWJZ"):
-                out[r["FSRQ"]] = float(r["DWJZ"])
-    return out
 
 
 def on_or_before(table, keys, d):

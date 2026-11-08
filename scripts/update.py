@@ -14,9 +14,6 @@ import json
 import os
 import statistics
 import sys
-import time
-import urllib.parse
-import urllib.request
 
 import sources as S
 
@@ -35,69 +32,9 @@ CASH_YIELD = 0.015   # 现金池年化（货基）
 DIV_CYB = 0.006      # 创业板50 股息率假设
 DIV_HL = 0.05        # 红利低波100 股息率假设（价格指数不含分红，按年化加回）
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                  "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-    "Accept": "application/json,text/plain,*/*",
-}
 
 
 # ---------------------------------------------------------------- 数据获取
-def get_json(url, referer):
-    req = urllib.request.Request(url, headers={**HEADERS, "Referer": referer})
-    last = None
-    for i in range(3):
-        try:
-            with urllib.request.urlopen(req, timeout=25) as r:
-                return json.loads(r.read().decode("utf-8"))
-        except Exception as e:  # noqa: BLE001
-            last = e
-            time.sleep(3 * (i + 1))
-    raise last
-
-
-def from_eastmoney(secid):
-    """东方财富日K：0.399673 = 创业板50，2.930955 = 红利低波100"""
-    q = urllib.parse.urlencode({
-        "secid": secid, "fields1": "f1,f2,f3", "fields2": "f51,f52,f53",
-        "klt": "101", "fqt": "0", "beg": "20140101", "end": "20500101",
-        "ut": "fa5fd1943c7b386f172d6893dbfba10b",
-    })
-    j = get_json("https://push2his.eastmoney.com/api/qt/stock/kline/get?" + q,
-                 "https://quote.eastmoney.com/")
-    out = {}
-    for line in (j.get("data") or {}).get("klines") or []:
-        p = line.split(",")
-        out[p[0]] = float(p[2])
-    return out
-
-
-def from_tencent(symbol):
-    """腾讯日线，按年分段取，作为东方财富的备用源"""
-    out = {}
-    for y in range(2014, dt.date.today().year + 1):
-        url = ("https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param="
-               f"{symbol},day,{y}-01-01,{y}-12-31,400,")
-        j = get_json(url, "https://gu.qq.com/")
-        node = (j.get("data") or {}).get(symbol) or {}
-        for row in node.get("day") or node.get("qfqday") or []:
-            out[row[0]] = float(row[2])
-    return out
-
-
-def from_csindex(code):
-    """中证指数官网日线（930955 官方口径）"""
-    end = dt.date.today().strftime("%Y%m%d")
-    url = ("https://www.csindex.com.cn/csindex-home/perf/index-perf"
-           f"?indexCode={code}&startDate={START}&endDate={end}")
-    j = get_json(url, "https://www.csindex.com.cn/")
-    out = {}
-    for row in j.get("data") or []:
-        d = str(row["tradeDate"])
-        out[f"{d[:4]}-{d[4:6]}-{d[6:]}"] = float(row["close"])
-    return out
-
-
 def from_csv(path):
     out = {}
     with open(path, newline="", encoding="utf-8-sig") as f:
@@ -111,21 +48,6 @@ def from_csv(path):
     return out
 
 
-def fetch(name, tries):
-    errors = []
-    for label, fn in tries:
-        try:
-            data = fn()
-            if len(data) > 500:
-                print(f"{name}: {label} 取到 {len(data)} 天")
-                return data, label
-            errors.append(f"{label}: 只有 {len(data)} 天")
-        except Exception as e:  # noqa: BLE001
-            errors.append(f"{label}: {e}")
-    raise SystemExit(f"{name} 取数失败 -> " + " | ".join(errors))
-
-
-# ---------------------------------------------------------------- 计算工具
 def pct(sorted_vals, q):
     k = (len(sorted_vals) - 1) * q
     f = int(k)
@@ -221,7 +143,7 @@ def backtest(dates, cyb, hl, ratio, mode, lo=LO, hi=HI, sells=(), div_g=DIV_CYB)
     }
 
 
-def build(g_raw, hl_raw, g_src, hl_src, out, lo, hi, sells, div_g, start, grid_lo, grid_hi):
+def build(g_raw, g_src, hl_raw, hl_src, out, lo, hi, sells, div_g, start, grid_lo, grid_hi):
     """生成一组比值轮动数据（成长端 ÷ 红利低波100）。字段名沿用 cyb 表示成长端。"""
     common = sorted(set(g_raw) & set(hl_raw))
     common = [d for d in common if d >= start]
@@ -294,42 +216,35 @@ def build(g_raw, hl_raw, g_src, hl_src, out, lo, hi, sells, div_g, start, grid_l
 
 # ---------------------------------------------------------------- 主流程
 def main():
-    if os.environ.get("CYB_CSV") and os.environ.get("HL_CSV"):
-        cyb_raw, cyb_src = from_csv(os.environ["CYB_CSV"]), "本地CSV"
-        hl_raw, hl_src = from_csv(os.environ["HL_CSV"]), "本地CSV"
-    else:
-        cyb_raw, cyb_src = S.get_series("cyb50", 2500)
-        hl_raw, hl_src = S.get_series("hl100", 2500)
-
-    build(cyb_raw, hl_raw, cyb_src, hl_src, OUT, LO, HI, SELLS, DIV_CYB,
-          f"{START[:4]}-{START[4:6]}-{START[6:]}",
-          [0.14, 0.15, 0.16, 0.17, 0.18], [0.26, 0.28, 0.30, 0.32])
-
-    if os.environ.get("CYB_CSV"):
+    if os.environ.get("CYB_CSV") and os.environ.get("HL_CSV"):      # 本地用自己导出的 CSV 计算
+        build(from_csv(os.environ["CYB_CSV"]), "本地CSV", from_csv(os.environ["HL_CSV"]), "本地CSV",
+              OUT, LO, HI, SELLS, DIV_CYB, f"{START[:4]}-{START[4:6]}-{START[6:]}",
+              [0.14, 0.15, 0.16, 0.17, 0.18], [0.26, 0.28, 0.30, 0.32])
         return
 
-    # 科创50 ÷ 红利低波100：失败时保留上一次的 kc.json
-    try:
-        kc_raw, kc_src = S.get_series("kc50", 1500)
-        build(kc_raw, hl_raw, kc_src, hl_src, os.path.join(ROOT, "data", "kc.json"),
-              KC_LO, KC_HI, KC_SELLS, DIV_KC, "2019-12-31",
-              [0.08, 0.085, 0.09, 0.095, 0.10], [0.13, 0.14, 0.15, 0.16])
-    except BaseException as e:  # noqa: BLE001
-        print(f"科创50 数据更新失败，保留旧数据：{e}")
+    changed = S.refresh_all()
+    outputs = ["ratio.json", "kc.json", "dividend.json", "a500.json", "ndx.json"]
+    missing = [f for f in outputs if not os.path.exists(os.path.join(ROOT, "data", f))]
+    if not changed and not missing and os.environ.get("FORCE") != "1":
+        print("数据没有变化（非交易日或接口还没更新），跳过计算")
+        S.write_health()
+        return
 
-    # 红利低波100 每日打分：失败时保留上一次的 dividend.json，不影响比值数据
-    try:
-        import dividend
-        dividend.run(cyb_raw)
-    except Exception as e:  # noqa: BLE001
-        print(f"红利打分更新失败，保留旧数据：{e}")
-
-    # 中证A500、纳指100 估值与回撤指标：各自失败时保留旧数据
-    try:
-        import value
-        value.run()
-    except Exception as e:  # noqa: BLE001
-        print(f"A500/纳指更新失败，保留旧数据：{e}")
+    jobs = [
+        ("创业板50 轮动", lambda: build(*S.get_series("cyb50"), *S.get_series("hl100"), OUT, LO, HI, SELLS, DIV_CYB,
+                                       f"{START[:4]}-{START[4:6]}-{START[6:]}",
+                                       [0.14, 0.15, 0.16, 0.17, 0.18], [0.26, 0.28, 0.30, 0.32])),
+        ("科创50 轮动", lambda: build(*S.get_series("kc50"), *S.get_series("hl100"),
+                                     os.path.join(ROOT, "data", "kc.json"), KC_LO, KC_HI, KC_SELLS, DIV_KC,
+                                     "2019-12-31", [0.08, 0.085, 0.09, 0.095, 0.10], [0.13, 0.14, 0.15, 0.16])),
+        ("红利打分", lambda: __import__("dividend").run(S.get_series("cyb50")[0])),
+        ("中证A500 / 纳指100", lambda: __import__("value").run()),
+    ]
+    for name, job in jobs:
+        try:
+            job()
+        except BaseException as e:  # noqa: BLE001  某一项失败时保留它的旧数据，不影响其他项
+            print(f"{name} 计算失败，保留旧数据：{e}")
 
     ok = S.write_health()
     print("数据源体检：" + ("正常" if ok else "有数据超过 12 天没更新，请检查 data/health.json"))
