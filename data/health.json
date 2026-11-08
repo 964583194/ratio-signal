@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-08 13:30",
+ "updated": "2026-11-08 18:26",
  "ok": true,
  "items": {
   "cyb50": {
@@ -53,6 +53,15 @@
    "mode": "增量",
    "last": "2026-11-06",
    "days": 4088,
+   "failed": [],
+   "stale_days": 2
+  },
+  "hs300": {
+   "name": "沪深300 收盘",
+   "source": "东方财富",
+   "mode": "增量",
+   "last": "2026-11-06",
+   "days": 5304,
    "failed": [],
    "stale_days": 2
   },
