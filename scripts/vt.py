@@ -4,7 +4,7 @@ from value import *
 px_raw=em_kline("1.000510","20050101"); pe_raw=csindex_pe("000300"); cgb=treasury("EMM00166466")
 dates=sorted(d for d in px_raw if d>=min(pe_raw)); pk,ck=sorted(pe_raw),sorted(cgb)
 px=[px_raw[d] for d in dates]; pe=[on_or_before(pe_raw,pk,d) for d in dates]; y10=[on_or_before(cgb,ck,d) for d in dates]
-erp=[100/p-y for p,y in zip(pe,y10)]
+erp=[None if p is None or y is None else 100/p-y for p,y in zip(pe,y10)]
 Dv.WARMUP=750
 pp=expanding_share(pe,"lt"); ep=expanding_share(erp,"lt")
 cheap=[None if a is None or b is None else 50*(1-a)+50*b for a,b in zip(pp,ep)]
