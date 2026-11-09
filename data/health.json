@@ -1,15 +1,15 @@
 {
- "updated": "2026-11-08 18:26",
+ "updated": "2026-11-09 14:01",
  "ok": true,
  "items": {
   "cyb50": {
    "name": "创业板50 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-06",
-   "days": 3012,
+   "last": "2026-11-09",
+   "days": 3992,
    "failed": [],
-   "stale_days": 2
+   "stale_days": 0
   },
   "hl100": {
    "name": "红利低波100 收盘",
@@ -18,7 +18,7 @@
    "last": "2026-11-06",
    "days": 4091,
    "failed": [],
-   "stale_days": 2
+   "stale_days": 3
   },
   "hl100_pe": {
    "name": "红利低波100 市盈率",
@@ -27,7 +27,7 @@
    "last": "2026-11-06",
    "days": 2310,
    "failed": [],
-   "stale_days": 2
+   "stale_days": 3
   },
   "hl100_tr": {
    "name": "红利低波100 全收益",
@@ -36,34 +36,34 @@
    "last": "2026-11-06",
    "days": 4091,
    "failed": [],
-   "stale_days": 2
+   "stale_days": 3
   },
   "kc50": {
    "name": "科创50 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-06",
+   "last": "2026-11-09",
    "days": 1660,
    "failed": [],
-   "stale_days": 2
+   "stale_days": 0
   },
   "a500": {
    "name": "中证A500 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-06",
-   "days": 4088,
+   "last": "2026-11-09",
+   "days": 4089,
    "failed": [],
-   "stale_days": 2
+   "stale_days": 0
   },
   "hs300": {
    "name": "沪深300 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-06",
-   "days": 5304,
+   "last": "2026-11-09",
+   "days": 5305,
    "failed": [],
-   "stale_days": 2
+   "stale_days": 0
   },
   "pe300": {
    "name": "沪深300 市盈率",
@@ -72,7 +72,7 @@
    "last": "2026-11-06",
    "days": 3665,
    "failed": [],
-   "stale_days": 2
+   "stale_days": 3
   },
   "pe_a500": {
    "name": "中证A500 市盈率",
@@ -81,7 +81,7 @@
    "last": "2026-11-06",
    "days": 524,
    "failed": [],
-   "stale_days": 2
+   "stale_days": 3
   },
   "cn10y": {
    "name": "中国十年国债",
@@ -90,7 +90,7 @@
    "last": "2026-11-06",
    "days": 4216,
    "failed": [],
-   "stale_days": 2
+   "stale_days": 3
   },
   "us10y": {
    "name": "美国十年国债",
@@ -99,7 +99,7 @@
    "last": "2026-11-06",
    "days": 4221,
    "failed": [],
-   "stale_days": 2
+   "stale_days": 3
   },
   "ndx": {
    "name": "纳指100 收盘",
@@ -108,16 +108,25 @@
    "last": "2026-11-06",
    "days": 3222,
    "failed": [],
-   "stale_days": 2
+   "stale_days": 3
+  },
+  "gold": {
+   "name": "黄金ETF 518880 收盘",
+   "source": "东方财富",
+   "mode": "全量",
+   "last": "2026-11-09",
+   "days": 3228,
+   "failed": [],
+   "stale_days": 0
   },
   "etf513100": {
    "name": "纳指ETF 513100 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-06",
-   "days": 640,
+   "last": "2026-11-09",
+   "days": 641,
    "failed": [],
-   "stale_days": 2
+   "stale_days": 0
   },
   "nav513100": {
    "name": "纳指ETF 513100 净值",
@@ -126,7 +135,7 @@
    "last": "2026-11-05",
    "days": 3247,
    "failed": [],
-   "stale_days": 3
+   "stale_days": 4
   }
  }
 }
