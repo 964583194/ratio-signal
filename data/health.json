@@ -1,44 +1,46 @@
 {
- "updated": "2026-11-09 14:57",
+ "updated": "2026-11-10 00:01",
  "ok": true,
  "items": {
   "cyb50": {
    "name": "创业板50 收盘",
-   "source": "国证指数官网",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-09",
    "days": 3992,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 0
+   "failed": [],
+   "stale_days": 1,
+   "ref": false
   },
   "hl100": {
    "name": "红利低波100 收盘",
    "source": "中证指数官网",
    "mode": "增量",
-   "last": "2026-11-06",
-   "days": 4091,
+   "last": "2026-11-09",
+   "days": 4092,
    "failed": [],
-   "stale_days": 3
+   "stale_days": 1,
+   "ref": false
   },
   "hl100_pe": {
    "name": "红利低波100 市盈率",
    "source": "中证指数官网",
    "mode": "增量",
-   "last": "2026-11-06",
-   "days": 2310,
+   "last": "2026-11-09",
+   "days": 2311,
    "failed": [],
-   "stale_days": 3
+   "stale_days": 1,
+   "ref": false
   },
   "hl100_tr": {
    "name": "红利低波100 全收益",
    "source": "中证指数官网",
    "mode": "增量",
-   "last": "2026-11-06",
-   "days": 4091,
+   "last": "2026-11-09",
+   "days": 4092,
    "failed": [],
-   "stale_days": 3
+   "stale_days": 1,
+   "ref": false
   },
   "kc50": {
    "name": "科创50 收盘",
@@ -47,7 +49,8 @@
    "last": "2026-11-09",
    "days": 1660,
    "failed": [],
-   "stale_days": 0
+   "stale_days": 1,
+   "ref": false
   },
   "a500": {
    "name": "中证A500 收盘",
@@ -56,7 +59,8 @@
    "last": "2026-11-09",
    "days": 4089,
    "failed": [],
-   "stale_days": 0
+   "stale_days": 1,
+   "ref": false
   },
   "hs300": {
    "name": "沪深300 收盘",
@@ -65,34 +69,38 @@
    "last": "2026-11-09",
    "days": 5305,
    "failed": [],
-   "stale_days": 0
+   "stale_days": 1,
+   "ref": false
   },
   "pe300": {
    "name": "沪深300 市盈率",
    "source": "中证指数官网",
    "mode": "增量",
-   "last": "2026-11-06",
-   "days": 3665,
+   "last": "2026-11-09",
+   "days": 3666,
    "failed": [],
-   "stale_days": 3
+   "stale_days": 1,
+   "ref": false
   },
   "pe_a500": {
    "name": "中证A500 市盈率",
    "source": "中证指数官网",
    "mode": "增量",
-   "last": "2026-11-06",
-   "days": 524,
+   "last": "2026-11-09",
+   "days": 525,
    "failed": [],
-   "stale_days": 3
+   "stale_days": 1,
+   "ref": false
   },
   "cn10y": {
    "name": "中国十年国债",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-06",
-   "days": 4216,
+   "last": "2026-11-09",
+   "days": 4217,
    "failed": [],
-   "stale_days": 3
+   "stale_days": 1,
+   "ref": false
   },
   "us10y": {
    "name": "美国十年国债",
@@ -101,7 +109,8 @@
    "last": "2026-11-06",
    "days": 4221,
    "failed": [],
-   "stale_days": 3
+   "stale_days": 4,
+   "ref": false
   },
   "ndx": {
    "name": "纳指100 收盘",
@@ -110,18 +119,88 @@
    "last": "2026-11-06",
    "days": 3222,
    "failed": [],
-   "stale_days": 3
+   "stale_days": 4,
+   "ref": false
   },
   "gold": {
    "name": "黄金ETF 518880 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-09",
    "days": 3228,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 0
+   "failed": [],
+   "stale_days": 1,
+   "ref": false
+  },
+  "pb_below": {
+   "name": "全A破净率",
+   "source": "乐咕乐股(AKShare)",
+   "mode": "增量",
+   "last": "2026-11-09",
+   "days": 5288,
+   "failed": [],
+   "stale_days": 1,
+   "ref": true
+  },
+  "margin": {
+   "name": "两市融资余额",
+   "source": "东方财富",
+   "mode": "增量",
+   "last": "2026-11-06",
+   "days": 4032,
+   "failed": [],
+   "stale_days": 4,
+   "ref": true
+  },
+  "margin_ratio": {
+   "name": "融资余额占流通市值",
+   "source": "东方财富",
+   "mode": "增量",
+   "last": "2026-11-06",
+   "days": 4032,
+   "failed": [],
+   "stale_days": 4,
+   "ref": true
+  },
+  "mkt_amt": {
+   "name": "两市成交额",
+   "source": "东方财富",
+   "mode": "全量",
+   "last": "2026-11-09",
+   "days": 4090,
+   "failed": [],
+   "stale_days": 1,
+   "ref": true
+  },
+  "pe_cyb": {
+   "name": "创业板指市盈率(周)",
+   "source": "蛋卷基金",
+   "mode": "增量",
+   "last": "2026-11-09",
+   "days": 516,
+   "failed": [],
+   "stale_days": 1,
+   "ref": true
+  },
+  "pe_kc": {
+   "name": "科创50市盈率(周)",
+   "source": "蛋卷基金",
+   "mode": "增量",
+   "last": "2026-11-09",
+   "days": 354,
+   "failed": [],
+   "stale_days": 1,
+   "ref": true
+  },
+  "etf300": {
+   "name": "沪深300ETF份额(国家队)",
+   "source": "上交所",
+   "mode": "全量",
+   "last": "2026-11-09",
+   "days": 6,
+   "failed": [],
+   "stale_days": 1,
+   "ref": true
   },
   "etf513100": {
    "name": "纳指ETF 513100 收盘",
@@ -130,16 +209,18 @@
    "last": "2026-11-09",
    "days": 641,
    "failed": [],
-   "stale_days": 0
+   "stale_days": 1,
+   "ref": false
   },
   "nav513100": {
    "name": "纳指ETF 513100 净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-05",
-   "days": 3247,
+   "last": "2026-11-06",
+   "days": 3248,
    "failed": [],
-   "stale_days": 4
+   "stale_days": 4,
+   "ref": false
   }
  }
 }
