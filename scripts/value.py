@@ -387,8 +387,55 @@ def run_gold():
     dump("gold.json", data)
 
 
+B_DUR = 7.0   # 7~10 年政策性金融债指数的大致久期
+
+
+def run_bond():
+    """债基（中债7-10年政策性金融债指数类）：用十年国债收益率估算指数涨跌，只作加仓提示。"""
+    raw, _ = S.get_series("cn10y", 2500)
+    dates = sorted(raw)
+    Y = [raw[d] for d in dates]
+    D_ = [dt.date.fromisoformat(d) for d in dates]
+    idx = [1.0]
+    for i in range(1, len(Y)):   # 票息 + 久期 × 收益率变化 的近似
+        idx.append(idx[-1] * (1 + Y[i - 1] / 100 * (D_[i] - D_[i - 1]).days / 365 - B_DUR * (Y[i] - Y[i - 1]) / 100))
+    m250 = ma(Y, 250)
+    dev = [(Y[k] - m250[k]) * 100 if m250[k] else None for k in range(len(Y))]   # 单位：基点
+    pct1 = [None] * len(Y)
+    for k in range(250, len(Y)):
+        w = Y[k - 250:k]
+        pct1[k] = sum(t < Y[k] for t in w) / len(w)
+
+    def b_zone(dv):
+        if dv >= 15:
+            return 2.0, "利率偏高", "利率比近一年均值高，有余钱可以多加（参考）"
+        if dv <= -15:
+            return 0.5, "利率偏低", "利率比近一年均值低，照常定投，不额外加"
+        return 1.0, "正常", "照常定投"
+    i0 = next(k for k, d in enumerate(dates) if d >= "2012-01-01")
+    D = D_[i0:]
+    P = idx[i0:]
+    mult = [b_zone(dev[k])[0] for k in range(i0, len(Y))]
+    bt = {"plain": backtest(D, P, 0.0), "value": backtest(D, P, 0.0, mult)}
+    fwd = forward(P, [("利率比年线高 ≥15bp", lambda i: dev[i0 + i] >= 15), ("正常（±15bp 内）", lambda i: -15 < dev[i0 + i] < 15),
+                      ("利率比年线低 ≥15bp", lambda i: dev[i0 + i] <= -15), ("全部交易日", lambda i: True)])
+    i = len(Y) - 1
+    m, zn, act = b_zone(dev[i])
+    data = {
+        "updated": now_str(), "name": "债基", "kind": "bond",
+        "latest": {"date": dates[i], "close": Y[i], "prev_close": Y[i - 1], "ma250": round(m250[i], 3),
+                   "dev": round(dev[i], 1), "pct1": round(pct1[i], 3), "lo3": round(min(Y[-750:]), 3),
+                   "hi3": round(max(Y[-750:]), 3), "zone": zn, "mult": m, "action": act, "dur": B_DUR,
+                   "chg60": round((Y[i] - Y[i - 60]) * 100, 1)},
+        "backtest": bt, "bt_start": dates[i0], "div": 0, "forward": fwd, "ma_events": [],
+        "series": [[d, round(v, 4)] for d, v in zip(dates[i0:], Y[i0:])],
+        "dev_series": [[dates[k], round(pct1[k], 4)] for k in range(i0, len(Y)) if pct1[k] is not None],
+    }
+    dump("bond.json", data)
+
+
 def run():
-    for f in (run_a500, lambda: run_a500("hs300", "沪深300", "hs300", "hs300.json"), run_ndx, run_gold):
+    for f in (run_a500, lambda: run_a500("hs300", "沪深300", "hs300", "hs300.json"), run_ndx, run_gold, run_bond):
         try:
             f()
         except Exception as e:  # noqa: BLE001

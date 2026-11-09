@@ -81,6 +81,11 @@ def gold(d):
     return L["zone"], f"回撤 {pc(L['dd'])}，比年线{'高' if L['dev'] >= 0 else '低'} {pc(abs(L['dev']))}（{L['zone']}）", L["action"], "gold"
 
 
+def bond(d):
+    L = d["latest"]
+    return L["zone"], f"十年国债 {L['close']:.2f}%，比近一年均值{'高' if L['dev'] >= 0 else '低'} {abs(L['dev']):.0f}bp", L["action"], "bond"
+
+
 WEIGHTS = {"创业板轮动": 25, "科创板轮动": 15, "纳指100": 20, "红利打分": 15, "黄金": 15, "沪深300": 5, "中证A500": 5}
 
 
@@ -92,7 +97,8 @@ def collect(prev):
              ("中证A500", "a500.json", a500),
              ("沪深300", "hs300.json", lambda d: a500(d)[:3] + ("hs300",)),
              ("纳指100", "ndx.json", lambda d: ndx(d, (prev.get("纳指100") or {}).get("prem"))),
-             ("黄金", "gold.json", gold)]
+             ("黄金", "gold.json", gold),
+             ("债基", "bond.json", bond)]
     for name, f, fn in pairs:
         d = load(f)
         if not d:

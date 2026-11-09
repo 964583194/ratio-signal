@@ -205,7 +205,7 @@ def div_score():
 # ---------------------------------------------------------------- 主流程
 def main():
     changed = S.refresh_all()
-    outputs = ["ratio.json", "kc.json", "dividend.json", "a500.json", "hs300.json", "ndx.json", "gold.json"]
+    outputs = ["ratio.json", "kc.json", "dividend.json", "a500.json", "hs300.json", "ndx.json", "gold.json", "bond.json"]
     missing = [f for f in outputs if not os.path.exists(os.path.join(ROOT, "data", f))]
     if not changed and not missing and os.environ.get("FORCE") != "1":
         print("数据没有变化（非交易日或接口还没更新），跳过计算")
