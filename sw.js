@@ -1,5 +1,5 @@
 // 离线缓存：先联网取最新，取不到就用上次缓存的内容
-const CACHE = "signal-v1";
+const CACHE = "signal-v2";
 self.addEventListener("install", e => self.skipWaiting());
 self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
 self.addEventListener("fetch", e => {
