@@ -1,14 +1,16 @@
 {
- "updated": "2026-11-09 14:01",
+ "updated": "2026-11-09 14:57",
  "ok": true,
  "items": {
   "cyb50": {
    "name": "创业板50 收盘",
-   "source": "东方财富",
+   "source": "国证指数官网",
    "mode": "增量",
    "last": "2026-11-09",
    "days": 3992,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 0
   },
   "hl100": {
@@ -112,11 +114,13 @@
   },
   "gold": {
    "name": "黄金ETF 518880 收盘",
-   "source": "东方财富",
-   "mode": "全量",
+   "source": "腾讯",
+   "mode": "增量",
    "last": "2026-11-09",
    "days": 3228,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 0
   },
   "etf513100": {
