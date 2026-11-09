@@ -145,9 +145,15 @@ def build(g_raw, g_src, hl_raw, hl_src, out, lo, hi, sells, div_g, start, g_name
     cyb = [g_raw[d] for d in common]
     hl = [hl_raw[d] for d in common]
     ratio = r_all[i0:]
-    res, state, weeks, trades = PL.simulate(D_all, [g_raw[d] for d in allc], [tr_raw[d] for d in allc],
-                                            r_all, th_all, ma_all, score, i0, div_g, g_name)
-    plan = PL.latest_plan(D_all, r_all, th_all, ma_all, score, state, g_name)
+    g_all = [g_raw[d] for d in allc]
+    gm = PL.ma(g_all, 250)
+    hot = HOT[0]
+    res, state, weeks, trades = PL.simulate(D_all, g_all, [tr_raw[d] for d in allc],
+                                            r_all, th_all, ma_all, score, i0, div_g, g_name, hot, gm)
+    hot_now = hot(allc[-1])
+    bear_now = gm[-1] is not None and g_all[-1] < gm[-1] and not hot_now
+    plan = PL.latest_plan(D_all, r_all, th_all, ma_all, score, state, g_name, hot_now, bear_now, gm[-1] or 0)
+    plan.update({"hot": hot_now, "bear": bear_now, "g_close": g_all[-1], "g_ma250": round(gm[-1] or 0, 2)})
     T = th_all[-1]
 
     s = sorted(ratio)
@@ -194,6 +200,9 @@ def build(g_raw, g_src, hl_raw, hl_src, out, lo, hi, sells, div_g, start, g_name
     print(f"写入 {out}：{common[-1]} 信号值 {now:.4f}（{plan['zone_name']}），平衡版回测年化 {res['xirr']}")
 
 
+HOT = [lambda d: False]
+
+
 def div_score():
     try:
         with open(os.path.join(ROOT, "data", "dividend.json"), encoding="utf-8") as f:
@@ -205,7 +214,7 @@ def div_score():
 # ---------------------------------------------------------------- 主流程
 def main():
     changed = S.refresh_all()
-    outputs = ["ratio.json", "kc.json", "dividend.json", "a500.json", "hs300.json", "ndx.json", "gold.json", "bond.json"]
+    outputs = ["market.json", "ratio.json", "kc.json", "dividend.json", "a500.json", "hs300.json", "ndx.json", "gold.json", "bond.json"]
     missing = [f for f in outputs if not os.path.exists(os.path.join(ROOT, "data", f))]
     if not changed and not missing and os.environ.get("FORCE") != "1":
         print("数据没有变化（非交易日或接口还没更新），跳过计算")
@@ -213,7 +222,13 @@ def main():
         return
 
     tr = lambda: S.get_series("hl100_tr")[0]  # noqa: E731
-    jobs = [   # 红利打分先算，轮动要用它的打分
+    import market as MK
+
+    def mk():
+        MK.run()
+        HOT[0] = MK.hot_lookup(MK.pb_hot_series())
+    jobs = [   # 红利打分、见底评分先算，轮动要用
+        ("见底评分", mk),
         ("红利打分", lambda: __import__("dividend").run(S.get_series("cyb50")[0])),
         ("创业板50 轮动", lambda: build(*S.get_series("cyb50"), *S.get_series("hl100"), OUT, LO, HI, SELLS, DIV_CYB,
                                        f"{START[:4]}-{START[4:6]}-{START[6:]}", "创业板50", tr(), div_score())),

@@ -6,13 +6,14 @@
 买入：每周集中一次。进入某个区间要连续 3 个交易日在线下才算。
   暂停区（中位数以上）：每周定投款买红利低波100（闲钱放红利）。
   每周买入区：每周定投款买成长端。
-  加大买入区 / 翻倍买入区：另外把红利仓位的 12% / 23% 转成成长端（相当于每天 1/40、1/20，按周集中）。
+  加大买入区 / 翻倍买入区：见底时（全A破净率 ≥ 近 10 年 85% 分位）另外掏钱加码 2000 / 4000 元（无限子弹）。
+  跌破年线：成长端收在 250 日均线下方、又还没见底时，暂停买成长端，定投款买红利。
 卖出（卖出的钱都转红利）：
   趋势确认：信号值过某档卖出线后，跌破信号 20 日均线时才卖这一档（1/3、再一半、全部）。
   目标止盈：成长端持仓盈利 ≥50% 卖 1/3，≥100% 再卖一半（信号值在中位数以上才执行）。
   红利打分联动：信号值在中位数以上且红利打分 ≥14（红利很便宜）时，卖 1/4 成长端。
   每段行情每条只触发一次，信号值回到中位数以下重新计数。
-极低值：跌破翻倍线先把红利仓位的 1/3 转入成长端，之后每再跌 5% 转一批，共 3 批；
+极低值（且已见底）：跌破翻倍线先把红利仓位的 1/3 转入成长端，之后每再跌 5% 转一批，共 3 批；
   上一批之后 4 周没有更低，就把剩下的全部转入。
 成交：用前一交易日收盘的信号，在当天收盘价成交（不用未来数据）。
 """
@@ -26,6 +27,7 @@ WEEKLY = 1000
 FEE = 0.0005
 SW = 0.001          # 红利 ⇄ 成长端 转换：卖出 + 买入两次费用
 DIV_SCORE = 14
+EXTRA = {"day": 2000, "dbl": 4000}   # 见底时（破净率 ≥85% 分位）每周额外投入
 TIERS = (("s1", 1 / 3, "卖出 1/3"), ("s2", 0.5, "再卖剩下的一半"), ("s3", 1.0, "全部卖出"))
 ZONE_NAME = {"dbl": "翻倍买入区", "day": "加大买入区", "wk": "每周买入区", "pause": "暂停区"}
 
@@ -88,8 +90,9 @@ def xirr(cfs):
     return (lo + hi) / 2
 
 
-def simulate(dates, g, hl, r, th, ma20, score, i0, div_g, g_name):
-    """g 成长端价格，hl 红利低波100 全收益指数。返回 (回测结果, 期末状态, 每周记录, 交易记录)"""
+def simulate(dates, g, hl, r, th, ma20, score, i0, div_g, g_name, hot, gm):
+    """g 成长端价格，hl 红利低波100 全收益指数，hot(日期)=破净率是否见底，gm 成长端年线。
+    返回 (回测结果, 期末状态, 每周记录, 交易记录)"""
     cy = pool = cost = 0.0
     nav = peak = 1.0
     mdd, prev = 0.0, 0.0
@@ -142,19 +145,27 @@ def simulate(dates, g, hl, r, th, ma20, score, i0, div_g, g_name):
         if x < T["mid"]:
             ep -= {"s1", "s2", "s3", "as1", "as2", "as3", "tp1", "tp2", "dv"}
         new_week = d.isocalendar()[:2] != wk
+        h_ = hot(dates[i - 1].isoformat())
+        bear = gm[i - 1] is not None and g[i - 1] < gm[i - 1] and not h_
         if new_week:
             wk = d.isocalendar()[:2]
             cfs.append((d, -WEEKLY))
             pool += WEEKLY * (1 - FEE)       # 定投款先进红利，买入区再转成长端
             if z == "pause":
                 acts.append(f"{WEEKLY} 元买红利")
+            elif bear:
+                acts.append(f"跌破年线未见底，{WEEKLY} 元买红利")
             else:
                 to_g(WEEKLY, f"{WEEKLY} 元买{g_name}")
-                if z in ("day", "dbl"):
-                    k = 1 - (1 - (1 / 20 if z == "dbl" else 1 / 40)) ** 5
-                    to_g(pool * k, f"红利转{g_name} {k:.0%}")
-        # 极低值分批转入
-        if pool > 1:
+                ex = EXTRA.get(z, 0) if h_ else 0
+                if ex:   # 无限子弹：见底时另外掏钱加码
+                    cfs.append((d, -ex))
+                    cy += ex * (1 - FEE)
+                    cost += ex
+                    acts.append(f"见底加码 {ex} 元")
+                    trades.append([d.isoformat(), f"见底加码 {ex} 元", ex])
+        # 极低值分批转入（破净率见底才转）
+        if pool > 1 and h_:
             if bk == 0 and below.get("dbl", 0) >= 3:
                 to_g(pool / 3, "极低值第1批")
                 bk, bl, bt = 1, x, d
@@ -194,14 +205,14 @@ def simulate(dates, g, hl, r, th, ma20, score, i0, div_g, g_name):
     cfs.append((dates[-1], final))
     x = xirr(cfs)
     res = {"xirr": round(x, 4) if x is not None else None, "mdd": round(mdd, 4), "final": round(final),
-           "invested": WEEKLY * (len(cfs) - 1), "pool": round(pool), "sells": nsell,
+           "invested": round(-sum(a for _, a in cfs[:-1])), "pool": round(pool), "sells": nsell,
            "g_share": round(cy / final, 3) if final else 0}
     state = {"ep": sorted(ep), "batch": bk, "batch_low": bl, "batch_date": bt.isoformat() if bt else None,
              "below": below, "gain": round(cy / cost - 1, 3) if cost > 1 else None}
     return res, state, weeks, trades
 
 
-def latest_plan(dates, r, th, ma20, score, state, g_name):
+def latest_plan(dates, r, th, ma20, score, state, g_name, hot_now, bear_now, g_ma):
     """按最新收盘信号，给出下一次操作。"""
     x, T = r[-1], th[-1]
     below = {n: (state["below"].get(n, 0) + 1 if x < T[n] else 0) for n in ("dbl", "day", "mid")}
@@ -212,11 +223,15 @@ def latest_plan(dates, r, th, ma20, score, state, g_name):
     acts, warn = [], []
     if z == "pause":
         acts.append(f"本周定投款买红利低波100（暂停买{g_name}）")
+    elif bear_now:
+        acts.append(f"{g_name}在年线 {g_ma:.0f} 下方、还没见底：本周定投款先买红利低波100")
     else:
         acts.append(f"本周定投款买{g_name}")
-        if z in ("day", "dbl"):
-            k = 1 - (1 - (1 / 20 if z == "dbl" else 1 / 40)) ** 5
-            acts.append(f"另外把这部分的红利仓位转 {k:.0%} 到{g_name}")
+        if z in EXTRA:
+            if hot_now:
+                acts.append(f"已见底（破净率高）：另外加码 {EXTRA[z]} 元买{g_name}")
+            else:
+                warn.append(f"进入{ZONE_NAME[z]}，但破净率还没到见底标准，先不加码、不转仓")
     sell_now = []
     for k, f, txt in TIERS:
         armed = x >= T[k] or "a" + k in ep
@@ -233,7 +248,7 @@ def latest_plan(dates, r, th, ma20, score, state, g_name):
     if 0 < bk < 3:
         batch = f"极低值转仓进行中：已转 {bk} 批，信号值跌到 {state['batch_low'] * 0.95:.4f} 转下一批，" \
                 f"{(dt.date.fromisoformat(state['batch_date']) + dt.timedelta(days=28)).isoformat()} 前没有更低就全部转入"
-    elif bk == 0 and below["dbl"] >= 3:
+    elif bk == 0 and below["dbl"] >= 3 and hot_now:
         batch = f"跌破翻倍线：把红利仓位的 1/3 转入{g_name}（第 1 批）"
     elif x < T["dbl"]:
         batch = f"跌破翻倍线 {below['dbl']} 天，连续 3 天后开始分批把红利转入{g_name}"

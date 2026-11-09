@@ -108,7 +108,8 @@ def collect(prev):
         if name == "纳指100":
             out[name]["prem"] = state.split("溢价")[-1]
     h = load("health.json") or {}
-    stale = [v["name"] for v in (h.get("items") or {}).values() if v.get("stale_days") is None or v["stale_days"] > 12]
+    stale = [v["name"] for v in (h.get("items") or {}).values()
+             if not v.get("ref") and (v.get("stale_days") is None or v["stale_days"] > 12)]
     out["数据源"] = {"state": "异常:" + "、".join(stale) if stale else "正常",
                     "now": f"{len(h.get('items') or {})} 项", "act": "请查看 Actions 运行记录" if stale else "无需处理",
                     "tab": "", "date": h.get("updated", "")[:10]}

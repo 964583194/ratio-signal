@@ -36,12 +36,16 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: 安装 AKShare（破净率用，装不上就用缓存）
+        run: pip install -q akshare || true
+
       - name: 拉取数据并计算
         env:
           FORCE: ${{ inputs.force && '1' || '0' }}
         run: python scripts/update.py
 
       - name: 信号提醒与周报
+        if: github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPORT: ${{ (github.event.schedule == '13 0 * * 5' || inputs.report) && '1' || '0' }}
@@ -57,7 +61,7 @@ jobs:
             echo "数据没有变化，不提交"
           else
             git commit -m "数据更新 $(TZ=Asia/Shanghai date '+%F %H:%M')"
-            git pull --rebase origin main
+            git pull --rebase origin ${{ github.ref_name }}
             git push
           fi
 
@@ -67,7 +71,7 @@ jobs:
           import json, sys
           h = json.load(open("data/health.json"))
           bad = [f"{v['name']}（{v.get('stale_days')} 天）" for v in h["items"].values()
-                 if v.get("stale_days") is None or v["stale_days"] > 12]
+                 if not v.get("ref") and (v.get("stale_days") is None or v["stale_days"] > 12)]
           print("需要处理：" + "、".join(bad) if bad else "全部正常")
           sys.exit(1 if bad else 0)
           EOF

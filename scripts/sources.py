@@ -151,6 +151,86 @@ def em_treasury(col, since=None):
     return out
 
 
+def em_amount(secid, beg="20100101"):
+    """东方财富日K 成交额（亿元）"""
+    q = urllib.parse.urlencode({"secid": secid, "fields1": "f1", "fields2": "f51,f57", "klt": "101", "fqt": "0",
+                                "beg": beg, "end": "20500101", "ut": "fa5fd1943c7b386f172d6893dbfba10b"})
+    last = None
+    for host in ("push2his", "33.push2his", "63.push2his"):
+        try:
+            j = jget(f"https://{host}.eastmoney.com/api/qt/stock/kline/get?" + q, "https://quote.eastmoney.com/")
+            return {a.split(",")[0]: float(a.split(",")[1]) / 1e8 for a in (j.get("data") or {}).get("klines") or []}
+        except Exception as e:  # noqa: BLE001
+            last = e
+    raise last
+
+
+def mkt_amount(since=None):
+    """沪深两市成交额 = 上证指数 + 深证成指"""
+    beg = _ymd(since, "20100101")
+    a, b = em_amount("1.000001", beg), em_amount("0.399001", beg)
+    return {d: round(a[d] + b[d], 2) for d in a if d in b}
+
+
+_MARGIN = {}
+
+
+def em_margin(field, since=None):
+    """东方财富 两市融资融券：RZYE 融资余额（亿元），ratio 融资余额 ÷ 流通市值（%）"""
+    if since not in _MARGIN:
+        stop, out, page = since or "2010", [], 1
+        while page < 10:
+            q = urllib.parse.urlencode({"reportName": "RPTA_RZRQ_LSHJ", "columns": "DIM_DATE,RZYE,LTSZ", "source": "WEB",
+                                        "sortColumns": "DIM_DATE", "sortTypes": "-1", "pageNumber": page, "pageSize": "1000"})
+            rows = (jget("https://datacenter-web.eastmoney.com/api/data/v1/get?" + q,
+                         "https://data.eastmoney.com/").get("result") or {}).get("data") or []
+            if not rows:
+                break
+            out += rows
+            if rows[-1]["DIM_DATE"][:10] < stop:
+                break
+            page += 1
+        _MARGIN[since] = out
+    out = {}
+    for r in _MARGIN[since]:
+        if r.get("RZYE") and r.get("LTSZ"):
+            out[r["DIM_DATE"][:10]] = round(r["RZYE"] / 1e8, 2) if field == "RZYE" else round(r["RZYE"] / r["LTSZ"] * 100, 4)
+    return out
+
+
+def dj_pe(code):
+    """蛋卷基金 指数市盈率历史（周）"""
+    j = jget(f"https://danjuanfunds.com/djapi/index_eva/pe_history/{code}?day=all", "https://danjuanfunds.com/")
+    return {dt.datetime.fromtimestamp(x["ts"] / 1000 + 8 * 3600, dt.timezone.utc).date().isoformat(): x["pe"]
+            for x in (j.get("data") or {}).get("index_eva_pe_growths") or []}
+
+
+def ak_pb_below(since=None):
+    """乐咕乐股 全部A股破净率（经 AKShare）"""
+    import akshare as ak  # noqa: PLC0415  只在需要时导入，没装时走缓存
+    df = ak.stock_a_below_net_asset_statistics(symbol="全部A股")
+    return {str(r["date"])[:10]: float(r["below_net_asset_ratio"]) for _, r in df.iterrows()
+            if not since or str(r["date"])[:10] >= since}
+
+
+def sse_etf300(since=None):
+    """上交所 ETF 份额：510300 + 510310 + 510330（万份），只取最近几个交易日"""
+    out = {}
+    d = dt.date.today()
+    for _ in range(8):
+        q = ("https://query.sse.com.cn/commonQuery.do?isPagination=true&pageHelp.pageSize=1000&pageHelp.pageNo=1"
+             f"&sqlId=COMMON_SSE_ZQPZ_ETFZL_XXPL_ETFGM_SEARCH_L&STAT_DATE={d.isoformat()}")
+        try:
+            r = jget(q, "https://www.sse.com.cn/").get("result") or []
+            v = sum(float(x["TOT_VOL"]) for x in r if x.get("SEC_CODE") in ("510300", "510310", "510330"))
+            if v:
+                out[d.isoformat()] = round(v, 2)
+        except Exception:  # noqa: BLE001
+            pass
+        d -= dt.timedelta(days=1)
+    return out
+
+
 def ust_gov(years=2):
     """美国财政部官网 10 年期收益率（最近几年）"""
     out = {}
@@ -285,6 +365,14 @@ CATALOG = {
         ("腾讯", lambda s: tx_kline2("sh518880", 60 if s else 3500)),
         ("新浪(近1000天)", lambda s: sina_kline("sh518880", 120 if s else 1000)),
     ]),
+    # ---- 以下为参考指标（见底评分），失败不影响主流程
+    "pb_below": ("全A破净率", 2000, [("乐咕乐股(AKShare)", ak_pb_below)]),
+    "margin": ("两市融资余额", 2000, [("东方财富", lambda s: em_margin("RZYE", s))]),
+    "margin_ratio": ("融资余额占流通市值", 2000, [("东方财富", lambda s: em_margin("ratio", s))]),
+    "mkt_amt": ("两市成交额", 2000, [("东方财富", mkt_amount)]),
+    "pe_cyb": ("创业板指市盈率(周)", 400, [("蛋卷基金", lambda s: dj_pe("SZ399006"))]),
+    "pe_kc": ("科创50市盈率(周)", 250, [("蛋卷基金", lambda s: dj_pe("SH000688"))]),
+    "etf300": ("沪深300ETF份额(国家队)", 1, [("上交所", sse_etf300)]),
     "etf513100": ("纳指ETF 513100 收盘", 100, [
         ("东方财富", lambda s: em_kline("1.513100", _ymd(s, "20240101"))),
         ("腾讯", lambda s: tx_kline2("sh513100", 60 if s else 640)),
@@ -298,6 +386,7 @@ CATALOG = {
 }
 
 # 和缓存比对时允许的差异：价格类相对 1%，收益率类绝对 0.15 个百分点
+REF_KEYS = {"pb_below", "margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc", "etf300"}
 TOL = {"cn10y": ("abs", 0.15), "us10y": ("abs", 0.15)}
 INCR_DAYS = 60          # 增量更新时回看的天数（同时用于和缓存比对）
 
@@ -415,9 +504,10 @@ def write_health():
     """写 data/health.json；有数据超过 HEALTH_DAYS 天没更新则返回 False"""
     now = dt.datetime.now(dt.timezone(dt.timedelta(hours=8)))
     ok = True
-    for v in HEALTH.values():
+    for k, v in HEALTH.items():
         v["stale_days"] = (now.date() - dt.date.fromisoformat(v["last"])).days if v["last"] else None
-        if v["stale_days"] is None or v["stale_days"] > HEALTH_DAYS:
+        v["ref"] = k in REF_KEYS          # 参考指标过期不算异常
+        if not v["ref"] and (v["stale_days"] is None or v["stale_days"] > HEALTH_DAYS):
             ok = False
     with open(os.path.join(ROOT, "data", "health.json"), "w", encoding="utf-8") as f:
         json.dump({"updated": now.strftime("%Y-%m-%d %H:%M"), "ok": ok, "items": HEALTH},
