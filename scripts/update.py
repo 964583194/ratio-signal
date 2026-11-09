@@ -5,8 +5,7 @@
 
 只用 Python 标准库，GitHub Actions 里直接运行即可。
 
-本地手动数据：设置环境变量 CYB_CSV / HL_CSV 指向两列 CSV（date,close），
-会跳过联网，直接用本地文件计算。
+现行规则（平衡版）见 plan.py；这里保留旧版固定线轮动，只用作回测对比。
 """
 import csv
 import datetime as dt
@@ -30,24 +29,11 @@ WEEKLY = 1000        # 每周定投额（元）
 FEE = 0.0005         # 买入费率
 CASH_YIELD = 0.015   # 现金池年化（货基）
 DIV_CYB = 0.006      # 创业板50 股息率假设
-DIV_HL = 0.05        # 红利低波100 股息率假设（价格指数不含分红，按年化加回）
+DIV_HL = 0.038       # 红利低波100 股息率（全收益指数比价格指数年均多 3.8%），只用于旧版对比
 
 
 
 # ---------------------------------------------------------------- 数据获取
-def from_csv(path):
-    out = {}
-    with open(path, newline="", encoding="utf-8-sig") as f:
-        for row in csv.reader(f):
-            if not row or not row[0][:1].isdigit():
-                continue
-            d = row[0].strip().replace("/", "-")
-            if len(d) == 8:
-                d = f"{d[:4]}-{d[4:6]}-{d[6:]}"
-            out[d] = float(row[1])
-    return out
-
-
 def pct(sorted_vals, q):
     k = (len(sorted_vals) - 1) * q
     f = int(k)
@@ -143,17 +129,26 @@ def backtest(dates, cyb, hl, ratio, mode, lo=LO, hi=HI, sells=(), div_g=DIV_CYB)
     }
 
 
-def build(g_raw, g_src, hl_raw, hl_src, out, lo, hi, sells, div_g, start, grid_lo, grid_hi):
-    """生成一组比值轮动数据（成长端 ÷ 红利低波100）。字段名沿用 cyb 表示成长端。"""
-    common = sorted(set(g_raw) & set(hl_raw))
-    common = [d for d in common if d >= start]
-    if len(common) < 500:
+def build(g_raw, g_src, hl_raw, hl_src, out, lo, hi, sells, div_g, start, g_name, tr_raw, score):
+    """生成一组比值轮动数据（成长端 ÷ 红利低波100）。现行规则见 plan.py（平衡版）；字段名沿用 cyb 表示成长端。"""
+    import plan as PL
+    allc = sorted(set(g_raw) & set(hl_raw) & set(tr_raw))
+    D_all = [dt.date.fromisoformat(d) for d in allc]
+    r_all = [g_raw[d] / hl_raw[d] for d in allc]
+    th_all, th_hist = PL.thresholds(D_all, r_all)
+    ma_all = PL.ma(r_all, 20)
+    i0 = next(i for i, d in enumerate(allc) if d >= start and th_all[i] and ma_all[i - 1])
+    common = allc[i0:]
+    if len(common) < 300:
         raise SystemExit(f"两个指数重合的交易日太少：{len(common)}")
-
-    dates = [dt.date.fromisoformat(d) for d in common]
+    dates = D_all[i0:]
     cyb = [g_raw[d] for d in common]
     hl = [hl_raw[d] for d in common]
-    ratio = [c / h for c, h in zip(cyb, hl)]
+    ratio = r_all[i0:]
+    res, state, weeks, trades = PL.simulate(D_all, [g_raw[d] for d in allc], [tr_raw[d] for d in allc],
+                                            r_all, th_all, ma_all, score, i0, div_g, g_name)
+    plan = PL.latest_plan(D_all, r_all, th_all, ma_all, score, state, g_name)
+    T = th_all[-1]
 
     s = sorted(ratio)
     n = len(ratio)
@@ -161,84 +156,71 @@ def build(g_raw, g_src, hl_raw, hl_src, out, lo, hi, sells, div_g, start, grid_l
     i_max = max(range(n), key=lambda i: ratio[i])
     recent = ratio[-1500:]
     now = ratio[-1]
-    zone_of = lambda r: "l" if r < lo else ("h" if r >= hi else "m")  # noqa: E731
-
     stats = {
-        "days": n,
-        "start": common[0],
+        "days": n, "start": common[0],
         "min": round(ratio[i_min], 4), "min_date": common[i_min],
         "max": round(ratio[i_max], 4), "max_date": common[i_max],
-        "mean": round(statistics.fmean(ratio), 4),
-        "median": round(statistics.median(ratio), 4),
+        "mean": round(statistics.fmean(ratio), 4), "median": round(statistics.median(ratio), 4),
         "std": round(statistics.pstdev(ratio), 4),
         "p10": round(pct(s, .10), 4), "p25": round(pct(s, .25), 4),
         "p75": round(pct(s, .75), 4), "p90": round(pct(s, .90), 4),
         "mean_1500": round(statistics.fmean(recent), 4),
         "pctile_1500": round(sum(r < now for r in recent) / len(recent), 4),
         "pctile_all": round(sum(r < now for r in ratio) / n, 4),
-        "share": {z: round(sum(zone_of(r) == z for r in ratio) / n, 4) for z in "lmh"},
     }
-
     kw = dict(lo=lo, hi=hi, div_g=div_g)
-    bt = {m: backtest(dates, cyb, hl, ratio, m, **kw) for m in ("rot", "cyb", "hl", "mix")}
-    bt["sell"] = backtest(dates, cyb, hl, ratio, "rot", sells=sells, **kw)
-    grid = [[backtest(dates, cyb, hl, ratio, "rot", a, b, div_g=div_g)["xirr"] for b in grid_hi]
-            for a in grid_lo]
-
-    # 每周首个交易日的信号，最近一年（52 周）
-    weekly, seen = [], set()
-    for i, d in enumerate(dates):
-        wk = d.isocalendar()[:2]
-        if wk not in seen:
-            seen.add(wk)
-            weekly.append([common[i], round(ratio[i], 4), zone_of(ratio[i])])
+    bt = {"plan": res, "sell": backtest(dates, cyb, hl, ratio, "rot", sells=sells, **kw),
+          "cyb": backtest(dates, cyb, hl, ratio, "cyb", **kw), "hl": backtest(dates, cyb, hl, ratio, "hl", **kw)}
 
     data = {
         "updated": dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M"),
         "sources": {"cyb": g_src, "hl": hl_src},
-        "params": {"lo": lo, "hi": hi, "sells": [[a, round(b, 4)] for a, b in sells],
-                   "weekly": WEEKLY, "fee": FEE, "cash": CASH_YIELD,
-                   "div_cyb": div_g, "div_hl": DIV_HL},
-        "latest": {"date": common[-1], "cyb": cyb[-1], "hl": hl[-1],
-                   "ratio": round(now, 4), "zone": zone_of(now),
-                   "prev_ratio": round(ratio[-2], 4)},
+        "params": {"th": T, "th_date": th_hist[-1][0], "th_years": th_hist[-1][2], "pct": PL.PCT,
+                   "old": {"lo": lo, "hi": hi, "sells": [[a, round(b, 4)] for a, b in sells]},
+                   "weekly": WEEKLY, "fee": FEE, "div_cyb": div_g},
+        "latest": {"date": common[-1], "cyb": cyb[-1], "hl": hl[-1], "ratio": round(now, 4),
+                   "prev_ratio": round(ratio[-2], 4), "zone": plan["zone"]},
+        "plan": plan,
+        "th_hist": [[d, t, y] for d, t, y in th_hist][-12:],
         "stats": stats,
         "backtest": bt,
-        "grid": {"lo": grid_lo, "hi": grid_hi, "xirr": grid},
-        "weekly": weekly[-60:],
+        "trades": trades[-20:],
+        "weekly": weeks[-60:],
         "series": [[d, round(r, 4)] for d, r in zip(common, ratio)],
     }
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
-    print(f"写入 {out}：{common[-1]} 比值 {now:.4f}，共 {n} 天")
+    print(f"写入 {out}：{common[-1]} 信号值 {now:.4f}（{plan['zone_name']}），平衡版回测年化 {res['xirr']}")
+
+
+def div_score():
+    try:
+        with open(os.path.join(ROOT, "data", "dividend.json"), encoding="utf-8") as f:
+            return dict(json.load(f)["series"])
+    except Exception:  # noqa: BLE001
+        return {}
 
 
 # ---------------------------------------------------------------- 主流程
 def main():
-    if os.environ.get("CYB_CSV") and os.environ.get("HL_CSV"):      # 本地用自己导出的 CSV 计算
-        build(from_csv(os.environ["CYB_CSV"]), "本地CSV", from_csv(os.environ["HL_CSV"]), "本地CSV",
-              OUT, LO, HI, SELLS, DIV_CYB, f"{START[:4]}-{START[4:6]}-{START[6:]}",
-              [0.14, 0.15, 0.16, 0.17, 0.18], [0.26, 0.28, 0.30, 0.32])
-        return
-
     changed = S.refresh_all()
-    outputs = ["ratio.json", "kc.json", "dividend.json", "a500.json", "hs300.json", "ndx.json"]
+    outputs = ["ratio.json", "kc.json", "dividend.json", "a500.json", "hs300.json", "ndx.json", "gold.json"]
     missing = [f for f in outputs if not os.path.exists(os.path.join(ROOT, "data", f))]
     if not changed and not missing and os.environ.get("FORCE") != "1":
         print("数据没有变化（非交易日或接口还没更新），跳过计算")
         S.write_health()
         return
 
-    jobs = [
+    tr = lambda: S.get_series("hl100_tr")[0]  # noqa: E731
+    jobs = [   # 红利打分先算，轮动要用它的打分
+        ("红利打分", lambda: __import__("dividend").run(S.get_series("cyb50")[0])),
         ("创业板50 轮动", lambda: build(*S.get_series("cyb50"), *S.get_series("hl100"), OUT, LO, HI, SELLS, DIV_CYB,
-                                       f"{START[:4]}-{START[4:6]}-{START[6:]}",
-                                       [0.14, 0.15, 0.16, 0.17, 0.18], [0.26, 0.28, 0.30, 0.32])),
+                                       f"{START[:4]}-{START[4:6]}-{START[6:]}", "创业板50", tr(), div_score())),
         ("科创50 轮动", lambda: build(*S.get_series("kc50"), *S.get_series("hl100"),
                                      os.path.join(ROOT, "data", "kc.json"), KC_LO, KC_HI, KC_SELLS, DIV_KC,
-                                     "2019-12-31", [0.08, 0.085, 0.09, 0.095, 0.10], [0.13, 0.14, 0.15, 0.16])),
-        ("红利打分", lambda: __import__("dividend").run(S.get_series("cyb50")[0])),
-        ("中证A500 / 沪深300 / 纳指100", lambda: __import__("value").run()),
+                                     "2021-01-01", "科创50", tr(), div_score())),
+        ("中证A500 / 沪深300 / 纳指100 / 黄金", lambda: __import__("value").run()),
     ]
     for name, job in jobs:
         try:

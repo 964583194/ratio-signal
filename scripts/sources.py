@@ -280,6 +280,11 @@ CATALOG = {
         ("纳斯达克官网(近三年)", lambda s: nasdaq_api("NDX", 1 if s else 3)),
         ("美联储FRED", lambda s: fred("NASDAQ100")),
     ]),
+    "gold": ("黄金ETF 518880 收盘", 2000, [
+        ("东方财富", lambda s: em_kline("1.518880", _ymd(s, "20130101"))),
+        ("腾讯", lambda s: tx_kline2("sh518880", 60 if s else 3500)),
+        ("新浪(近1000天)", lambda s: sina_kline("sh518880", 120 if s else 1000)),
+    ]),
     "etf513100": ("纳指ETF 513100 收盘", 100, [
         ("东方财富", lambda s: em_kline("1.513100", _ymd(s, "20240101"))),
         ("腾讯", lambda s: tx_kline2("sh513100", 60 if s else 640)),

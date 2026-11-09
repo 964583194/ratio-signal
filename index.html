@@ -163,6 +163,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
   <p id="subH" hidden>沪深300（000300）· 2005 年以来真实行情 · 估值：市盈率与十年国债 · 数据更新于 <span class="num" id="h_updated">—</span></p>
   <p id="subA" hidden>价格：中证A500（000510）· 估值：沪深300 市盈率与十年国债 · 数据更新于 <span class="num" id="a_updated">—</span></p>
   <p id="subN" hidden>纳斯达克100 指数（美元计价）· 回撤、年线与国内 ETF 溢价率 · 数据更新于 <span class="num" id="n_updated">—</span></p>
+  <p id="subG" hidden>黄金ETF（518880）· 回撤、年线偏离 · 数据更新于 <span class="num" id="g_updated">—</span></p>
   <p id="subDiv" hidden>每个交易日 200 元 · 四维打分 0~20 分决定买多少 · 数据更新于 <span class="num" id="dUpdated">—</span></p>
 </header>
 
@@ -174,15 +175,16 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
   <button type="button" role="tab" id="tabA" data-view="a500" aria-selected="false">中证A500</button>
   <button type="button" role="tab" id="tabH" data-view="hs300" aria-selected="false">沪深300</button>
   <button type="button" role="tab" id="tabN" data-view="ndx" aria-selected="false">纳指100</button>
+  <button type="button" role="tab" id="tabG" data-view="gold" aria-selected="false">黄金</button>
 </nav></div>
 
 <div id="viewO">
 <section class="panel"><h2>本周操作</h2>
-  <div class="scroll"><table class="otbl"><thead><tr><th>页签</th><th>现状</th><th>操作</th></tr></thead><tbody id="o_rows"><tr><td colspan="3" class="note">加载中</td></tr></tbody></table></div>
+  <div class="scroll"><table class="otbl"><thead><tr><th>页签</th><th class="r">比例</th><th>现状</th><th>操作</th></tr></thead><tbody id="o_rows"><tr><td colspan="4" class="note">加载中</td></tr></tbody></table></div>
   <p class="note" id="o_note"></p>
 </section>
 <section class="panel"><h2>怎么看</h2>
-  <p class="note" style="margin:0">创业板轮动、科创板轮动按周操作，每周五按周四收盘的信号下单；红利打分按交易日操作；中证A500、沪深300、纳指100 每周定投，按页签里的倍数调整金额。点表格里的名称可以看详情。</p>
+  <p class="note" style="margin:0">创业板轮动、科创板轮动按周操作，每周五按周四收盘的信号下单，卖出信号出现时当天会发邮件；红利打分按交易日操作；中证A500、沪深300、黄金每周定投，按页签里的倍数调整金额；纳指100 每周照常定投。各板块没买完的钱都放红利低波100。点表格里的名称可以看详情。</p>
 </section>
 </div>
 
@@ -206,8 +208,8 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
       <span class="action" id="action">加载中</span>
     </div>
     <div class="dist">
-      <div class="drow"><div class="top"><span>距低区线 <span class="num" id="loTxt"></span>（买<span class="gname">创业板50</span>）</span><b class="num" id="dLo"></b></div><div class="bar"><i id="bLo" style="background:var(--grow)"></i></div></div>
-      <div class="drow"><div class="top"><span>距高区线 <span class="num" id="hiTxt"></span>（买红利低波100）</span><b class="num" id="dHi"></b></div><div class="bar"><i id="bHi" style="background:var(--div)"></i></div></div>
+      <div class="drow"><div class="top"><span>距买入线 <span class="num" id="loTxt"></span>（每周买<span class="gname">创业板50</span>）</span><b class="num" id="dLo"></b></div><div class="bar"><i id="bLo" style="background:var(--grow)"></i></div></div>
+      <div class="drow"><div class="top"><span>距加大买入线 <span class="num" id="hiTxt"></span>（多买）</span><b class="num" id="dHi"></b></div><div class="bar"><i id="bHi" style="background:var(--div)"></i></div></div>
       <div class="drow"><div class="top"><span>距卖出线 <span class="num" id="sTxt"></span>（卖 1/3 <span class="gname">创业板50</span>）</span><b class="num" id="dS"></b></div><div class="bar"><i id="bS" style="background:var(--mark)"></i></div></div>
       <div class="label">进度条按信号值变化计，满格 50%</div>
     </div>
@@ -246,7 +248,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
     <div><div class="label">P10 / P25</div><div class="v" id="p1025"></div></div>
     <div><div class="label">P75 / P90</div><div class="v" id="p7590"></div></div>
     <div><div class="label">近1500日均值</div><div class="v" id="m1500"></div></div>
-    <div><div class="label">低 / 中 / 高区天数</div><div class="v" id="share"></div></div>
+    <div><div class="label">样本天数</div><div class="v" id="share"></div></div>
   </div>
 </section>
 
@@ -257,15 +259,15 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
     <tbody id="bt"></tbody>
   </table></div>
   <p class="note" id="btNote"></p>
-  <h2 style="margin-top:18px">阈值敏感性（轮动年化）</h2>
-  <div class="scroll"><table class="heat" id="heat"></table></div>
-  <p class="note">行是低区线，列是高区线，红框是当前使用的 <span id="heatCur"></span>（不含卖点）。颜色越深收益越高。如果红框附近颜色变化剧烈，说明结果依赖阈值的精确取值，要警惕过拟合。</p>
+  <h2 style="margin-top:18px">阈值调整记录</h2>
+  <div class="scroll"><table id="heat"></table></div>
+  <p class="note" id="heatCur"></p>
 </section>
 
 <section class="panel">
   <h2>近一年信号（52 周）</h2>
   <div class="scroll"><table>
-    <thead><tr><th>周首交易日</th><th class="r">信号值</th><th>区间</th><th>动作</th></tr></thead>
+    <thead><tr><th>周首交易日</th><th class="r">信号值</th><th>区间</th><th>回测里的操作</th></tr></thead>
     <tbody id="weeks"></tbody>
   </table></div>
 </section>
@@ -299,8 +301,8 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
       <span class="action" id="k_action">加载中</span>
     </div>
     <div class="dist">
-      <div class="drow"><div class="top"><span>距低区线 <span class="num" id="k_loTxt"></span>（买<span class="gname">科创50</span>）</span><b class="num" id="k_dLo"></b></div><div class="bar"><i id="k_bLo" style="background:var(--grow)"></i></div></div>
-      <div class="drow"><div class="top"><span>距高区线 <span class="num" id="k_hiTxt"></span>（买红利低波100）</span><b class="num" id="k_dHi"></b></div><div class="bar"><i id="k_bHi" style="background:var(--div)"></i></div></div>
+      <div class="drow"><div class="top"><span>距买入线 <span class="num" id="k_loTxt"></span>（每周买<span class="gname">科创50</span>）</span><b class="num" id="k_dLo"></b></div><div class="bar"><i id="k_bLo" style="background:var(--grow)"></i></div></div>
+      <div class="drow"><div class="top"><span>距加大买入线 <span class="num" id="k_hiTxt"></span>（多买）</span><b class="num" id="k_dHi"></b></div><div class="bar"><i id="k_bHi" style="background:var(--div)"></i></div></div>
       <div class="drow"><div class="top"><span>距卖出线 <span class="num" id="k_sTxt"></span>（卖 1/3 <span class="gname">科创50</span>）</span><b class="num" id="k_dS"></b></div><div class="bar"><i id="k_bS" style="background:var(--mark)"></i></div></div>
       <div class="label">进度条按信号值变化计，满格 50%</div>
     </div>
@@ -339,7 +341,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
     <div><div class="label">P10 / P25</div><div class="v" id="k_p1025"></div></div>
     <div><div class="label">P75 / P90</div><div class="v" id="k_p7590"></div></div>
     <div><div class="label">近1500日均值</div><div class="v" id="k_m1500"></div></div>
-    <div><div class="label">低 / 中 / 高区天数</div><div class="v" id="k_share"></div></div>
+    <div><div class="label">样本天数</div><div class="v" id="k_share"></div></div>
   </div>
 </section>
 
@@ -350,15 +352,15 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
     <tbody id="k_bt"></tbody>
   </table></div>
   <p class="note" id="k_btNote"></p>
-  <h2 style="margin-top:18px">阈值敏感性（轮动年化）</h2>
-  <div class="scroll"><table class="heat" id="k_heat"></table></div>
-  <p class="note">行是低区线，列是高区线，红框是当前使用的 <span id="k_heatCur"></span>（不含卖点）。颜色越深收益越高。如果红框附近颜色变化剧烈，说明结果依赖阈值的精确取值，要警惕过拟合。</p>
+  <h2 style="margin-top:18px">阈值调整记录</h2>
+  <div class="scroll"><table id="k_heat"></table></div>
+  <p class="note" id="k_heatCur"></p>
 </section>
 
 <section class="panel">
   <h2>近一年信号（52 周）</h2>
   <div class="scroll"><table>
-    <thead><tr><th>周首交易日</th><th class="r">信号值</th><th>区间</th><th>动作</th></tr></thead>
+    <thead><tr><th>周首交易日</th><th class="r">信号值</th><th>区间</th><th>回测里的操作</th></tr></thead>
     <tbody id="k_weeks"></tbody>
   </table></div>
 </section>
@@ -375,6 +377,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 
 <div id="viewA" hidden></div>
 <div id="viewH" hidden></div>
+<div id="viewG" hidden></div>
 <div id="viewN" hidden></div>
 
 <div id="viewDiv" hidden>
@@ -567,8 +570,8 @@ function LineChart(svg,opt){
 function Rot(p,file,cfg){
 const q=id=>document.getElementById(p+id);
 const G_=cfg.g;
-const ACT={l:`买${G_} · 回补现金池`,m:"空仓 · 进现金池",h:"买红利低波100 · 回补现金池"};
-const ACT_SHORT={l:`买${G_}`,m:"进现金池",h:"买红利低波100"};
+const ZCLS={dbl:"l",day:"l",wk:"l",pause:"m",armed:"h",sell:"s"};
+const ZNM={dbl:"翻倍买入",day:"加大买入",wk:"每周买入",pause:"暂停"};
 const chart=LineChart(q("chart"),{W:720,H:300});
 function load(){
   q("loadError").hidden=true;
@@ -589,7 +592,7 @@ q("retry").addEventListener("click",load);
 return {load};
 
 function render(d){
-  const P=d.params,S=d.stats,L=d.latest,LO=P.lo,HI=P.hi;
+  const P=d.params,S=d.stats,L=d.latest,T=P.th,PL=d.plan;
   q("updated").textContent=d.updated;
   const now=new Date(Date.now()+8*3600e3), last=new Date(L.date+"T00:00:00Z");
   const days=Math.floor((Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate())-last)/864e5);
@@ -599,34 +602,30 @@ function render(d){
   const dd=L.ratio/L.prev_ratio-1;
   q("delta").textContent=(dd>=0?"▲ ":"▼ ")+pc(Math.abs(dd),2);
   q("delta").style.color=dd>=0?"var(--grow)":"var(--mark)";
-  q("readout").className="panel z-"+L.zone;
-  const SL=P.sells||[];
-  const sIdx=SL.reduce((k,[th],i)=>L.ratio>=th?i:k,-1);
-  const SELLTXT=[`卖出 1/3 ${G_} 转红利`,`再卖一半 ${G_}`,`${G_} 全部转红利`];
-  q("action").textContent=sIdx>=0?`卖出区 · ${SELLTXT[sIdx]}`:ACT[L.zone];
-  if(sIdx>=0)q("readout").className="panel z-s";
-  if(SL.length){const s1=SL[0][0],ds=s1/L.ratio-1;q("sTxt").textContent=s1;
-    q("dS").textContent=ds<=0?"已进入":"还需涨 "+pc(ds);
-    q("bS").style.width=Math.max(4,100-Math.min(100,Math.max(0,ds)/.5*100))+"%";
-    q("sellNote").textContent=`区间尺上下边缘的红色短线为分档卖出线：信号值 ≥${SL[0][0]} 卖 1/3 ${G_} 转红利，≥${SL[1][0]} 再卖剩下的一半，≥${SL[2][0]} 全部转出。每段行情每档只卖一次，信号值回到 ${HI} 以下后重新计数。`;}
-  q("loTxt").textContent=LO;q("hiTxt").textContent=HI;
-  const dl=LO/L.ratio-1,dh=HI/L.ratio-1;
-  q("dLo").textContent=dl>=0?"已进入":"还需跌 "+pc(-dl);
-  q("dHi").textContent=dh<=0?"已进入":"还需涨 "+pc(dh);
-  q("bLo").style.width=Math.max(4,100-Math.min(100,Math.max(0,-dl)/.5*100))+"%";
-  q("bHi").style.width=Math.max(4,100-Math.min(100,Math.max(0,dh)/.5*100))+"%";
+  q("readout").className="panel z-"+(ZCLS[PL.zone]||"m");
+  q("action").textContent=PL.zone_name+" · "+PL.actions[0];
+  const bar=(id,x)=>q(id).style.width=Math.max(4,100-Math.min(100,Math.max(0,x)/.5*100))+"%";
+  const dm=T.mid/L.ratio-1,dy=T.day/L.ratio-1,ds=T.s1/L.ratio-1;
+  q("loTxt").textContent=T.mid;q("hiTxt").textContent=T.day;q("sTxt").textContent=T.s1;
+  q("dLo").textContent=dm>=0?"已进入":"还需跌 "+pc(-dm);bar("bLo",-dm);
+  q("dHi").textContent=dy>=0?"已进入":"还需跌 "+pc(-dy);bar("bHi",-dy);
+  q("dS").textContent=ds<=0?"已进入":"还需涨 "+pc(ds);bar("bS",ds);
   {const sg=x=>(x>=0?"+":"")+(x*100).toFixed(2)+"%",w=d.weekly,r4=w.length>4?w[w.length-5][1]:null;
     q("cyb").textContent=sg(L.ratio/L.prev_ratio-1);q("hl").textContent=r4?sg(L.ratio/r4-1):"—";}
   q("p1500").textContent=pc(S.pctile_1500);q("pall").textContent=pc(S.pctile_all);
+  const more=PL.actions.slice(1).concat(PL.warn);
+  q("sellNote").innerHTML=(more.length?"<b>"+more.join("；")+"。</b><br>":"")+
+    `阈值按过去 ${P.th_years} 年信号值的分位计算，${P.th_date} 起生效，每年 1 月、7 月各调整一次。进入买入区间要连续 3 个交易日在线下。卖出线之间的红色短线依次为第 1、2、3 档。`;
 
   // 区间尺
-  const MIN=cfg.min,MAX=Math.max(cfg.max,Math.ceil((S.max+0.02)/cfg.tick)*cfg.tick);
+  const MIN=cfg.min,MAX=Math.max(cfg.max,Math.ceil((Math.max(S.max,T.s3)+0.02)/cfg.tick)*cfg.tick);
   const at=v=>Math.min(100,Math.max(0,(v-MIN)/(MAX-MIN)*100));
   q("track").innerHTML=
-    `<div class="seg l" style="width:${at(LO)}%">低区<br>&lt;${LO}</div>`+
-    `<div class="seg m" style="width:${at(HI)-at(LO)}%">中间区<br>空仓</div>`+
-    `<div class="seg h" style="width:${100-at(HI)}%">高区 ≥${HI}<br>买红利低波100</div>`+
-    SL.map(([th])=>`<i class="sellmark" style="left:${at(th)}%"></i>`).join("");
+    `<div class="seg l" style="width:${at(T.day)}%">加大/翻倍<br>&lt;${T.day}</div>`+
+    `<div class="seg l" style="width:${at(T.mid)-at(T.day)}%;opacity:.75">每周买<br>&lt;${T.mid}</div>`+
+    `<div class="seg m" style="width:${at(T.s1)-at(T.mid)}%">暂停<br>买红利</div>`+
+    `<div class="seg h" style="width:${100-at(T.s1)}%">卖出区<br>≥${T.s1}</div>`+
+    [T.dbl,T.s1,T.s2,T.s3].map(v=>`<i class="sellmark" style="left:${at(v)}%"></i>`).join("");
   ["pinLo","pinHi","pinNow"].forEach(id=>{const v=id==="pinLo"?S.min:id==="pinHi"?S.max:L.ratio,p=at(v),el=q(id);
     el.style.transform=p<12?"translateX(-12px)":p>88?"translateX(calc(-100% + 12px))":"translateX(-50%)";
     el.style.alignItems=p<12?"flex-start":p>88?"flex-end":"center"});
@@ -636,49 +635,45 @@ function render(d){
   let t="";for(let v=MIN;v<=MAX+1e-9;v+=cfg.tick)t+=`<span style="left:${at(v)}%">${v.toFixed(2)}</span>`;
   q("ticks").innerHTML=t;
 
-  // 走势图
+  // 走势图（阈值线为当前这半年的）
   chart.set(d.series,{
-    bands:[{to:LO,fill:"var(--grow-soft)"},{from:HI,fill:"var(--div-soft)"}],
-    lines:[{v:S.mean,c:"var(--mark)",dash:"5 4"},{v:S.median,c:"var(--muted)",dash:"2 3"}]
-      .concat(SL.map(([th])=>({v:th,c:"var(--mark)",dash:"3 3",w:1,label:"卖 "+th}))),
-    tip:(dt,v)=>{const z=v<LO?"低区 · 买"+G_:v>=HI?(SL.length&&v>=SL[0][0]?"卖出区":"高区 · 买红利"):"中间区 · 进现金池";
-      return `${dt}<br><b>${v.toFixed(4)}</b> ${z}`}});
+    bands:[{to:T.mid,fill:"var(--grow-soft)"},{from:T.s1,fill:"var(--div-soft)"}],
+    lines:[{v:S.median,c:"var(--muted)",dash:"2 3"},{v:T.dbl,c:"var(--grow)",dash:"3 3",w:1,label:"翻倍 "+T.dbl},
+      {v:T.s1,c:"var(--mark)",dash:"3 3",w:1,label:"卖 "+T.s1}],
+    tip:(dt,v)=>{const z=v<T.dbl?"翻倍买入线下":v<T.day?"加大买入线下":v<T.mid?"每周买入":v>=T.s1?"卖出区":"暂停区";
+      return `${dt}<br><b>${v.toFixed(4)}</b> ${z}（按当前阈值）`}});
   q("lgMean").textContent=f4(S.mean);q("lgMed").textContent=f4(S.median);
   q("p1025").textContent=S.p10.toFixed(3)+" / "+S.p25.toFixed(3);
   q("p7590").textContent=S.p75.toFixed(3)+" / "+S.p90.toFixed(3);
   q("m1500").textContent=f4(S.mean_1500);
-  q("share").textContent=[S.share.l,S.share.m,S.share.h].map(x=>Math.round(x*100)).join(" / ")+"%";
+  q("share").textContent=S.days.toLocaleString()+" 天";
 
   // 回测
-  const names={rot:`轮动 ${LO} / ${HI}`,sell:"轮动 + 分档卖出",cyb:`只定投${G_}`,hl:"只定投红利低波100",mix:"两边各半定投"};
-  q("bt").innerHTML=["rot","sell","cyb","mix","hl"].filter(k=>d.backtest[k]).map(k=>{const b=d.backtest[k];
-    return `<tr class="${k==="rot"||k==="sell"?"hl":""}"><td>${names[k]}</td><td class="r num">${b.xirr==null?"—":pc(b.xirr)}</td><td class="r num">${pc(b.mdd)}</td><td class="r num">${b.invested.toLocaleString()}</td><td class="r num">${b.final.toLocaleString()}</td></tr>`}).join("");
-  const w=d.backtest.rot.weeks;
-  q("btNote").textContent=`${S.start} 至 ${L.date}，每周首个交易日投 ${P.weekly} 元，买入费 ${pc(P.fee,2)}，现金池年化 ${pc(P.cash)}，股息率假设${G_} ${pc(P.div_cyb)}、红利低波100 ${pc(P.div_hl)}。轮动方案共 ${w.l+w.m+w.h} 周：低区 ${w.l} 周、中间区 ${w.m} 周、高区 ${w.h} 周；现金池当前余额 ${d.backtest.rot.pool.toLocaleString()} 元。`;
+  const O=P.old,names={plan:"平衡版（现行规则）",sell:`旧版：固定线 ${O.lo} / ${O.hi} 轮动 + 分档卖出`,cyb:`只定投${G_}`,hl:"只定投红利低波100"};
+  q("bt").innerHTML=["plan","sell","cyb","hl"].filter(k=>d.backtest[k]).map(k=>{const b=d.backtest[k];
+    return `<tr class="${k==="plan"?"hl":""}"><td>${names[k]}</td><td class="r num">${b.xirr==null?"—":pc(b.xirr)}</td><td class="r num">${pc(b.mdd)}</td><td class="r num">${b.invested.toLocaleString()}</td><td class="r num">${b.final.toLocaleString()}</td></tr>`}).join("");
+  const B=d.backtest.plan;
+  q("btNote").textContent=`${S.start} 至 ${L.date}，每周投 ${P.weekly} 元，用前一交易日收盘的信号、当天收盘价成交。平衡版：阈值每半年按历史分位调整，闲钱和卖出的钱放红利低波100（按全收益指数计分红），共卖出 ${B.sells} 次，期末${G_}占 ${pc(B.g_share,0)}。旧版的固定线是看过历史后定的，回测会偏乐观。`;
 
-  // 敏感性热力
-  const G=d.grid,all=G.xirr.flat().filter(v=>v!=null),gmin=Math.min(...all),gmax=Math.max(...all);
-  let h=`<tr><th>低 \\ 高</th>${G.hi.map(v=>`<th style="text-align:center">${+v.toFixed(3)}</th>`).join("")}</tr>`;
-  G.lo.forEach((lo,i)=>{h+=`<tr><th>${+lo.toFixed(3)}</th>`+G.xirr[i].map((v,j)=>{
-    const a=v==null?0:(gmax>gmin?(v-gmin)/(gmax-gmin):.5);
-    const cur=Math.abs(lo-LO)<1e-9&&Math.abs(G.hi[j]-HI)<1e-9;
-    return `<td class="${cur?"cur":""}" style="background:color-mix(in srgb, var(--grow) ${Math.round(8+a*62)}%, var(--panel))">${v==null?"—":pc(v)}</td>`}).join("")+"</tr>"});
-  q("heat").innerHTML=h;q("heatCur").textContent=LO+" / "+HI;
+  // 阈值调整记录
+  q("heat").innerHTML=`<tr><th>生效日</th><th class="r">翻倍</th><th class="r">加大</th><th class="r">每周买</th><th class="r">卖1</th><th class="r">卖2</th><th class="r">卖3</th></tr>`+
+    d.th_hist.slice().reverse().map(([dt,t])=>`<tr><td class="num">${dt}</td>${["dbl","day","mid","s1","s2","s3"].map(k=>`<td class="r num">${t[k]}</td>`).join("")}</tr>`).join("");
+  q("heatCur").textContent=`分位：翻倍 ${P.pct.dbl}%、加大 ${P.pct.day}%、每周买 ${P.pct.mid}%（中位数）、卖出 ${P.pct.s1}% / ${P.pct.s2}% / ${P.pct.s3}%。用调整日之前最多 10 年的数据，不含未来数据。`;
 
-  // 近一年周信号（含分档卖出提示）
-  const hitW=new Set(),WK=d.weekly.map(([dt,r,z])=>{
-    if(r<HI)hitW.clear();
-    let a=ACT_SHORT[z];const fired=[];
-    SL.forEach(([th],i)=>{if(r>=th&&!hitW.has(th)){hitW.add(th);fired.push(i)}});
-    if(fired.length)a+=" + "+SELLTXT[fired[fired.length-1]];
-    else if(sIdxOf(r)>=0)a+="（已卖过本档）";
-    return [dt,r,z,a,fired.length>0]});
-  function sIdxOf(r){return SL.reduce((k,[th],i)=>r>=th?i:k,-1)}
-  q("weeks").innerHTML=WK.slice(-52).reverse().map(([dt,r,z,a,sell])=>
-    `<tr><td class="num">${dt}</td><td class="r num">${f4(r)}</td><td><span class="chip ${sell?"s":z}">${sell?"卖出":ZN[z]}</span></td><td>${a}</td></tr>`).join("");
+  // 近一年（回测里每周的操作）
+  q("weeks").innerHTML=d.weekly.slice(-52).reverse().map(([dt,r,z,a])=>{const s=/卖/.test(a);
+    return `<tr><td class="num">${dt}</td><td class="r num">${f4(r)}</td><td><span class="chip ${s?"s":ZCLS[z]}">${s?"卖出":ZNM[z]}</span></td><td>${a}</td></tr>`}).join("");
 
-  q("sellRules").innerHTML=SL.map(([th],i)=>`<div class="rule"><span class="k">≥ ${th}</span><span>${["卖出 1/3 ","再卖剩下的一半 ","全部卖出 "][i]}${G_}，转入红利低波100（每段行情每档只卖一次）</span></div>`).join("");
-  q("r1k").textContent="< "+LO;q("r2k").textContent=LO+"–"+HI;q("r3k").textContent="≥ "+HI;
+  q("r1k").closest("section").innerHTML=`<h2>规则速查（平衡版）</h2>`+[
+    [`< ${T.dbl}`,`翻倍买入：每周定投款买${G_}，另外把红利仓位的 23% 转成${G_}；连续 3 天在线下，开始把红利分 3 批转入（每再跌 5% 一批，4 周没有更低就全部转入）`],
+    [`< ${T.day}`,`加大买入：每周定投款买${G_}，另外把红利仓位的 12% 转成${G_}`],
+    [`< ${T.mid}`,`每周买入：每周定投款买${G_}（连续 3 个交易日在线下才算进入）`],
+    [`${T.mid}–${T.s1}`,`暂停：定投款买红利低波100`],
+    [`≥ ${T.s1} / ${T.s2} / ${T.s3}`,`过线后，等信号值跌破 20 日均线（现在 ${PL.ma20}）再卖：1/3、剩下的一半、全部，转红利`],
+    ["止盈",`${G_}持仓盈利 ≥50% 卖 1/3，≥100% 再卖一半（信号值在中位数以上时）`],
+    ["红利打分",`信号值在中位数以上、红利打分 ≥14 时，卖 1/4 ${G_}转红利（现在 ${PL.score??"—"} 分）`],
+    ["重新计数",`以上卖出每段行情各一次，信号值回到中位数以下后重新计数`]]
+    .map(([k,v])=>`<div class="rule"><span class="k">${k}</span><span>${v}</span></div>`).join("");
 }
 
 }
@@ -687,7 +682,7 @@ const kcView=Rot("k_","data/kc.json",{g:"科创50",min:.05,max:.25,tick:.05,cmin
 
 // ---------------- 中证A500 / 纳指100
 function Val(view,file,kind){
-  const root=$(view),P=kind==="a500"?"a_":kind==="hs300"?"h_":"n_",isV=kind!=="ndx";
+  const root=$(view),P=kind==="a500"?"a_":kind==="hs300"?"h_":kind==="gold"?"g_":"n_",isV=kind==="a500"||kind==="hs300",isG=kind==="gold";
   const sec=(t,body,cls="")=>`<section class="panel ${cls}">${t?`<h2>${t}</h2>`:""}${body}</section>`;
   const chartBox=(id,h)=>`<div class="ranges" role="group" aria-label="时间范围" data-for="${id}"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y">近3年</button><button type="button" data-r="all" aria-pressed="true">全部</button></div>
     <div class="chartwrap"><svg class="chart" id="${id}" viewBox="0 0 720 ${h}" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
@@ -711,8 +706,9 @@ function Val(view,file,kind){
   const q=id=>document.getElementById(P+id);
   const c1=LineChart(q("c1"),isV
       ?{W:720,H:260,fixedY:[0,100],ticks:[0,20,40,60,80,100],bands:[{from:60,fill:"var(--grow-soft)"},{to:20,fill:"var(--mark-soft)"}]}
+      :isG?{W:720,H:260,fixedY:[-40,0],ticks:[-40,-30,-20,-10,0],bands:[{to:-15,fill:"var(--grow-soft)"}]}
       :{W:720,H:260,fixedY:[-40,0],ticks:[-40,-30,-20,-10,0],bands:[{to:-20,fill:"var(--grow-soft)"}],lines:[{v:-10,c:"var(--grow)",dash:"3 3",w:1},{v:-30,c:"var(--grow)",dash:"3 3",w:1}]});
-  const c2=LineChart(q("c2"),{W:720,H:220,lines:[{v:0,c:"var(--mark)",w:1.4}]});
+  const c2=LineChart(q("c2"),{W:720,H:220,lines:[{v:0,c:"var(--mark)",w:1.4}].concat(isG?[{v:25,c:"var(--mark)",dash:"3 3",w:1,label:"过热 +25%"}]:[])});
   function load(){
     q("err").hidden=true;
     fetch(file+"?t="+Date.now(),{cache:"no-store"})
@@ -743,11 +739,24 @@ function Val(view,file,kind){
         `<div class="dim"><div class="top"><span class="name">年线（趋势）</span><span class="w">只作参考</span></div><div class="row"><span class="sv" style="font-size:20px">${L.below?"跌破":"上方"}</span><span class="lv ${L.below?"r1":"c0"}">${sign(L.dev)}</span></div><div class="det">${maTxt}。历史上跌破年线后一年的表现和平时差不多，跌破就卖的回测收益更差，所以不作为卖出信号。</div></div>`;
       c1.set(d.series,{tip:(dt,v)=>`${dt}<br>便宜指数 <b>${v.toFixed(1)}</b> · ${v>=80?"很便宜":v>=60?"偏便宜":v>=40?"正常":v>=20?"偏贵":"很贵"}`});
       q("c1n").textContent="绿色区域（≥60）偏便宜，多买；红色区域（<20）很贵，少买。";
+    }else if(isG){
+      q("lab").textContent="离最高点的回撤 · "+L.date;q("big").textContent="−"+(L.dd*100).toFixed(1)+"%";q("of").textContent="";
+      q("act").className="action "+(L.mult===0?"vz-bad":L.mult>1?"vz-good":"vz-mid");q("act").textContent=L.zone+" · "+L.action;
+      q("why").textContent=`最高点 ${L.high.toFixed(3)}（${L.high_date}），现在 ${L.close.toFixed(3)}，比年线${L.dev>=0?"高":"低"} ${pc(Math.abs(L.dev))}。黄金在组合里是压舱石，每周照常买；比年线高 25% 以上说明涨得太急，先暂停，定投款买红利；回撤 15% 以上买 2 倍。`;
+      q("kv").innerHTML=[["黄金ETF",L.close.toFixed(3)+` <small style="color:${chg>=0?"var(--mark)":"var(--grow)"}">${sign(chg)}</small>`],["年线 MA250",L.ma250.toFixed(3)],
+        ["偏离年线",sign(L.dev)],["离最高点",pc(-L.dd)]].map(([a,b])=>`<div><div class="label">${a}</div><div class="v">${b}</div></div>`).join("");
+      q("dimNote").textContent="黄金没有市盈率和分红，用回撤和年线偏离判断。";
+      const dd=L.dd*100,dv=L.dev*100;
+      q("dims").innerHTML=
+        `<div class="dim"><div class="top"><span class="name">偏离年线</span><span class="w">决定暂停</span></div><div class="row"><span class="sv">${dv>0?"+":""}${dv.toFixed(1)}<small> %</small></span><span class="lv ${dv>25?"r2":dv>15?"r1":"c0"}">${dv>25?"过热":dv>15?"偏热":"正常"}</span></div><div class="meter"><i style="width:${Math.min(100,Math.max(2,dv/40*100))}%;background:var(--mark)"></i></div><div class="ends"><span>0%</span><span>+40%</span></div><div class="det">比年线高 25% 以上暂停买入。</div></div>`+
+        `<div class="dim"><div class="top"><span class="name">回撤</span><span class="w">决定加倍</span></div><div class="row"><span class="sv">−${dd.toFixed(1)}<small> %</small></span><span class="lv ${dd>=15?"g2":"c0"}">${dd>=15?"加倍":"正常"}</span></div><div class="meter"><i style="width:${Math.min(100,dd/40*100)}%;background:var(--grow)"></i></div><div class="ends"><span>0%</span><span>−40%</span></div><div class="det">从最高点回撤 15% 以上买 2 倍。</div></div>`;
+      c1.set(d.series,{tip:(dt,v)=>`${dt}<br>回撤 <b>${v.toFixed(1)}%</b>`});
+      q("c1n").textContent="绿色区域为回撤 15% 以上（2 倍定投）。";
     }else{
       q("lab").textContent="离最高点的回撤 · "+L.date;q("big").textContent="−"+(L.dd*100).toFixed(1)+"%";q("of").textContent="";
       const cls=L.dd>=.3?"vz-good":L.dd>=.2?"vz-good":L.dd>=.1?"vz-ok":"vz-mid";
       q("act").className="action "+cls;q("act").textContent=L.zone+" · "+L.action;
-      q("why").textContent=`最高点 ${L.high.toFixed(0)}（${L.high_date}），现在 ${L.close.toFixed(0)}。纳指长期向上，回测里任何“少买等跌”的做法都跑不赢普通定投，所以每周照常买；回撤越深，有余钱时越值得额外加。`;
+      q("why").textContent=`最高点 ${L.high.toFixed(0)}（${L.high_date}），现在 ${L.close.toFixed(0)}。纳指长期向上，回测里任何“少买等跌”或“回撤加码”的做法都跑不赢普通定投，所以每周照常买，回撤档位只作参考；只看溢价率决定买场内还是场外。`;
       q("kv").innerHTML=[["纳指100",L.close.toFixed(0)+` <small style="color:${chg>=0?"var(--mark)":"var(--grow)"}">${sign(chg)}</small>`],["年线 MA250",L.ma250.toFixed(0)],
         ["美国十年国债",L.ust10!=null?L.ust10.toFixed(2)+"%":"—"],["ETF 溢价率",d.premium?pc(d.premium.value):"—"]].map(([a,b])=>`<div><div class="label">${a}</div><div class="v">${b}</div></div>`).join("");
       const pr=d.premium;
@@ -755,7 +764,7 @@ function Val(view,file,kind){
       q("dimNote").textContent="纳指拿不到免费的历史市盈率，这里用回撤、年线和溢价率判断。";
       const dd=L.dd*100;
       q("dims").innerHTML=
-        `<div class="dim"><div class="top"><span class="name">回撤</span><span class="w">决定加码</span></div><div class="row"><span class="sv">−${dd.toFixed(1)}<small> %</small></span><span class="lv ${dd>=20?"g2":dd>=10?"g1":"c0"}">${L.zone}</span></div><div class="meter"><i style="width:${Math.min(100,dd/40*100)}%;background:var(--grow)"></i></div><div class="ends"><span>0%</span><span>−40%</span></div><div class="det">回撤 10% / 20% / 30% 分别为回调、大幅回撤、深度回撤。</div></div>`+
+        `<div class="dim"><div class="top"><span class="name">回撤</span><span class="w">只作参考</span></div><div class="row"><span class="sv">−${dd.toFixed(1)}<small> %</small></span><span class="lv ${dd>=20?"g2":dd>=10?"g1":"c0"}">${L.zone}</span></div><div class="meter"><i style="width:${Math.min(100,dd/40*100)}%;background:var(--grow)"></i></div><div class="ends"><span>0%</span><span>−40%</span></div><div class="det">回撤 10% / 20% / 30% 分别为回调、大幅回撤、深度回撤。</div></div>`+
         `<div class="dim"><div class="top"><span class="name">年线（趋势）</span><span class="w">只作预警</span></div><div class="row"><span class="sv" style="font-size:20px">${L.below?"跌破":"上方"}</span><span class="lv ${L.below?"r1":"c0"}">${sign(L.dev)}</span></div><div class="det">${maTxt}。回测里跌破就卖、跌破就暂停加码都更差，所以只作风险提示。</div></div>`+
         (pr?`<div class="dim"><div class="top"><span class="name">ETF 溢价率</span><span class="w">决定买哪种</span></div><div class="row"><span class="sv">${(pr.value*100).toFixed(1)}<small> %</small></span><span class="lv ${pr.value>.05?"r2":pr.value>.03?"r1":"g1"}">${pr.value>.05?"别买场内":pr.value>.03?"偏高":"正常"}</span></div><div class="meter"><i style="width:${Math.min(100,pr.value/.25*100)}%;background:var(--mark)"></i></div><div class="ends"><span>0%</span><span>25%</span></div><div class="det">513100 收盘价 ÷ 净值 − 1，${pr.date}。3% 以内正常买，超过 5% 改买场外联接基金。</div></div>`:"");
       c1.set(d.series,{tip:(dt,v)=>`${dt}<br>回撤 <b>${v.toFixed(1)}%</b>`});
@@ -765,18 +774,21 @@ function Val(view,file,kind){
     q("fwd").innerHTML=d.forward.map(r=>`<tr><td>${r.zone}</td><td class="r num">${r.n}</td><td class="r num">${r.avg==null?"—":sign(r.avg)}</td><td class="r num">${r.win==null?"—":pc(r.win,0)}</td><td class="r num">${r.worst==null?"—":sign(r.worst)}</td></tr>`).join("");
     q("fwdNote").textContent=`按每个交易日买入、持有 250 个交易日后的价格涨幅统计（不含分红），样本从 ${d.bt_start} 开始。同一段行情里的天数互相重叠，样本天数多不代表独立次数多。`;
     const names=isV
-      ?{plain:"普通定投",value:"按便宜指数调整金额",value_ma:"同上，跌破年线时不加码",timing:"跌破年线清仓，站回再买"}
-      :{plain:"普通定投",value:"平时 0.8 倍，回撤时加码",value_ma:"同上，跌破年线时不加码",timing:"跌破年线清仓，站回再买"};
+      ?{value_tp:"便宜指数 + 止盈 + 闲钱放红利（现行）",plain:"普通定投",value:"按便宜指数调整金额",value_ma:"同上，跌破年线时不加码",timing:"跌破年线清仓，站回再买"}
+      :isG?{value:"防追高 + 回撤加倍（现行，闲钱放红利）",plain:"普通定投"}
+      :{plain:"普通定投（现行）",value:"平时 0.8 倍，回撤时加码",value_ma:"同上，跌破年线时不加码",timing:"跌破年线清仓，站回再买"};
     const best=Object.entries(d.backtest).sort((a,b)=>b[1].xirr-a[1].xirr)[0][0];
     q("bt").innerHTML=Object.entries(names).filter(([k])=>d.backtest[k]).map(([k,n])=>{const b=d.backtest[k];
       return `<tr class="${k===best?"hl":""}"><td>${n}</td><td class="r num">${pc(b.xirr,2)}</td><td class="r num">${pc(b.mdd)}</td><td class="r num">${b.final.toLocaleString()}</td><td class="r num">${b.pool.toLocaleString()}</td></tr>`}).join("");
-    q("btNote").textContent=(isV
-      ?`${d.bt_start} 起，每周首个交易日拿出 1000 元${kind==="a500"?"（A500 在 2024 年 9 月发布，之前的价格是按规则倒推的回测数据，真实行情的验证见“沪深300”页签）":"（全部为真实行情）"}；便宜指数 ≥80 / 60~80 / 40~60 / 20~40 / <20 分别买 3 / 2 / 1 / 0.6 / 0.3 倍，钱不够就买池子里有的，没买的进现金池（年化 1.5%）。股息率按 2.5% 加回。按便宜指数调整金额，收益和普通定投接近，最大回撤明显更小。`
+    q("btNote").textContent=isG?`${d.bt_start} 起（ETF 2013 年上市，头一年用来算年线），每周首个交易日 1000 元。现行规则：比年线高 25% 以上暂停，钱放红利低波100；回撤 15% 以上买 2 倍。黄金不分红。`:(isV
+      ?`${d.bt_start} 起，每周首个交易日拿出 1000 元${kind==="a500"?"（A500 在 2024 年 9 月发布，之前的价格是按规则倒推的回测数据，真实行情的验证见“沪深300”页签）":"（全部为真实行情）"}；便宜指数 ≥80 / 60~80 / 40~60 / 20~40 / <20 分别买 3 / 2 / 1 / 0.6 / 0.3 倍，钱不够就买池子里有的，股息率按 2.5% 加回。旧方案没买的进现金池（年化 1.5%）；现行方案没买的放红利低波100，并且在偏贵区间（<40）持仓盈利 ≥50% 卖 1/3、≥100% 再卖一半，卖出的钱回红利。`
       :`${d.bt_start} 起，美元计价，未计汇率与溢价。股息率按 0.7% 加回。纳指过去十年强势上涨，攒钱等回撤反而少赚，普通定投最好；跌破年线就清仓会错过反弹，收益最差。`);
     q("ma").innerHTML=d.ma_events.slice().reverse().map(([a,b,n])=>`<tr><td class="num">${a}</td><td class="num">${b||"至今未站回"}</td><td class="r num">${n}</td></tr>`).join("");
     q("rules").innerHTML=(isV
       ?[["≥ 80","很便宜，3 倍定投"],["60–80","偏便宜，2 倍定投"],["40–60","正常定投"],["20–40","偏贵，0.6 倍定投"],["< 20","很贵，0.3 倍定投，其余进现金池"],["年线","跌破不卖，仅作参考"]]
-      :[["每周","照常定投，不择时"],["回撤 ≥10%","有余钱可额外加 0.5 倍"],["回撤 ≥20%","有余钱可额外加 1 倍"],["回撤 ≥30%","有余钱可额外加 2 倍"],["溢价 > 5%","停买场内 ETF，改买场外联接基金"],["年线","跌破不卖，仅作风险提示"]])
+      .concat([["没买完的钱","放红利低波100"],["止盈","偏贵区间（<40）持仓盈利 ≥50% 卖 1/3，≥100% 再卖一半，钱回红利"]])
+      :isG?[["每周","正常定投"],["回撤 ≥15%","2 倍定投"],["比年线高 >25%","过热，暂停买入，定投款买红利低波100"],["年线","跌破不卖，仅作参考"]]
+      :[["每周","照常定投，不择时"],["回撤档位","只作参考，不改金额"],["溢价 > 5%","停买场内 ETF，改买场外联接基金"],["年线","跌破不卖，仅作风险提示"]])
       .map(([k,v])=>`<div class="rule"><span class="k">${k}</span><span>${v}</span></div>`).join("");
   }
   return {load};
@@ -784,6 +796,7 @@ function Val(view,file,kind){
 const aView=Val("viewA","data/a500.json","a500");
 const hView=Val("viewH","data/hs300.json","hs300");
 const nView=Val("viewN","data/ndx.json","ndx");
+const gView=Val("viewG","data/gold.json","gold");
 // ---------------- 数据源状态
 fetch("data/health.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(hh=>{
   const it=Object.values(hh.items||{}),cache=it.filter(v=>v.source==="本地缓存"),stale=it.filter(v=>v.stale_days==null||v.stale_days>12);
@@ -806,12 +819,13 @@ function nextUpdate(){
 function loadOverview(){
   $("o_next").textContent=nextUpdate();
   fetch("data/state.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(st=>{
+    const W={"创业板轮动":25,"科创板轮动":15,"纳指100":20,"红利打分":15,"黄金":15,"沪深300":5,"中证A500":5};
     const cls=s=>/卖出|很贵|偏贵|减仓|异常/.test(s)?"r1":/低区|很便宜|偏便宜|加码|多买|深度|大幅/.test(s)?"g1":"c0";
     $("o_rows").innerHTML=Object.entries(st).map(([n,v])=>{
       const name=v.tab?`<a href="#${v.tab}">${n}</a>`:n;
-      return `<tr><td>${name}<div class="note" style="margin:2px 0 0">${v.date||""}</div></td><td><span class="lv ${cls(v.state)}">${v.state.split("|")[0]}</span><div style="margin-top:4px">${v.now}</div></td><td>${v.act}</td></tr>`}).join("");
-    $("o_note").textContent="和每周五早上的周报邮件内容一致；日期是各指数最近一个交易日。";
-  }).catch(e=>{$("o_rows").innerHTML=`<tr><td colspan="3" class="note">读取失败，请稍后刷新（${e.message}）</td></tr>`});
+      return `<tr><td>${name}<div class="note" style="margin:2px 0 0">${v.date||""}</div></td><td class="r num">${W[n]?W[n]+"%":""}</td><td><span class="lv ${cls(v.state)}">${v.state.split("|")[0]}</span><div style="margin-top:4px">${v.now}</div></td><td>${v.act}</td></tr>`}).join("");
+    $("o_note").textContent="比例是每周定投款在各板块的建议分配。和每周五早上的周报邮件内容一致；日期是各指数最近一个交易日。";
+  }).catch(e=>{$("o_rows").innerHTML=`<tr><td colspan="4" class="note">读取失败，请稍后刷新（${e.message}）</td></tr>`});
 }
 // ---------------- 页签
 const VIEWS={overview:["viewO","tabO","subO","指数定投信号看板"],
@@ -820,8 +834,9 @@ const VIEWS={overview:["viewO","tabO","subO","指数定投信号看板"],
              dividend:["viewDiv","tabDiv","subDiv","红利低波100 · 每日定投打分"],
              a500:["viewA","tabA","subA","中证A500 · 便宜还是贵"],
              hs300:["viewH","tabH","subH","沪深300 · 便宜还是贵"],
-             ndx:["viewN","tabN","subN","纳指100 · 什么时候能买"]};
-const LOADERS={overview:loadOverview,rotation:rotView.load,kc:kcView.load,dividend:loadDiv,a500:aView.load,hs300:hView.load,ndx:nView.load},LOADED={};
+             ndx:["viewN","tabN","subN","纳指100 · 什么时候能买"],
+             gold:["viewG","tabG","subG","黄金 · 压舱石"]};
+const LOADERS={overview:loadOverview,rotation:rotView.load,kc:kcView.load,dividend:loadDiv,a500:aView.load,hs300:hView.load,ndx:nView.load,gold:gView.load},LOADED={};
 function showView(){
   const hk=location.hash.slice(1),k=VIEWS[hk]?hk:"overview";
   Object.entries(VIEWS).forEach(([key,[v,t,s]])=>{const on=key===k;$(v).hidden=!on;$(s).hidden=!on;$(t).setAttribute("aria-selected",on)});

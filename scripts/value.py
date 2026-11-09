@@ -120,6 +120,55 @@ def backtest(dates, px, div, mult=None, exit_flags=None):
             "invested": inv, "final": round(final), "pool": round(pool)}
 
 
+def backtest2(dates, px, div, mult, tp=True):
+    """现行规则：每周 1000 元进“红利池”（红利低波100 全收益），按倍数从池子里买；
+    tp=True 时加目标止盈：偏贵区间（倍数 <1）持仓盈利 ≥50% 卖 1/3、≥100% 再卖一半，卖出的钱回红利池。"""
+    tr, _ = S.get_series("hl100_tr")
+    tk = sorted(tr)
+    H = [on_or_before(tr, tk, d.isoformat()) for d in dates]
+    hold = pool = cost = 0.0
+    nav = peak = 1.0
+    mdd, prev, nsell = 0.0, 0.0, 0
+    cfs, last_wk, hit = [], None, set()
+    for i, d in enumerate(dates):
+        if i:
+            hold *= px[i] / px[i - 1] * (1 + div / 252)
+            pool *= H[i] / H[i - 1]
+        cur = hold + pool
+        if prev > 0:
+            nav *= cur / prev
+            peak = max(peak, nav)
+            mdd = min(mdd, nav / peak - 1)
+        wk = d.isocalendar()[:2]
+        if wk != last_wk:
+            last_wk = wk
+            pool += WEEKLY
+            cfs.append((d, -WEEKLY))
+            m = mult[i]
+            amt = min(pool, WEEKLY * m)
+            hold += amt * (1 - FEE)
+            pool -= amt
+            cost += amt
+            if tp and cost > 0:
+                if m >= 1:
+                    hit.clear()
+                g = hold / cost - 1
+                for th, f in ((0.5, 1 / 3), (1.0, 0.5)):
+                    if m < 1 and g >= th and th not in hit:
+                        s = hold * f
+                        hold -= s
+                        cost *= 1 - f
+                        pool += s * (1 - 2 * FEE)
+                        hit.add(th)
+                        nsell += 1
+        prev = hold + pool
+    final = hold + pool
+    cfs.append((dates[-1], final))
+    x = xirr(cfs)
+    return {"xirr": round(x, 4) if x is not None else None, "mdd": round(mdd, 4),
+            "invested": WEEKLY * (len(cfs) - 1), "final": round(final), "pool": round(pool), "sells": nsell}
+
+
 def forward(px, idx_groups, h=250):
     out = []
     for name, cond in idx_groups:
@@ -184,6 +233,7 @@ def run_a500(price_key="a500", name="中证A500", kind="a500", out="a500.json"):
     mult_ma = [min(m, 1.0) if b else m for m, b in zip(mult, below[i0:])]
     bt["value_ma"] = backtest(D, P, DIV, mult_ma)
     bt["timing"] = backtest(D, P, DIV, exit_flags=below[i0:])
+    bt["value_tp"] = backtest2(D, P, DIV, mult)
     fwd = forward(P, [(f"{n}（便宜指数 {'≥'+str(th) if th>=0 else '<20'}）", (lambda i, th=th, nx=nx: C[i] >= th and C[i] < nx))
                       for (th, _, n, _), nx in zip(A_ZONES, [101, 80, 60, 40, 20])])
     fwd += forward(P, [("年线上方", lambda i: not below[i0 + i]), ("有效跌破年线", lambda i: below[i0 + i]),
@@ -213,8 +263,8 @@ def run_a500(price_key="a500", name="中证A500", kind="a500", out="a500.json"):
 
 # ================================================================ 纳指100
 # 回测里的预算中性加码方案：平时 0.8 倍省下钱，回撤时加码。实测跑不赢普通定投，页面上作为对照
-N_ZONES = [(0.30, 3.0, "深度回撤", "正常定投；有余钱可额外加 2 倍"), (0.20, 2.0, "大幅回撤", "正常定投；有余钱可额外加 1 倍"),
-           (0.10, 1.5, "回调", "正常定投；有余钱可额外加 0.5 倍"), (-1, 0.8, "接近高点", "正常定投")]
+N_ZONES = [(0.30, 3.0, "深度回撤", "照常定投"), (0.20, 2.0, "大幅回撤", "照常定投"),
+           (0.10, 1.5, "回调", "照常定投"), (-1, 0.8, "接近高点", "照常定投")]   # 回撤档位只作参考，不改金额
 
 
 def n_zone(dd):
@@ -287,8 +337,58 @@ def run_ndx():
     dump("ndx.json", data)
 
 
+G_ZONES = [(0.15, 2.0, "回撤 ≥15%", "2 倍定投"), (-1, 1.0, "正常", "正常定投")]
+G_HOT = 0.25    # 比年线高 25% 以上暂停买入
+
+
+def g_mult(dd, dev):
+    if dev is not None and dev > G_HOT:
+        return 0.0, "过热", "暂停买入，定投款买红利低波100"
+    for th, m, n, a in G_ZONES:
+        if dd >= th:
+            return m, n, a
+
+
+def run_gold():
+    raw, _ = S.get_series("gold", 2000)
+    dates = sorted(raw)
+    px = [raw[d] for d in dates]
+    print(f"黄金ETF {len(dates)} 天（{dates[0]} 起）")
+    peak, dd = 0.0, []
+    for v in px:
+        peak = max(peak, v)
+        dd.append(1 - v / peak)
+    m250 = ma(px, 250)
+    below = below_flags(px, m250)
+    dev = [px[k] / m250[k] - 1 if m250[k] else None for k in range(len(px))]
+    i0 = 250
+    D = [dt.date.fromisoformat(d) for d in dates[i0:]]
+    P, DD, B = px[i0:], dd[i0:], below[i0:]
+    mult = [g_mult(a, b)[0] for a, b in zip(DD, dev[i0:])]
+    bt = {"plain": backtest(D, P, 0.0), "value": backtest2(D, P, 0.0, mult, tp=False)}
+    fwd = forward(P, [("比年线高 25% 以上（过热）", lambda i: dev[i0 + i] > G_HOT),
+                      ("回撤 ≥15%", lambda i: DD[i] >= .15), ("回撤 5%~15%", lambda i: .05 <= DD[i] < .15),
+                      ("接近高点（回撤 <5%）", lambda i: DD[i] < .05),
+                      ("有效跌破年线", lambda i: B[i]), ("全部交易日", lambda i: True)])
+    i = len(dates) - 1
+    m, zn, act = g_mult(dd[i], dev[i])
+    hi_i = max(range(len(px)), key=lambda k: px[k])
+    data = {
+        "updated": now_str(), "name": "黄金", "kind": "gold",
+        "latest": {"date": dates[i], "close": px[i], "prev_close": px[i - 1], "high": px[hi_i],
+                   "high_date": dates[hi_i], "dd": round(dd[i], 4), "zone": zn, "mult": m, "action": act,
+                   "ma250": round(m250[i], 3), "dev": round(dev[i], 4), "below": below[i], "hot": G_HOT},
+        "backtest": bt, "bt_start": dates[i0], "div": 0,
+        "forward": fwd,
+        "ma_events": ma_events(dates, below)[-10:],
+        "series": [[d, round(-x * 100, 2)] for d, x in zip(dates[i0:], DD)],
+        "dev_series": [[dates[k], round(dev[k], 4)] for k in range(len(dates)) if dev[k] is not None],
+    }
+    dump("gold.json", data)
+
+
 def run():
-    for f in (run_a500, lambda: run_a500("hs300", "沪深300", "hs300", "hs300.json"), run_ndx):
+    for f in (run_a500, lambda: run_a500("hs300", "沪深300", "hs300", "hs300.json"), run_ndx, run_gold):
         try:
             f()
         except Exception as e:  # noqa: BLE001

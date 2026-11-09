@@ -35,26 +35,18 @@ def pc(x, d=1):
 
 # ---------------------------------------------------------------- 各页签的当前状态
 def rotation(d, g, tab):
-    """返回 (状态key, 一句话现状, 本周操作)"""
-    L, P = d["latest"], d["params"]
-    r, lo, hi, sells = L["ratio"], P["lo"], P["hi"], P.get("sells") or []
-    tier = max([i for i, (th, _) in enumerate(sells) if r >= th], default=-1)
-    zone = "低区" if r < lo else "高区" if r >= hi else "中间区"
-    sell_txt = [f"卖出 1/3 {g} 转红利", f"再卖一半 {g}", f"{g} 全部转红利"]
-    if tier >= 0:
-        state, act = f"卖出区·第{tier + 1}档", sell_txt[tier]
-    else:
-        state = zone
-        act = {"低区": f"买{g}，现金池一次性回补", "中间区": "空仓，定投款进现金池",
-               "高区": "买红利低波100，现金池一次性回补"}[zone]
+    """返回 (状态key, 一句话现状, 本周操作, 页签)。状态里带上阈值生效日，半年调整时也会提醒。"""
+    L, P, PL = d["latest"], d["params"], d["plan"]
+    T, r = P["th"], L["ratio"]
     gap = []
-    if r >= lo:
-        gap.append(f"距低区线 {lo} 还需跌 {pc(1 - lo / r)}")
-    if r < hi:
-        gap.append(f"距高区线 {hi} 还需涨 {pc(hi / r - 1)}")
-    if sells and r < sells[0][0]:
-        gap.append(f"距卖出线 {sells[0][0]} 还需涨 {pc(sells[0][0] / r - 1)}")
-    return state, f"信号值 {r:.4f}（{state}）", act + ("；" + "，".join(gap) if gap else ""), tab
+    if r >= T["mid"]:
+        gap.append(f"距每周买入线 {T['mid']} 还需跌 {pc(1 - T['mid'] / r)}")
+    if r < T["s1"]:
+        gap.append(f"距卖出线 {T['s1']} 还需涨 {pc(T['s1'] / r - 1)}")
+    act = "；".join(PL["actions"] + PL["warn"]) + ("；" + "，".join(gap) if gap else "")
+    state = f"{PL['zone_name']}|阈值{P['th_date']}"
+    th = f"（阈值 {P['th_date']} 起：每周买 <{T['mid']}，加大 <{T['day']}，翻倍 <{T['dbl']}，卖出 {T['s1']}/{T['s2']}/{T['s3']}）"
+    return state, f"信号值 {r:.4f}（{PL['zone_name']}）", act + th, tab
 
 
 def dividend(d):
@@ -84,6 +76,14 @@ def ndx(d, prev_prem):
     return state, f"回撤 {pc(L['dd'])}（{L['zone']}），{'跌破' if L['below'] else '位于'}年线", act, "ndx"
 
 
+def gold(d):
+    L = d["latest"]
+    return L["zone"], f"回撤 {pc(L['dd'])}，比年线{'高' if L['dev'] >= 0 else '低'} {pc(abs(L['dev']))}（{L['zone']}）", L["action"], "gold"
+
+
+WEIGHTS = {"创业板轮动": 25, "科创板轮动": 15, "纳指100": 20, "红利打分": 15, "黄金": 15, "沪深300": 5, "中证A500": 5}
+
+
 def collect(prev):
     out = {}
     pairs = [("创业板轮动", "ratio.json", lambda d: rotation(d, "创业板50", "rotation")),
@@ -91,7 +91,8 @@ def collect(prev):
              ("红利打分", "dividend.json", dividend),
              ("中证A500", "a500.json", a500),
              ("沪深300", "hs300.json", lambda d: a500(d)[:3] + ("hs300",)),
-             ("纳指100", "ndx.json", lambda d: ndx(d, (prev.get("纳指100") or {}).get("prem")))]
+             ("纳指100", "ndx.json", lambda d: ndx(d, (prev.get("纳指100") or {}).get("prem"))),
+             ("黄金", "gold.json", gold)]
     for name, f, fn in pairs:
         d = load(f)
         if not d:
@@ -134,10 +135,11 @@ def post(title, body, prefix):
 
 
 def table(cur):
-    rows = ["| 页签 | 现状 | 操作 |", "|---|---|---|"]
+    rows = ["| 页签 | 比例 | 现状 | 操作 |", "|---|---|---|---|"]
     for name, v in cur.items():
         link = f"[{name}]({PAGE}#{v['tab']})" if v["tab"] else name
-        rows.append(f"| {link} | {v['now']} | {v['act']} |")
+        w = f"{WEIGHTS[name]}%" if name in WEIGHTS else ""
+        rows.append(f"| {link} | {w} | {v['now']} | {v['act']} |")
     return "\n".join(rows)
 
 
@@ -160,8 +162,8 @@ def main():
         print("信号没有变化，不发提醒")
 
     if os.environ.get("REPORT") == "1" and not first:
-        post(f"【周报】{TODAY} 本周操作", "数据截至各指数最近一个交易日（A股为周四收盘）。创业板轮动、科创板轮动每周五按周四收盘的信号操作，"
-             "红利打分按日操作，A500、沪深300、纳指每周定投。\n\n" + table(cur), "【周报】")
+        post(f"【周报】{TODAY} 本周操作", "数据截至各指数最近一个交易日（A股为周四收盘）。创业板轮动、科创板轮动每周五按周四收盘的信号操作（卖出信号出现时当天另发邮件），"
+             "红利打分按日操作，A500、沪深300、黄金按倍数每周定投，纳指照常定投；没买完的钱都放红利低波100。比例是每周定投款的分配。\n\n" + table(cur), "【周报】")
 
     with open(STATE, "w", encoding="utf-8") as f:
         json.dump(cur, f, ensure_ascii=False, indent=1)
