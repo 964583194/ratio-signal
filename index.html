@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>指数定投信号看板</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<meta name="theme-color" content="#1f5c40">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="定投信号">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="几个指数的定投信号，每个交易日自动更新">
 <style>
 /* 布局：顶部页签（总览在前），每个页签是一列仪表面板：信号 → 区间尺 → 明细 → 走势 → 回测 → 规则 */
@@ -961,6 +969,9 @@ function renderDiv(d){
 }
 
 })();
+
+// 添加到桌面后可离线查看上次的数据
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
 </html>
