@@ -197,6 +197,18 @@ def main():
     with open(STATE, "w", encoding="utf-8") as f:
         json.dump(cur, f, ensure_ascii=False, indent=1)
 
+    # 到期提醒：data/reminders.json 里日期已到、还没发过的，各发一次
+    rp = os.path.join(DATA, "reminders.json")
+    rem = load("reminders.json") or []
+    hit = False
+    for r in rem:
+        if not r.get("done") and r["date"] <= TODAY:
+            post(r["title"], r["body"], r["title"])
+            r["done"], r["sent"], hit = True, TODAY, True
+    if hit:
+        with open(rp, "w", encoding="utf-8") as f:
+            json.dump(rem, f, ensure_ascii=False, indent=1)
+
 
 if __name__ == "__main__":
     main()
