@@ -275,7 +275,16 @@ def ak_szse_shares(code, since):
     """深交所基金规模日频（AKShare 封装，一次最多 6 个月）"""
     import akshare as ak  # noqa: PLC0415
     d0 = dt.date.fromisoformat(since) if since else dt.date.today() - dt.timedelta(days=150)
-    df = ak.fund_scale_daily_szse(start_date=d0.strftime("%Y%m%d"), end_date=dt.date.today().strftime("%Y%m%d"))
+    last = None
+    for k in range(4):       # 深交所接口偶尔断开连接，多试几次
+        try:
+            df = ak.fund_scale_daily_szse(start_date=d0.strftime("%Y%m%d"), end_date=dt.date.today().strftime("%Y%m%d"))
+            break
+        except Exception as e:  # noqa: BLE001
+            last = e
+            time.sleep(5 * (k + 1))
+    else:
+        raise last
     x = df[df["基金代码"].astype(str) == code]
     out = {str(r["日期"])[:10]: float(r["基金份额"]) for _, r in x.iterrows()}
     if not out:
@@ -292,7 +301,8 @@ def szse_shares_now(code, since):
     df = pd.read_excel(_io.BytesIO(b), dtype={"证券代码": str})
     x = df[df["证券代码"].astype(str).str.zfill(6) == code]
     v = float(str(x["当前规模(份)"].iloc[0]).replace(",", ""))
-    d = dt.date.today()
+    # “当前规模”是上一个交易日的份额（2026-11-10 下载的值和 11-09 的日频数据完全相同）
+    d = dt.date.today() - dt.timedelta(days=1)
     while d.weekday() >= 5:
         d -= dt.timedelta(days=1)
     return {d.isoformat(): v}
