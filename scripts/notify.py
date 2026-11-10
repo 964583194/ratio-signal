@@ -82,7 +82,22 @@ def etf300(d):
     pct = "—" if L["pct"] is None else pc(L["pct"], 0)
     now = (f"头部沪深300 ETF 规模 {L['size']:,} 亿，占沪深300 流通市值 {L['ratio']:.2f}%（近 252 日分位 {pct}），"
            f"近 20 日份额 {'+' if (L['chg20'] or 0) > 0 else ''}{pc(L['chg20'])}")
-    return L["zone"], now, L["action"] + "（只作观察，不改定投规则）", "hs300"
+    hs, mk = load("hs300.json") or {}, load("market.json") or {}
+    cheap = (hs.get("latest") or {}).get("cheap")
+    return L["zone"], now, f"{L['action']}。暂定判断：{judge(L['zone'], cheap, mk.get('pb_hot'))}（只作参考，不改规则和倍数）", "hs300"
+
+
+def judge(zone, cheap, pb_hot):
+    """和页面上的暂定判断同一张表：国家队状态 × 沪深300 便宜指数"""
+    lv = "mid" if cheap is None else "cheap" if cheap >= 60 else "mid" if cheap >= 40 else "dear"
+    T = {"大幅流入·托底": {"cheap": "有人托底，按规则买可以放心执行；不额外加钱，短期 1~3 个月可能还会下探", "mid": "有人托底，照常买", "dear": "少见：托底资金在买、但指数不便宜，照常"},
+         "重仓持有": {"cheap": "下跌有人接，照常买", "mid": "照常", "dear": "托底资金还在，但已不便宜，按规则少买"},
+         "撤出中": {"cheap": "接盘的人在减少，别急着加码", "mid": "偏谨慎，照常", "dear": "偏热：少买，止盈可以积极一点"},
+         "低仓观望": {"cheap": "没人托底，按规则买，但要接受更大波动", "mid": "照常", "dear": "偏热，按规则少买"}}
+    t = T.get(zone, {}).get(lv, "跟着便宜指数走，这个指标不额外说什么")
+    if pb_hot and zone in ("大幅流入·托底", "重仓持有"):
+        t += "；破净率也已见底"
+    return t
 
 
 def ndx(d, prev_prem):
