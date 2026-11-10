@@ -227,7 +227,8 @@ def main():
     def mk():
         MK.run()
         HOT[0] = MK.hot_lookup(MK.pb_hot_series())
-    jobs = [   # 红利打分、见底评分先算，轮动要用
+    jobs = [   # 红利打分、见底评分先算，轮动要用；托底资金在见底评分之前（总览“国家队”一行要用）
+        ("托底资金（国家队）", lambda: __import__("etf300").run()),
         ("见底评分", mk),
         ("红利打分", lambda: __import__("dividend").run(S.get_series("cyb50")[0])),
         ("创业板50 轮动", lambda: build(*S.get_series("cyb50"), *S.get_series("hl100"), OUT, LO, HI, SELLS, DIV_CYB,

@@ -76,7 +76,6 @@ def run():
     ak, am, _ = _series("mkt_amt")
     ck, cpe, _ = _series("pe_cyb")
     kk, kpe, _ = _series("pe_kc")
-    ek, et, _ = _series("etf300")
     pk, pe300, _ = _series("pe300")
     yk, y10, _ = _series("cn10y")
     am20 = ma(am, ak, 20) if ak else {}
@@ -121,7 +120,11 @@ def run():
     def last(keys, d, back=0):
         return d[keys[-1 - back]] if len(keys) > back else None
     m20 = (last(mk, mg) / last(mk, mg, 20) - 1) if len(mk) > 20 else None
-    e20 = (last(ek, et) / last(ek, et, 20) - 1) if len(ek) > 20 else None
+    try:   # 国家队：来自托底资金指标（etf300.py 先算）
+        with open(os.path.join(ROOT, "data", "etf300.json"), encoding="utf-8") as fh:
+            EL = json.load(fh)["latest"]
+    except Exception:  # noqa: BLE001
+        EL = None
     pbp = it["pb"]["pct"]
     zone = "接近底部" if sc is not None and sc >= 75 else "偏冷" if sc is not None and sc >= 60 else \
         "偏热" if sc is not None and sc < 30 else "正常"
@@ -136,7 +139,7 @@ def run():
             "amt_val": last(ak, am), "amt20": round(last(a2k, am20), 0) if a2k else None,
             "pe_cyb": last(ck, cpe), "pe_kc": last(kk, kpe),
             "pe_kc_pct": pct_at(kk, kpe, kk[-1], 10, 50) if kk else None,
-            "etf300": last(ek, et), "etf300_chg20": round(e20, 4) if e20 is not None else None, "etf300_days": len(ek),
+            "etf300": EL and {"zone": EL["zone"], "pct": EL["pct"], "chg20": EL["chg20"], "ratio": EL["ratio"], "date": EL["date"]},
         },
     }
     with open(os.path.join(ROOT, "data", "market.json"), "w", encoding="utf-8") as f:

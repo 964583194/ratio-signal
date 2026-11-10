@@ -76,6 +76,15 @@ def overseas(d):
     return state, now, act, "overseas"
 
 
+def etf300(d):
+    """托底资金（国家队）：状态变化就提醒（先观察，不进规则）"""
+    L = d["latest"]
+    pct = "—" if L["pct"] is None else pc(L["pct"], 0)
+    now = (f"头部沪深300 ETF 规模 {L['size']:,} 亿，占沪深300 流通市值 {L['ratio']:.2f}%（近 252 日分位 {pct}），"
+           f"近 20 日份额 {'+' if (L['chg20'] or 0) > 0 else ''}{pc(L['chg20'])}")
+    return L["zone"], now, L["action"] + "（只作观察，不改定投规则）", "hs300"
+
+
 def ndx(d, prev_prem):
     L, pr = d["latest"], d.get("premium")
     # 溢价率用滞后区间，避免在 5% 附近来回提醒：>5% 记为“高”，≤3% 记为“低”，中间保持上次
@@ -113,7 +122,8 @@ def collect(prev):
              ("纳指100", "ndx.json", lambda d: ndx(d, (prev.get("纳指100") or {}).get("prem"))),
              ("黄金", "gold.json", gold),
              ("债基", "bond.json", bond),
-             ("海外小仓位", "overseas.json", overseas)]
+             ("海外小仓位", "overseas.json", overseas),
+             ("托底资金（国家队）", "etf300.json", etf300)]
     for name, f, fn in pairs:
         d = load(f)
         if not d:
