@@ -308,6 +308,16 @@ def szse_shares_now(code, since):
     return {d.isoformat(): v}
 
 
+def ak_buffett(since):
+    """巴菲特指标：A 股总市值 ÷ GDP（乐咕乐股，经 AKShare）"""
+    import akshare as ak  # noqa: PLC0415
+    df = ak.stock_buffett_index_lg()
+    out = {str(r["日期"])[:10]: float(r["总市值"]) / float(r["GDP"]) for _, r in df.iterrows() if float(r["GDP"] or 0) > 0}
+    if not out:
+        raise RuntimeError("没有取到")
+    return out
+
+
 def em_cap300(since):
     """沪深300 流通市值（元，东方财富，只有当天）"""
     out = {}
@@ -494,6 +504,7 @@ CATALOG = {
     "unav510330": ("510330 单位净值", 200, [("天天基金", lambda s: em_pzd("510330")), ("东方财富", lambda s: em_lsjz("510330", 3 if s else 60)), ("新浪", lambda s: sina_nav("510330", 60 if s else 1000))]),
     "unav159919": ("159919 单位净值", 200, [("天天基金", lambda s: em_pzd("159919")), ("东方财富", lambda s: em_lsjz("159919", 3 if s else 60)), ("新浪", lambda s: sina_nav("159919", 60 if s else 1000))]),
     "cap300": ("沪深300 流通市值", 1, [("东方财富", em_cap300)]),
+    "buffett": ("巴菲特指标（总市值÷GDP）", 200, [("乐咕乐股", ak_buffett)]),
     "etf513100": ("纳指ETF 513100 收盘", 100, [
         ("东方财富", lambda s: em_kline("1.513100", _ymd(s, "20240101"))),
         ("腾讯", lambda s: tx_kline2("sh513100", 60 if s else 640)),
@@ -523,7 +534,7 @@ CATALOG = {
 
 # 和缓存比对时允许的差异：价格类相对 1%，收益率类绝对 0.15 个百分点
 OVERSEAS_KEYS = {"nav006555", "nav539002", "nav007280", "nav021189", "etf159687", "nav159687"}
-ETF300_KEYS = {"sh510300", "sh510310", "sh510330", "sz159919", "unav510300", "unav510310", "unav510330", "unav159919", "cap300"}
+ETF300_KEYS = {"buffett", "sh510300", "sh510310", "sh510330", "sz159919", "unav510300", "unav510310", "unav510330", "unav159919", "cap300"}
 REF_KEYS = {"pb_below", "margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc"} | OVERSEAS_KEYS | ETF300_KEYS
 TOL = {"cn10y": ("abs", 0.15), "us10y": ("abs", 0.15)}
 INCR_DAYS = 60          # 增量更新时回看的天数（同时用于和缓存比对）

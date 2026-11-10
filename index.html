@@ -204,8 +204,9 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
   <div class="panel" id="m_panel"><div class="note">加载中</div></div>
   <div class="ranges" role="group" aria-label="时间范围" data-for="m_chart"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y" aria-pressed="true">近3年</button><button type="button" data-r="all" hidden>全部</button></div>
   <div class="chartwrap"><svg class="chart" id="m_chart" viewBox="0 0 720 200" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
-  <p class="note">0~100 分，越高越接近底部：75 以上接近底部，60~75 偏冷，30 以下偏热。五项各换算成历史百分位后取平均：破净率高、股债利差高、融资占比低、成交额地量、创业板指市盈率低（表里的“分位”是指标本身的历史分位）。只作参考；规则里只用破净率判断“见底才加码”。</p>
+  <p class="note">0~100 分，越高越接近底部（看顶部请看下面的“见顶信号灯”）：75 以上接近底部，60~75 偏冷，30 以下偏热。五项各换算成历史百分位后取平均：破净率高、股债利差高、融资占比低、成交额地量、创业板指市盈率低（表里的“分位”是指标本身的历史分位）。只作参考；规则里只用破净率判断“见底才加码”。</p>
 </section>
+<section class="panel" id="tl"><h2>见顶信号灯</h2><p class="note">加载中</p></section>
 <section class="panel"><h2>怎么看</h2>
   <p class="note" style="margin:0">创业板轮动、科创板轮动按周操作，每周五按周四收盘的信号下单，卖出信号出现时当天会发邮件；红利打分按交易日操作；A500 / 沪深300（二选一）、黄金每周定投，按页签里的倍数调整金额；纳指100 每周照常定投。各板块没买完的钱都放红利低波100。“海外”页签是几只 QDII 小仓位，只作提醒，不算在比例里。点表格里的名称可以看详情。</p>
 </section>
@@ -881,7 +882,7 @@ function loadOverview(){
     $("o_rows").innerHTML=Object.entries(st).map(([n,v])=>{
       const name=v.tab?`<a href="#${v.tab}">${n}</a>`:n;
       return `<tr><td>${name}<div class="note" style="margin:2px 0 0">${v.date||""}</div></td><td class="r num">${W[n]?W[n]+"%":""}</td><td><span class="lv ${cls(v.state)}">${v.state.split("|")[0]}</span><div style="margin-top:4px">${v.now}</div><div style="margin-top:4px;padding-top:4px;border-top:1px dashed var(--line)"><b>操作：</b>${v.act}</div></td></tr>`}).join("");
-    loadMarket();
+    loadMarket();loadTop();
     $("o_note").textContent="比例是每周定投款在各板块的建议分配。和每周五早上的周报邮件内容一致；日期是各指数最近一个交易日。";
   }).catch(e=>{$("o_rows").innerHTML=`<tr><td colspan="3" class="note">读取失败，请稍后刷新（${e.message}）</td></tr>`});
 }
@@ -951,12 +952,12 @@ function DualChart(svg, o) {
   D.forEach((d, i) => { const k = d.slice(0, 7); if (k !== last) { if (last) ms.push(i); last = k } });
   // 地方够就每月标“3月”这种短标签（1 月标年份），不够就每 3/6/12 个月标“2026/3”
   const perM = (W - pl - pr) / Math.max(1, (n - 1) / 21), shortW = fs * 2.6, longW = fs * 4.8;
-  const stepM = perM >= shortW ? 1 : 2 * perM >= shortW ? 2 : ([3, 6, 12].find(k => k * perM >= longW) || 24);
+  const yrW = fs * 3.2, stepM = perM >= shortW ? 1 : 2 * perM >= shortW ? 2 : ([3, 6].find(k => k * perM >= longW) || [12, 24, 36, 60].find(k => k * perM >= yrW) || 120);
   ms.forEach(i => { const d = D[i], m = +d.slice(5, 7);
     s += `<line x1="${X(i)}" x2="${X(i)}" y1="${H - pb}" y2="${H - pb + (m === 1 ? 6 : 3)}" stroke="var(--muted)"/>`;
     if ((m - 1) % stepM) return;
-    if (stepM === 24 && +d.slice(0, 4) % 2) return;
-    s += `<text x="${X(i)}" y="${H - fs * .4}" text-anchor="middle"${stepM < 3 && m === 1 ? ' style="font-weight:700"' : ""}>${stepM < 3 ? (m === 1 ? d.slice(0, 4) : m + "月") : d.slice(0, 4) + "/" + m}</text>` });
+    if (stepM > 12 && +d.slice(0, 4) % (stepM / 12)) return;
+    s += `<text x="${X(i)}" y="${H - fs * .4}" text-anchor="middle"${stepM < 3 && m === 1 ? ' style="font-weight:700"' : ""}>${stepM < 3 ? (m === 1 ? d.slice(0, 4) : m + "月") : stepM >= 12 ? d.slice(0, 4) : d.slice(0, 4) + "/" + m}</text>` });
   const path = (v, Y) => { let p = ""; v.forEach((y, i) => { if (y == null) return; p += (p ? "L" : "M") + X(i).toFixed(1) + " " + Y(y).toFixed(1) }); return p };
   s += `<path d="${path(o.right.v, YR)}" fill="none" stroke="${o.right.c}" stroke-width="${1.3 * lw}" opacity=".9"/>`;
   o.left.forEach(l => { s += `<path d="${path(l.v, YL)}" fill="none" stroke="${l.c}" stroke-width="${(l.w || 1.8) * lw}" stroke-dasharray="${l.dash || ""}"/>` });
@@ -1053,6 +1054,43 @@ function loadEtf300(root,HL){
     if((d.quarterly||[]).length){const Q=d.quarterly,qm=new Map(Q.map(r=>[r[0],r]));
       LineChart($("etf_c3"),{W:720,H:200,fixedY:[0,Math.ceil(Math.max(...Q.map(r=>r[1])))],ticks:Array.from({length:Math.ceil(Math.max(...Q.map(r=>r[1])))+1},(_,i)=>i)}).set(Q.map(r=>[r[0],r[1]]),{tip:(dt,v)=>`${dt}<br>占流通市值 <b>${v.toFixed(2)}%</b><br>规模 ${qm.get(dt)[2].toLocaleString()} 亿<br>沪深300 ${qm.get(dt)[3].toFixed(0)}`})}
   }).catch(e=>{sec.innerHTML=`<h2>托底资金（国家队）</h2><p class="note">${e.message}</p>`});
+}
+
+// ---------------- 见顶信号灯（总览）：7 个信号各自独立亮灯，≥3 个接近顶部，只作提醒
+function loadTop(){
+  const sec=$("tl");
+  fetch("data/topsig.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error(r.status===404?"还没有生成数据，下次自动更新后会出现":"HTTP "+r.status);return r.json()}).then(d=>{
+    const L=d.latest,N=d.names,Sr=d.series,c=L.count,st=d.stats,sg=x=>x==null?"—":(x>0?"+":"")+pc(x);
+    const V=L.values,val={"挤":V["挤"]==null?"":"现在 "+pc(V["挤"]),"贵":V["贵"]==null?"":"现在 "+pc(V["贵"],0)+" 分位","疯":V["疯"]==null?"":"现在 "+pc(V["疯"],0)+" 分位",
+      "热":V["热"]==null?"":"现在 "+pc(V["热"],0)+" 分位","走":V["走"]==null?"":"近 40 日份额 "+sg(V["走"]),"分歧":V["分歧"]==null?"":"站上年线 "+pc(V["分歧"],0),"高估":V["高估"]==null?"":"现在 "+pc(V["高估"],0)+" 分位"};
+    const row=(t,v)=>v?`<tr><td>${t}（${v.days} 天）</td>${["60","120","250"].map(h=>`<td class="r num">${v[h]?sg(v[h].avg)+`<br><small>上涨 ${pc(v[h].up,0)}</small>`:"—"}</td>`).join("")}</tr>`:"";
+    const lit=new Set(L.lit);
+    sec.innerHTML=`<h2>见顶信号灯 <span class="note" style="font-weight:400">${L.date}</span></h2>
+      <p class="note" style="margin:-6px 0 10px">7 个信号各自独立亮灯，<b>同时亮 3 个及以上</b>才算接近顶部，2 个算偏热。只作提醒，不改规则；亮灯个数变化会发邮件。</p>
+      <div style="display:flex;gap:14px;align-items:center"><div class="big num">${c}<small style="font-size:20px"> / 7</small></div><div><span class="lv ${L.cls}">${L.zone}</span><div class="note" style="margin:4px 0 0">${L.action}</div></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">${N.map(n=>`<div style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:${lit.has(n)?"var(--mark-soft)":"var(--panel)"}">
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:${lit.has(n)?"var(--mark)":"var(--line)"}"></span><b style="font-size:14px">${n}</b><span class="note" style="margin:0">${lit.has(n)?"亮":"未亮"}</span></div>
+        <div class="note" style="margin:4px 0 0;font-size:12px">${d.desc[n]}</div><div class="note" style="margin:2px 0 0;font-size:12px">${val[n]||""}</div></div>`).join("")}</div>
+      ${L.month_partial?`<p class="note" style="margin-top:6px">“挤”和“分歧”是月度数据，本月按至今 ${L.month_days||"—"} 个交易日计算，月底才定稿。</p>`:""}
+      <h3 style="font-size:14px;margin:16px 0 4px">同时亮几个灯与沪深300<button type="button" class="bigbtn" data-big="tl_c1" data-title="同时亮灯个数（左轴）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
+      <p class="note" style="margin:0 0 6px"><span style="color:var(--mark);font-weight:700">——</span> 亮灯个数（左轴，红色区 ≥3）　<span style="color:var(--ink);font-weight:700">——</span> 沪深300（右轴）</p>
+      <div class="chartwrap"><svg class="chart" id="tl_c1" viewBox="0 0 720 260" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+      <h3 style="font-size:14px;margin:14px 0 4px">成交额集中度（每月前 5% 个股占比）<button type="button" class="bigbtn" data-big="tl_c2" data-title="成交额集中度（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
+      <div class="chartwrap"><svg class="chart" id="tl_c2" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+      <h3 style="font-size:14px;margin:14px 0 6px">历史检验（2010 年起，沪深300 之后涨跌）</h3>
+      <div class="scroll"><table><thead><tr><th></th><th class="r">60日后</th><th class="r">120日后</th><th class="r">250日后</th></tr></thead><tbody>${row("亮 ≥3 个",st.ge3)}${row("亮 ≥2 个",st.ge2)}${row("对照：任意一天",st.all)}</tbody></table></div>
+      <p class="note">亮 ≥3 个的时段：${(d.segments||[]).map(s=>s[0].slice(0,7)+(s[1].slice(0,7)!==s[0].slice(0,7)?"~"+s[1].slice(0,7):"")).join("、")||"无"}。漏掉过 2018 年 1 月（最多 2 个）和 2024 年 10 月（政策急涨，0 个）；高危时段只有几段，只作旁证。<br>
+      数据：集中度、宽度由全部沪深 A 股月线和每日行情计算（东方财富）；巴菲特指标来自乐咕乐股；其余见各页签。</p>`;
+    const dates=Sr.map(r=>r[0]),cnt=Sr.map(r=>r[1]),cl=Sr.map(r=>r[2]);
+    DualChart($("tl_c1"),{W:720,H:260,dates,leftRange:[0,7],leftTicks:[0,1,2,3,4,5,6,7],leftFmt:v=>v,bands:[{from:3,to:7,fill:"var(--mark-soft)"}],
+      left:[{v:cnt,c:"var(--mark)",w:1.6}],right:{v:cl,c:"var(--ink)"},
+      tip:i=>`${dates[i]}<br>亮 <b>${cnt[i]}</b> 个：${N.filter((n,k)=>Sr[i][3][k]==="1").join("、")||"无"}<br>沪深300 ${cl[i].toFixed(0)}`});
+    const mm=new Map(d.monthly.map(r=>[r[0],r])),cv=dates.map(x=>{const r=mm.get(x.slice(0,7));return r&&r[1]!=null?r[1]*100:null});
+    DualChart($("tl_c2"),{W:720,H:220,dates,leftRange:[20,55],leftTicks:[20,30,40,45,50],leftFmt:v=>v+"%",bands:[{from:45,to:55,fill:"var(--mark-soft)"}],
+      left:[{v:cv,c:"var(--div)",w:1.8}],right:{v:cl,c:"var(--ink)"},
+      tip:i=>`${dates[i].slice(0,7)}<br>前 5% 个股占成交额 <b>${cv[i]==null?"—":cv[i].toFixed(1)+"%"}</b><br>沪深300 ${cl[i].toFixed(0)}`});
+    sec.querySelectorAll(".bigbtn").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
+  }).catch(e=>{sec.innerHTML=`<h2>见顶信号灯</h2><p class="note">${e.message}</p>`});
 }
 // ---------------- 页签
 const VIEWS={overview:["viewO","tabO","subO","指数定投信号看板"],

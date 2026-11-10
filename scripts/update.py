@@ -214,7 +214,7 @@ def div_score():
 # ---------------------------------------------------------------- 主流程
 def main():
     changed = S.refresh_all()
-    outputs = ["market.json", "ratio.json", "kc.json", "dividend.json", "a500.json", "hs300.json", "ndx.json", "gold.json", "bond.json"]
+    outputs = ["market.json", "ratio.json", "kc.json", "dividend.json", "a500.json", "hs300.json", "ndx.json", "gold.json", "bond.json", "topsig.json"]
     missing = [f for f in outputs if not os.path.exists(os.path.join(ROOT, "data", f))]
     if not changed and not missing and os.environ.get("FORCE") != "1":
         print("数据没有变化（非交易日或接口还没更新），跳过计算")
@@ -229,6 +229,7 @@ def main():
         HOT[0] = MK.hot_lookup(MK.pb_hot_series())
     jobs = [   # 红利打分、见底评分先算，轮动要用；托底资金在见底评分之前（总览“国家队”一行要用）
         ("托底资金（国家队）", lambda: __import__("etf300").run()),
+        ("见顶信号灯", lambda: __import__("topsig").run()),   # 要读 etf300.json
         ("见底评分", mk),
         ("红利打分", lambda: __import__("dividend").run(S.get_series("cyb50")[0])),
         ("创业板50 轮动", lambda: build(*S.get_series("cyb50"), *S.get_series("hl100"), OUT, LO, HI, SELLS, DIV_CYB,

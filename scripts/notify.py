@@ -76,6 +76,14 @@ def overseas(d):
     return state, now, act, "overseas"
 
 
+def topsig(d):
+    """见顶信号灯：亮灯个数变化就提醒"""
+    L = d["latest"]
+    lit = "、".join(L["lit"]) or "无"
+    now = f"{L['count']} / 7 个信号亮着（{lit}）"
+    return f"亮{L['count']}个", now, L["action"] + "（只作提醒，不改规则）", "overview"
+
+
 def etf300(d):
     """托底资金（国家队）：状态变化就提醒（先观察，不进规则）"""
     L = d["latest"]
@@ -138,7 +146,8 @@ def collect(prev):
              ("黄金", "gold.json", gold),
              ("债基", "bond.json", bond),
              ("海外小仓位", "overseas.json", overseas),
-             ("托底资金（国家队）", "etf300.json", etf300)]
+             ("托底资金（国家队）", "etf300.json", etf300),
+             ("见顶信号灯", "topsig.json", topsig)]
     for name, f, fn in pairs:
         d = load(f)
         if not d:
