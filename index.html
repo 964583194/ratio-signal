@@ -152,7 +152,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 .hint{margin:4px 0 0}
 .vz-good{background:var(--grow);color:#fff}.vz-ok{background:var(--grow-soft);color:var(--grow)}
 .vz-mid{background:var(--mid);color:var(--ink)}.vz-warn{background:var(--mark-soft);color:var(--mark)}.vz-bad{background:var(--mark);color:#fff}
-.lv.g2{background:var(--grow);color:#fff}.lv.g1{background:var(--grow-soft);color:var(--grow)}.lv.r1{background:var(--mark-soft);color:var(--mark)}.lv.r2{background:var(--mark);color:#fff}
+.lv.h1{background:var(--div-soft);color:var(--div)}.lv.g2{background:var(--grow);color:#fff}.lv.g1{background:var(--grow-soft);color:var(--grow)}.lv.r1{background:var(--mark-soft);color:var(--mark)}.lv.r2{background:var(--mark);color:#fff}
 .otbl td{white-space:normal;vertical-align:top;font-size:13px}.otbl td:first-child{white-space:nowrap;font-weight:700}.otbl a{color:var(--ink)}
 .otbl{min-width:0}
 .alert{border:1px solid var(--mark);background:var(--mark-soft);border-radius:8px;padding:10px 12px;font-size:14px;margin-top:12px}
@@ -866,7 +866,8 @@ function loadOverview(){
   $("o_next").textContent=nextUpdate();
   fetch("data/state.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(st=>{
     const W={"创业板轮动":25,"科创板轮动":15,"纳指100":20,"红利打分":15,"黄金":15,"A500 / 沪深300":10};
-    const cls=s=>/卖出|很贵|偏贵|减仓|异常/.test(s)?"r1":/低区|很便宜|偏便宜|加码|多买|深度|大幅/.test(s)?"g1":"c0";
+    // 统一配色：绿=可以买 / 多买，灰=照常或暂停等待，橙=过热或偏贵（不加钱），红=卖出 / 减仓 / 异常
+    const cls=s=>/卖出预警|过热|偏贵|利率偏低/.test(s)?"h1":/卖出|很贵|减仓|异常/.test(s)?"r1":/买入区|低区|便宜|加码|多买|深度|大幅|回撤 ≥/.test(s)?"g1":"c0";
     $("o_rows").innerHTML=Object.entries(st).map(([n,v])=>{
       const name=v.tab?`<a href="#${v.tab}">${n}</a>`:n;
       return `<tr><td>${name}<div class="note" style="margin:2px 0 0">${v.date||""}</div></td><td class="r num">${W[n]?W[n]+"%":""}</td><td><span class="lv ${cls(v.state)}">${v.state.split("|")[0]}</span><div style="margin-top:4px">${v.now}</div></td><td>${v.act}</td></tr>`}).join("");
