@@ -26,9 +26,9 @@ IN_TH, OUT_TH, HI, LO, WIN = 0.15, -0.15, 0.80, 0.20, 252
 
 def zone(pct, chg):
     if chg is not None and chg >= IN_TH:
-        return "大幅流入·托底", "国家队在大举买入，往往在底部附近（见底旁证）", "g1"
+        return "大幅流入·托底", "国家队在大举买入，有人托底；但往往还在下跌途中，不等于马上见底", "g1"
     if chg is not None and chg <= OUT_TH:
-        return "撤出中", "托底资金在撤，若指数在高位要留意偏热", "h1"
+        return "撤出中", "托底资金在撤，历史上之后沪深300 偏弱；指数在高位时要留意偏热", "h1"
     if pct is not None and pct >= HI:
         return "重仓持有", "托底资金在场，下跌有人接；但不代表现在便宜", "c0"
     if pct is not None and pct <= LO:

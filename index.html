@@ -922,20 +922,21 @@ function loadOS(){
 }
 // 双纵轴折线图：左轴若干条（同一刻度），右轴一条；按住看当天数值
 function DualChart(svg, o) {
-  const W = o.W || 720, H = o.H || 260, pt = 14, pb = 28, pl = 46, pr = 52;
+  const W = o.W || 720, H = o.H || 260, pt = 14;
   const wrap = svg.parentNode, tip = wrap.querySelector(".tip");
   const D = o.dates, n = D.length;
-  const X = i => pl + i / (n - 1) * (W - pl - pr);
   const ly = o.left.flatMap(s => s.v.filter(v => v != null)), ry = o.right.v.filter(v => v != null);
   const [l0, l1] = o.leftRange || [Math.min(...ly), Math.max(...ly)];
   const rpad = (Math.max(...ry) - Math.min(...ry)) * .06, r0 = Math.min(...ry) - rpad, r1 = Math.max(...ry) + rpad;
-  const YL = v => pt + (1 - (v - l0) / (l1 - l0)) * (H - pt - pb), YR = v => pt + (1 - (v - r0) / (r1 - r0)) * (H - pt - pb);
   const cw = svg.clientWidth || W, fs = Math.min(22, Math.max(11, 10.5 * W / cw));
   svg.style.setProperty("--fs", fs + "px");
+  const pb = Math.round(fs * 1.9), pl = Math.round(Math.max(...o.leftTicks.map(v => String(o.leftFmt(v)).length)) * fs * .62 + fs * .9), pr = Math.round(fs * 2.9);
+  const X = i => pl + i / (n - 1) * (W - pl - pr);
+  const YL = v => pt + (1 - (v - l0) / (l1 - l0)) * (H - pt - pb), YR = v => pt + (1 - (v - r0) / (r1 - r0)) * (H - pt - pb);
   let s = "";
   (o.bands || []).forEach(b => { const y1 = YL(b.to), y2 = YL(b.from); s += `<rect x="${pl}" y="${y1}" width="${W - pl - pr}" height="${y2 - y1}" fill="${b.fill}"/>` });
   (o.leftTicks).forEach(v => { s += `<line x1="${pl}" x2="${W - pr}" y1="${YL(v)}" y2="${YL(v)}" stroke="var(--line)"/><text x="${pl - 6}" y="${YL(v) + fs * .36}" text-anchor="end" style="fill:${o.leftColor || "var(--muted)"}">${o.leftFmt(v)}</text>` });
-  const rt = []; const st = niceStep((r1 - r0) / 4); for (let v = Math.ceil(r0 / st) * st; v <= r1; v += st) rt.push(v);
+  const rt = []; const st = niceStep((r1 - r0) * 0.8); for (let v = Math.ceil(r0 / st) * st; v <= r1; v += st) rt.push(v);
   rt.forEach(v => { s += `<text x="${W - pr + 6}" y="${YR(v) + fs * .36}" text-anchor="start" style="fill:${o.right.c}">${Math.round(v)}</text>` });
   let last = "", lx = -1e9;
   D.forEach((d, i) => { const k = d.slice(0, 7); if (k !== last) { const first = last === ""; last = k; const m = +d.slice(5, 7); if (first || (m - 1) % 6) return; if (X(i) - lx < fs * 4) return; lx = X(i);
@@ -962,7 +963,7 @@ function loadEtf300(root){
     const ev=d.events||[],st=d.stats||{};
     const fr=x=>x==null?"—":`<span style="color:${x>0?"var(--grow)":"var(--mark)"}">${sg(x)}</span>`;
     const statRow=k=>{const v=st[k];if(!v)return"";const c=h=>v[h]?`${sg(v[h].avg)}<br><small>上涨 ${pc(v[h].up,0)}</small>`:"—";
-      return `<tr><td>${k==="全部交易日"?"对照：任意一天":k}</td><td class="r num">${k==="全部交易日"?"—":v.n}</td><td class="r num">${c("20")}</td><td class="r num">${c("60")}</td><td class="r num">${c("120")}</td></tr>`};
+      return `<tr><td>${k==="全部交易日"?"对照":k==="大幅流入·托底"?"大幅流入":"撤出"}</td><td class="r num">${k==="全部交易日"?"—":v.n}</td><td class="r num">${c("20")}</td><td class="r num">${c("60")}</td><td class="r num">${c("120")}</td></tr>`};
     sec.innerHTML=`<h2>托底资金（国家队）</h2>
       <p class="note" style="margin:-6px 0 10px">华泰柏瑞 510300、易方达 510310、华夏 510330、嘉实 159919 合计规模（份额 × 单位净值）占沪深300 流通市值。汇金托底主要买这几只，可以近似看作国家队在沪深300 上的仓位。<b>先观察，不改定投规则；状态变化会发邮件。</b></p>
       <div><span class="lv ${L.cls}">${L.zone}</span> <span style="margin-left:6px">${L.action}</span></div>
@@ -977,13 +978,13 @@ function loadEtf300(root){
       <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 分位（%，左轴；绿色 ≥80% 重仓，红色 ≤20% 撤空）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）</p>
       <div class="chartwrap"><svg class="chart" id="etf_c2" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
       <h3 style="font-size:14px;margin:16px 0 6px">历次事件之后沪深300 怎么走</h3>
-      <div class="scroll"><table><thead><tr><th></th><th class="r">次数</th><th class="r">20 日后</th><th class="r">60 日后</th><th class="r">120 日后</th></tr></thead><tbody>${statRow("大幅流入·托底")}${statRow("撤出中")}${statRow("全部交易日")}</tbody></table></div>
-      <div class="scroll" style="margin-top:8px"><table><thead><tr><th>日期</th><th>事件</th><th class="r">20 日份额</th><th class="r">20 日后</th><th class="r">60 日后</th></tr></thead><tbody>
-        ${ev.slice().reverse().map(e=>`<tr><td class="num">${e.date}</td><td>${e.kind}</td><td class="r num">${sg(e.chg)}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td></tr>`).join("")||`<tr><td colspan="5" class="note">暂无</td></tr>`}</tbody></table></div>
+      <div class="scroll"><table><thead><tr><th></th><th class="r">次</th><th class="r">20日后</th><th class="r">60日后</th><th class="r">120日后</th></tr></thead><tbody>${statRow("大幅流入·托底")}${statRow("撤出中")}${statRow("全部交易日")}</tbody></table></div>
+      <div class="scroll" style="margin-top:8px"><table><thead><tr><th>日期</th><th>事件</th><th class="r">20 日后</th><th class="r">60 日后</th></tr></thead><tbody>
+        ${ev.slice().reverse().map(e=>`<tr><td class="num">${e.date}</td><td>${e.kind==="撤出中"?"撤出":"流入"} ${sg(e.chg)}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td></tr>`).join("")||`<tr><td colspan="5" class="note">暂无</td></tr>`}</tbody></table></div>
       ${(d.quarterly||[]).length?`<h3 style="font-size:14px;margin:16px 0 4px">长期（基金季报，2013 年起）</h3>
       <div class="ranges" role="group" data-for="etf_c3"><button type="button" data-r="all" aria-pressed="true">全部</button></div>
       <div class="chartwrap"><svg class="chart" id="etf_c3" viewBox="0 0 720 200" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>`:""}
-      <p class="note" style="margin-top:10px">怎么看：<b>指数下跌时份额猛增</b> = 大资金托底，往往在底部附近；<b>重仓之后会拿很久</b>，分位高不代表现在便宜；<b>指数在高位时份额大减</b> = 托底资金撤出。事件只有几次，只作旁证。<br>
+      <p class="note" style="margin-top:10px">怎么看：<b>大幅流入</b>大多发生在下跌途中，之后 1~3 个月往往还在磨底，说明有人托底、但不等于马上见底；<b>重仓之后会拿很久</b>，分位高不代表现在便宜；<b>撤出</b>（尤其在高位）之后沪深300 偏弱，这个信号目前更有参考价值。事件只有几次，只作旁证。<br>
       数据：份额来自上交所、深交所，单位净值来自天天基金；流通市值${d.first_real_cap?`从 ${d.first_real_cap} 起是东方财富每天的真实值，之前`:""}按沪深300 点位倒推，越早越不准（只影响高低，不影响方向）。份额里也有非国家队的资金。</p>`;
     const dates=S.map(r=>r[0]),marks=ev.map(e=>({d:e.date,c:e.kind==="撤出中"?"var(--div)":"var(--grow)",t:""}));
     const tip=i=>`${dates[i]}<br>占流通市值 <b>${S[i][1].toFixed(2)}%</b>`+(S[i][2]!=null?`<br>252 日分位 ${S[i][2].toFixed(0)}%`:"")+`<br>合计 ${S[i][3].toFixed(0)} 亿份<br>沪深300 ${S[i][4].toFixed(0)}`;
@@ -994,7 +995,7 @@ function loadEtf300(root){
       bands:[{from:80,to:100,fill:"var(--grow-soft)"},{from:0,to:20,fill:"var(--mark-soft)"}],
       left:[{v:S.map(r=>r[2]),c:"var(--ink)",w:1.8}],right:{v:S.map(r=>r[4]),c:"var(--mark)"},tip});
     if((d.quarterly||[]).length){const Q=d.quarterly,qm=new Map(Q.map(r=>[r[0],r]));
-      LineChart($("etf_c3"),{W:720,H:200}).set(Q.map(r=>[r[0],r[1]]),{tip:(dt,v)=>`${dt}<br>占流通市值 <b>${v.toFixed(2)}%</b><br>规模 ${qm.get(dt)[2].toLocaleString()} 亿<br>沪深300 ${qm.get(dt)[3].toFixed(0)}`})}
+      LineChart($("etf_c3"),{W:720,H:200,fixedY:[0,Math.ceil(Math.max(...Q.map(r=>r[1])))],ticks:Array.from({length:Math.ceil(Math.max(...Q.map(r=>r[1])))+1},(_,i)=>i)}).set(Q.map(r=>[r[0],r[1]]),{tip:(dt,v)=>`${dt}<br>占流通市值 <b>${v.toFixed(2)}%</b><br>规模 ${qm.get(dt)[2].toLocaleString()} 亿<br>沪深300 ${qm.get(dt)[3].toFixed(0)}`})}
   }).catch(e=>{sec.innerHTML=`<h2>托底资金（国家队）</h2><p class="note">${e.message}</p>`});
 }
 // ---------------- 页签
