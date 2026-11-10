@@ -118,6 +118,7 @@ def one(code, name, desc):
                    "ret1y": round(P[i] / P[j1] - 1, 4) if j1 is not None else None,
                    "zone": zn, "action": act, "cls": cls},
         "series": [[dates[k], round(-dd[k] * 100, 2)] for k in range(len(P))],
+        "nav_series": [[dates[k], round(P[k], 4)] for k in range(len(P))],
         "dev_series": [[dates[k], round(dev[k] * 100, 2)] for k in range(len(P)) if dev[k] is not None],
         "bt": bt,
         "_weekly": {dates[k]: P[k] for k in range(len(P))},

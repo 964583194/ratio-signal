@@ -410,9 +410,9 @@ def run_bond():
 
     def b_zone(dv):
         if dv >= 15:
-            return 2.0, "利率偏高", "利率比近一年均值高，有余钱可以多加（参考）"
+            return 2.0, "便宜", "利率比近一年均值高，有余钱可以多加（参考）"
         if dv <= -15:
-            return 0.5, "利率偏低", "利率比近一年均值低，照常定投，不额外加"
+            return 0.5, "偏贵", "利率比近一年均值低，照常定投，不额外加"
         return 1.0, "正常", "照常定投"
     i0 = next(k for k, d in enumerate(dates) if d >= "2012-01-01")
     D = D_[i0:]

@@ -191,7 +191,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 
 <div id="viewO">
 <section class="panel"><h2>本周操作</h2>
-  <div class="scroll"><table class="otbl"><thead><tr><th>页签</th><th class="r">比例</th><th>现状</th><th>操作</th></tr></thead><tbody id="o_rows"><tr><td colspan="4" class="note">加载中</td></tr></tbody></table></div>
+  <div class="scroll"><table class="otbl"><thead><tr><th>页签</th><th class="r">比例</th><th>现状与操作</th></tr></thead><tbody id="o_rows"><tr><td colspan="3" class="note">加载中</td></tr></tbody></table></div>
   <p class="note" id="o_note"></p>
   <h2 style="margin-top:20px">见底评分 <span class="note" id="m_date" style="font-weight:400"></span></h2>
   <div class="panel" id="m_panel"><div class="note">加载中</div></div>
@@ -530,7 +530,7 @@ function LineChart(svg,opt){
   const W=opt.W,H=opt.H,pr=14,pt=12;let pl=44,pb=26,fs=11;
   const wrap=svg.parentNode,tip=wrap.querySelector(".tip");
   const bar=document.querySelector(`.ranges[data-for="${svg.id}"]`);
-  let full=[],range="all",cur=[],X=null,Y=null,ctx={};
+  let full=[],range=opt.range||"all",cur=[],X=null,Y=null,ctx={};
   bar.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;range=b.dataset.r;
     bar.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));draw()});
   function slice(){
@@ -540,12 +540,13 @@ function LineChart(svg,opt){
     const f=last.toISOString().slice(0,10);return full.filter(p=>p[0]>=f)}
   function draw(){
     cur=slice();const n=cur.length;if(n<2)return;
+    const ovs=(opt.overlays||[]).map(o=>{const m=new Map(o.data);return {...o,v:cur.map(p=>m.has(p[0])?m.get(p[0]):null)}});
     // 手机上 SVG 会被缩小，按实际宽度放大文字，保证约 10px 可读
     const cw=svg.clientWidth||W;fs=Math.min(22,Math.max(11,10.5*W/cw));svg.style.setProperty("--fs",fs+"px");
     pb=Math.round(fs*1.9);
     let ymin,ymax,ticks;
     if(opt.fixedY){[ymin,ymax]=opt.fixedY;ticks=opt.ticks}
-    else{let lo=Math.min(...cur.map(p=>p[1])),hi=Math.max(...cur.map(p=>p[1]));const pad=(hi-lo)*.08||.01;
+    else{const all=cur.map(p=>p[1]).concat(...ovs.map(o=>o.v.filter(x=>x!=null)));let lo=Math.min(...all),hi=Math.max(...all);const pad=(hi-lo)*.08||.01;
       const st=niceStep((hi-lo+2*pad)*(H<250?1.4:1));ymin=Math.floor((lo-pad)/st)*st;ymax=Math.ceil((hi+pad)/st)*st;ticks=[];
       for(let v=ymin;v<=ymax+st/2;v+=st)ticks.push(+v.toFixed(6))}
     const st0=ticks[1]-ticks[0],yl=ticks.map(v=>opt.fixedY||st0>=1?String(Math.round(v)):v.toFixed(Math.max(2,-Math.floor(Math.log10(st0+1e-12)))));
@@ -568,6 +569,8 @@ function LineChart(svg,opt){
     const step=Math.max(1,Math.floor(n/700));let d="";
     for(let i=0;i<n;i+=step)d+=(d?"L":"M")+X(i).toFixed(1)+" "+Y(cur[i][1]).toFixed(1);
     d+="L"+X(n-1).toFixed(1)+" "+Y(cur[n-1][1]).toFixed(1);
+    ovs.forEach(o=>{let od="";for(let i=0;i<n;i+=step){const v=o.v[i];if(v==null){continue}od+=(od?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1)}
+      if(od)s+=`<path d="${od}" fill="none" stroke="${o.c}" stroke-width="${o.w||1.3}" stroke-dasharray="${o.dash||""}" stroke-linejoin="round"/>`});
     s+=`<path d="${d}" fill="none" stroke="var(--ink)" stroke-width="${range==="all"?1.4:1.8}" stroke-linejoin="round"/>`;
     s+=`<circle cx="${X(n-1)}" cy="${Y(cur[n-1][1])}" r="4.5" fill="var(--mark)" stroke="var(--panel)" stroke-width="2"/>`;
     s+=`<g class="cursor" style="display:none"><line y1="${pt}" y2="${H-pb}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3"/><circle r="5" fill="var(--panel)" stroke="var(--ink)" stroke-width="2"/></g>`;
@@ -578,7 +581,7 @@ function LineChart(svg,opt){
     const [dt,v]=cur[i],g=svg.querySelector(".cursor");if(!g)return;
     g.style.display="";g.querySelector("line").setAttribute("x1",X(i));g.querySelector("line").setAttribute("x2",X(i));
     const c=g.querySelector("circle");c.setAttribute("cx",X(i));c.setAttribute("cy",Y(v));
-    tip.innerHTML=opt.tip(dt,v);tip.hidden=false;
+    tip.innerHTML=opt.tip(dt,v,i);tip.hidden=false;
     const px=X(i)/W*r.width,py=Y(v)/H*r.height,tw=tip.offsetWidth,th=tip.offsetHeight;
     let left=px+12;if(left+tw>r.width)left=px-tw-12;
     let top=py-th-10;if(top<0)top=py+12;
@@ -870,10 +873,10 @@ function loadOverview(){
     const cls=s=>/卖出预警|过热|偏贵|利率偏低/.test(s)?"h1":/卖出|很贵|减仓|异常/.test(s)?"r1":/买入区|低区|便宜|加码|多买|深度|大幅|回撤 ≥/.test(s)?"g1":"c0";
     $("o_rows").innerHTML=Object.entries(st).map(([n,v])=>{
       const name=v.tab?`<a href="#${v.tab}">${n}</a>`:n;
-      return `<tr><td>${name}<div class="note" style="margin:2px 0 0">${v.date||""}</div></td><td class="r num">${W[n]?W[n]+"%":""}</td><td><span class="lv ${cls(v.state)}">${v.state.split("|")[0]}</span><div style="margin-top:4px">${v.now}</div></td><td>${v.act}</td></tr>`}).join("");
+      return `<tr><td>${name}<div class="note" style="margin:2px 0 0">${v.date||""}</div></td><td class="r num">${W[n]?W[n]+"%":""}</td><td><span class="lv ${cls(v.state)}">${v.state.split("|")[0]}</span><div style="margin-top:4px">${v.now}</div><div style="margin-top:4px;padding-top:4px;border-top:1px dashed var(--line)"><b>操作：</b>${v.act}</div></td></tr>`}).join("");
     loadMarket();
     $("o_note").textContent="比例是每周定投款在各板块的建议分配。和每周五早上的周报邮件内容一致；日期是各指数最近一个交易日。";
-  }).catch(e=>{$("o_rows").innerHTML=`<tr><td colspan="4" class="note">读取失败，请稍后刷新（${e.message}）</td></tr>`});
+  }).catch(e=>{$("o_rows").innerHTML=`<tr><td colspan="3" class="note">读取失败，请稍后刷新（${e.message}）</td></tr>`});
 }
 // ---------------- 海外小仓位（只作提醒）
 function loadOS(){
@@ -896,8 +899,9 @@ function loadOS(){
         <p class="note" style="margin:-6px 0 8px">${f.desc}</p>
         <div>${tag(L.cls,L.zone)} <span style="margin-left:6px">${L.action}</span></div>
         <div class="kv"><div><div class="label">累计净值</div><div class="v">${L.nav.toFixed(4)}</div></div><div><div class="label">离最高点</div><div class="v">${pc(L.dd)}</div><div class="s">历史最深 ${pc(L.hist_mdd)}</div></div><div><div class="label">偏离年线</div><div class="v">${sg(L.dev)}</div></div><div><div class="label">近一年</div><div class="v">${sg(L.ret1y)}</div></div></div>
-        <h3 style="font-size:14px;margin:14px 0 6px">离最高点的回撤（%）</h3>
-        <div class="ranges" role="group" aria-label="时间范围" data-for="os_c_${f.code}"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y">近3年</button><button type="button" data-r="all" aria-pressed="true">全部</button></div>
+        <h3 style="font-size:14px;margin:14px 0 4px">累计净值与年线</h3>
+        <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 累计净值　<span style="color:var(--grow);font-weight:700">- - -</span> 年线（250 日均线）　<span style="color:var(--mark);font-weight:700">· · ·</span> 过热线（年线 +25%，净值到这里以上暂停加钱）</p>
+        <div class="ranges" role="group" aria-label="时间范围" data-for="os_c_${f.code}"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y" aria-pressed="true">近3年</button><button type="button" data-r="all">全部</button></div>
         <div class="chartwrap"><svg class="chart" id="os_c_${f.code}" viewBox="0 0 720 200" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
         ${b?`<p class="note">回测（${b.start} 起，每周 1000 元）：普通定投年化 <b>${b.plain.xirr==null?"—":pc(b.plain.xirr)}</b>、最大回撤 ${pc(b.plain.mdd)}；按提醒规则（过热暂停、回撤 ≥20% 买 2 倍，没买的钱放现金）年化 <b>${b.rule.xirr==null?"—":pc(b.rule.xirr)}</b>、最大回撤 ${pc(b.rule.mdd)}${b.rule.xirr!=null&&b.plain.xirr!=null?(b.rule.xirr>b.plain.xirr+.005?"，规则略好。":b.rule.xirr<b.plain.xirr-.005?"，规则不如普通定投，结论只作参考。":"，两者差不多。"):"。"}</p>`:`<p class="note">成立时间太短，暂时没有回测。</p>`}
       </section>`}).join("")+
@@ -908,8 +912,12 @@ function loadOS(){
         <tr><td>亚太精选场内溢价 &gt; 5%</td><td>不买场内 159687，买场外联接</td></tr>
         <tr><td>主动管理基金</td><td>连续两年明显跑输同类或大盘，考虑换成指数基金</td></tr>
       </tbody></table></div></section>`;
-    d.funds.forEach(f=>{const c=LineChart($("os_c_"+f.code),{W:720,H:200,lines:[{v:-20,c:"var(--grow)",dash:"3 3",w:1},{v:0,c:"var(--line)",w:1}]});
-      c.set(f.series,{tip:(dt,v)=>`${dt}<br>离最高点 <b>${v.toFixed(1)}%</b>`})});
+    d.funds.forEach(f=>{
+      const nav=f.nav_series||[],ma=[],hot=[];let sum=0;
+      nav.forEach(([dt,v],i)=>{sum+=v;if(i>=250)sum-=nav[i-250][1];if(i>=249){ma.push([dt,sum/250]);hot.push([dt,sum/250*1.25])}});
+      const mm=new Map(ma),dm=new Map(f.series);
+      const c=LineChart($("os_c_"+f.code),{W:720,H:220,range:"3y",overlays:[{data:ma,c:"var(--grow)",dash:"6 4",w:1.4},{data:hot,c:"var(--mark)",dash:"2 4",w:1.2}]});
+      c.set(nav,{tip:(dt,v)=>{const m=mm.get(dt);return `${dt}<br>累计净值 <b>${v.toFixed(4)}</b>`+(m?`<br>年线 ${m.toFixed(4)}（${v>=m?"高":"低"} ${pc(Math.abs(v/m-1))}）`:"")+(dm.has(dt)?`<br>离最高点 ${(-dm.get(dt)).toFixed(1)}%`:"")}})});
   }).catch(e=>{root.innerHTML=`<section class="panel err"><h2>读取数据失败</h2><p class="note">${e.message}</p></section>`});
 }
 // ---------------- 页签
