@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-11 01:15",
+ "updated": "2026-11-11 07:22",
  "ok": true,
  "items": {
   "cyb50": {
@@ -106,10 +106,10 @@
    "name": "美国十年国债",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 4222,
+   "last": "2026-11-10",
+   "days": 4223,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": false
   },
   "ndx": {
@@ -194,11 +194,13 @@
   },
   "sh510300": {
    "name": "华泰柏瑞沪深300ETF 份额",
-   "source": "上交所",
+   "source": "AKShare",
    "mode": "增量",
    "last": "2026-11-10",
-   "days": 954,
-   "failed": [],
+   "days": 2879,
+   "failed": [
+    "上交所：RuntimeError 没有取到"
+   ],
    "stale_days": 1,
    "ref": true
   },
@@ -207,7 +209,7 @@
    "source": "上交所",
    "mode": "增量",
    "last": "2026-11-10",
-   "days": 954,
+   "days": 2879,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -217,7 +219,7 @@
    "source": "上交所",
    "mode": "增量",
    "last": "2026-11-10",
-   "days": 954,
+   "days": 2879,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -227,7 +229,7 @@
    "source": "深交所日频",
    "mode": "增量",
    "last": "2026-11-10",
-   "days": 954,
+   "days": 2859,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -278,6 +280,16 @@
    "mode": "增量",
    "last": "2026-11-10",
    "days": 1,
+   "failed": [],
+   "stale_days": 1,
+   "ref": true
+  },
+  "buffett": {
+   "name": "巴菲特指标（总市值÷GDP）",
+   "source": "乐咕乐股",
+   "mode": "增量",
+   "last": "2026-11-10",
+   "days": 5235,
    "failed": [],
    "stale_days": 1,
    "ref": true
