@@ -1015,8 +1015,8 @@ function loadEtf300(root,HL){
     const L=d.latest,S=d.series,sg=x=>x==null?"—":(x>0?"+":"")+pc(x);
     const ev=d.events||[],st=d.stats||{};
     const fr=x=>x==null?"—":`<span style="color:${x>0?"var(--grow)":"var(--mark)"}">${sg(x)}</span>`;
-    const statRow=k=>{const v=st[k];if(!v)return"";const c=h=>v[h]?`${sg(v[h].avg)}<br><small>上涨 ${pc(v[h].up,0)}</small>`:"—";
-      return `<tr><td>${k==="全部交易日"?"对照":k==="大幅流入·托底"?"大幅流入":"撤出"}</td><td class="r num">${k==="全部交易日"?"—":v.n}</td><td class="r num">${c("20")}</td><td class="r num">${c("60")}</td><td class="r num">${c("120")}</td></tr>`};
+    const statRow=(k,S2=st,tag="")=>{const v=S2[k];if(!v)return"";const c=h=>v[h]?`${sg(v[h].avg)}<br><small>上涨 ${pc(v[h].up,0)}</small>`:"—";
+      return `<tr><td>${k==="全部交易日"?"对照":k==="大幅流入·托底"?"大幅流入":"撤出"}${tag}</td><td class="r num">${k==="全部交易日"?"—":v.n}</td><td class="r num">${c("20")}</td><td class="r num">${c("60")}</td><td class="r num">${c("120")}</td></tr>`};
     sec.innerHTML=`<h2>托底资金（国家队）</h2>
       <p class="note" style="margin:-6px 0 10px">华泰柏瑞 510300、易方达 510310、华夏 510330、嘉实 159919 合计规模（份额 × 单位净值）占沪深300 流通市值。汇金托底主要买这几只，可以近似看作国家队在沪深300 上的仓位。<b>先观察，不改定投规则；状态变化会发邮件。</b></p>
       <div><span class="lv ${L.cls}">${L.zone}</span> <span style="margin-left:6px">${L.action}</span></div>
@@ -1032,9 +1032,10 @@ function loadEtf300(root,HL){
       <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 分位（%，左轴；绿色 ≥80% 重仓，红色 ≤20% 撤空）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）</p>
       <div class="chartwrap"><svg class="chart" id="etf_c2" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
       <h3 style="font-size:14px;margin:16px 0 6px">历次事件之后沪深300 怎么走</h3>
-      <div class="scroll"><table><thead><tr><th></th><th class="r">次</th><th class="r">20日后</th><th class="r">60日后</th><th class="r">120日后</th></tr></thead><tbody>${statRow("大幅流入·托底")}${statRow("撤出中")}${statRow("全部交易日")}</tbody></table></div>
+      <div class="scroll"><table><thead><tr><th></th><th class="r">次</th><th class="r">20日后</th><th class="r">60日后</th><th class="r">120日后</th></tr></thead><tbody><tr><td colspan="5" class="note" style="padding-top:8px">${(d.recent_from||"2023").slice(0,4)} 年起（汇金大规模用这几只 ETF 托底以来）</td></tr>${statRow("大幅流入·托底")}${statRow("撤出中")}${statRow("全部交易日")}
+        ${d.stats_all?`<tr><td colspan="5" class="note" style="padding-top:10px">2015 年起全部（2023 年前占比只有 0.2%~0.3%，事件多是普通资金进出，参考价值低）</td></tr>${statRow("大幅流入·托底",d.stats_all)}${statRow("撤出中",d.stats_all)}${statRow("全部交易日",d.stats_all)}`:""}</tbody></table></div>
       <div class="scroll" style="margin-top:8px"><table><thead><tr><th>日期</th><th>事件</th><th class="r">20 日后</th><th class="r">60 日后</th></tr></thead><tbody>
-        ${ev.slice().reverse().map(e=>`<tr><td class="num">${e.date}</td><td>${e.kind==="撤出中"?"撤出":"流入"} ${sg(e.chg)}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td></tr>`).join("")||`<tr><td colspan="5" class="note">暂无</td></tr>`}</tbody></table></div>
+        ${ev.slice().reverse().filter(e=>e.date>=(d.recent_from||"")).map(e=>`<tr><td class="num">${e.date}</td><td>${e.kind==="撤出中"?"撤出":"流入"} ${sg(e.chg)}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td></tr>`).join("")||`<tr><td colspan="5" class="note">暂无</td></tr>`}</tbody></table></div>
       ${(d.quarterly||[]).length?`<h3 style="font-size:14px;margin:16px 0 4px">长期（基金季报，2013 年起）</h3>
       <div class="ranges" role="group" data-for="etf_c3"><button type="button" data-r="all" aria-pressed="true">全部</button></div>
       <div class="chartwrap"><svg class="chart" id="etf_c3" viewBox="0 0 720 200" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>`:""}

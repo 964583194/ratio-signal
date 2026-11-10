@@ -20,7 +20,8 @@ import sources as S
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "data", "etf300.json")
 SH = ("510300", "510310", "510330")
-START = "2022-12-01"
+START = "2015-01-01"
+RECENT = "2023-01-01"     # 统计“2023 年起”的事件（汇金大规模用 ETF 托底以来）
 IN_TH, OUT_TH, HI, LO, WIN = 0.15, -0.15, 0.80, 0.20, 252
 
 
@@ -95,16 +96,20 @@ def run():
                 lastk[k] = i
                 fw = {str(h): round(rows[i + h]["close"] / r["close"] - 1, 4) if i + h < len(rows) else None for h in (20, 60, 120)}
                 events.append({"date": r["d"], "kind": k, "close": r["close"], "pct": r["pct"], "chg": round(r["chg"], 4), "fwd": fw})
-    stats = {}
-    for k in ("大幅流入·托底", "撤出中", "全部交易日"):
-        ev = [e for e in events if e["kind"] == k] if k != "全部交易日" else \
-            [{"fwd": {str(h): rows[i + h]["close"] / rows[i]["close"] - 1 if i + h < len(rows) else None for h in (20, 60, 120)}}
-             for i in range(len(rows))]
-        st = {"n": len(ev)}
-        for h in ("20", "60", "120"):
-            xs = [e["fwd"][h] for e in ev if e["fwd"][h] is not None]
-            st[h] = {"avg": round(sum(xs) / len(xs), 4), "up": round(sum(x > 0 for x in xs) / len(xs), 3), "n": len(xs)} if xs else None
-        stats[k] = st
+    def mkstats(since):
+        out = {}
+        for k in ("大幅流入·托底", "撤出中", "全部交易日"):
+            ev = [e for e in events if e["kind"] == k and e["date"] >= since] if k != "全部交易日" else \
+                [{"fwd": {str(h): rows[i + h]["close"] / rows[i]["close"] - 1 if i + h < len(rows) else None for h in (20, 60, 120)}}
+                 for i in range(len(rows)) if rows[i]["d"] >= since]
+            st = {"n": len(ev)}
+            for h in ("20", "60", "120"):
+                xs = [e["fwd"][h] for e in ev if e["fwd"][h] is not None]
+                st[h] = {"avg": round(sum(xs) / len(xs), 4), "up": round(sum(x > 0 for x in xs) / len(xs), 3), "n": len(xs)} if xs else None
+            out[k] = st
+        return out
+    # 汇金 2023 年起才大规模用这几只 ETF 托底；之前占比只有 0.2%~0.3%，±15% 的“事件”多半是普通资金进出
+    stats, stats_all = mkstats(RECENT), mkstats(START)
     L = rows[-1]
     zn, act, cls = zone(L["pct"], L["chg"])
     try:   # 季报：[季末日期, 四只期末净资产合计（亿元）, 合计份额（亿份）]
@@ -130,7 +135,7 @@ def run():
         "first_real_cap": first_real,
         "series": [[r["d"], round(r["ratio"], 4), None if r["pct"] is None else round(r["pct"] * 100, 1),
                     round(r["sh"] / 1e8, 1), r["close"]] for r in rows],
-        "events": events, "stats": stats, "quarterly": quarterly,
+        "events": events, "stats": stats, "stats_all": stats_all, "recent_from": RECENT, "quarterly": quarterly,
         "rule": {"in": IN_TH, "out": OUT_TH, "hi": HI, "lo": LO, "win": WIN},
     }
     with open(OUT, "w", encoding="utf-8") as fh:
