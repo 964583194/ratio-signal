@@ -700,6 +700,8 @@ const rotView=Rot("","data/ratio.json",{g:"创业板50",min:.10,max:.50,tick:.10
 const kcView=Rot("k_","data/kc.json",{g:"科创50",min:.05,max:.25,tick:.05,cmin:.05,cmax:.22,grid:.02});
 
 // ---------------- 中证A500 / 纳指100
+// 债基结论：[状态, 操作, 顶部标签样式, 小标签样式]，按比近一年均值的基点数
+const bondZone=dv=>dv>=15?["便宜","可以多加","vz-good","g2"]:dv<=-15?["偏贵","照常定投，不加仓","vz-warn","r1"]:["正常","照常定投","vz-mid","c0"];
 function Val(view,file,kind){
   const root=$(view),P=kind==="a500"?"a_":kind==="hs300"?"h_":kind==="gold"?"g_":kind==="bond"?"b_":"n_",isV=kind==="a500"||kind==="hs300",isG=kind==="gold",isB=kind==="bond";
   const sec=(t,body,cls="")=>`<section class="panel ${cls}">${t?`<h2>${t}</h2>`:""}${body}</section>`;
@@ -717,7 +719,7 @@ function Val(view,file,kind){
       <div class="kv" id="${P}kv"></div><div id="${P}alert"></div></section>`+
     sec("指标体检",`<p class="note" style="margin:-6px 0 12px" id="${P}dimNote"></p><div class="dims" id="${P}dims"></div>`)+
     sec(isV?"便宜指数走势":isB?"十年国债收益率（%）":"离最高点的回撤",chartBox(P+"c1",260)+`<p class="note" id="${P}c1n"></p>`)+
-    sec(isB?"收益率在近一年的分位":"偏离年线（MA250）",chartBox(P+"c2",220)+`<p class="note">${isB?"越高说明利率在近一年里越高，债券越便宜。":"0 线以下表示收盘价低于年线。连续 2 天收在年线下方才算“有效跌破”。"}</p>`)+
+    sec(isB?"债券便宜指数走势":"偏离年线（MA250）",chartBox(P+"c2",220)+`<p class="note">${isB?"越高越便宜。绿色区域（≥75，利率比近一年均值高 15bp 以上）便宜，可以多加；红色区域（<25，低 15bp 以上）偏贵，照常定投、不加仓。":"0 线以下表示收盘价低于年线。连续 2 天收在年线下方才算“有效跌破”。"}</p>`)+
     sec("历史检验：在这个位置买入，之后一年怎样",`<div class="scroll"><table><thead><tr><th>当时所处位置</th><th class="r">样本天数</th><th class="r">一年后平均</th><th class="r">上涨概率</th><th class="r">最差</th></tr></thead><tbody id="${P}fwd"></tbody></table></div><p class="note" id="${P}fwdNote"></p>`)+
     sec("回测：每周 1000 元",`<div class="scroll"><table><thead><tr><th>方案</th><th class="r">年化 XIRR</th><th class="r">最大回撤</th><th class="r">期末市值</th><th class="r">未投现金</th></tr></thead><tbody id="${P}bt"></tbody></table></div><p class="note" id="${P}btNote"></p>`)+
     (isB?"":sec("近几次有效跌破年线",`<div class="scroll"><table><thead><tr><th>跌破</th><th>站回</th><th class="r">持续交易日</th></tr></thead><tbody id="${P}ma"></tbody></table></div>`))+
@@ -728,7 +730,7 @@ function Val(view,file,kind){
       :isB?{W:720,H:260}
       :isG?{W:720,H:260,fixedY:[-40,0],ticks:[-40,-30,-20,-10,0],bands:[{to:-15,fill:"var(--grow-soft)"}]}
       :{W:720,H:260,fixedY:[-40,0],ticks:[-40,-30,-20,-10,0],bands:[{to:-20,fill:"var(--grow-soft)"}],lines:[{v:-10,c:"var(--grow)",dash:"3 3",w:1},{v:-30,c:"var(--grow)",dash:"3 3",w:1}]});
-  const c2=LineChart(q("c2"),isB?{W:720,H:220,fixedY:[0,100],ticks:[0,25,50,75,100]}:{W:720,H:220,lines:[{v:0,c:"var(--mark)",w:1.4}].concat(isG?[{v:25,c:"var(--mark)",dash:"3 3",w:1,label:"过热 +25%"}]:[])});
+  const c2=LineChart(q("c2"),isB?{W:720,H:220,fixedY:[0,100],ticks:[0,25,50,75,100],bands:[{from:75,fill:"var(--grow-soft)"},{to:25,fill:"var(--mark-soft)"}]}:{W:720,H:220,lines:[{v:0,c:"var(--mark)",w:1.4}].concat(isG?[{v:25,c:"var(--mark)",dash:"3 3",w:1,label:"过热 +25%"}]:[])});
   function load(){
     q("err").hidden=true;
     fetch(file+"?t="+Date.now(),{cache:"no-store"})
@@ -760,13 +762,14 @@ function Val(view,file,kind){
       c1.set(d.series,{tip:(dt,v)=>`${dt}<br>便宜指数 <b>${v.toFixed(1)}</b> · ${v>=80?"很便宜":v>=60?"偏便宜":v>=40?"正常":v>=20?"偏贵":"很贵"}`});
       q("c1n").textContent="绿色区域（≥60）偏便宜，多买；红色区域（<20）很贵，少买。";
     }else if(isB){
-      q("lab").textContent="十年国债收益率 · "+L.date;q("big").textContent=L.close.toFixed(2);q("of").textContent="%";
-      q("act").className="action "+(L.mult>1?"vz-good":L.mult<1?"vz-warn":"vz-mid");q("act").textContent=L.zone+" · "+L.action;
-      q("why").textContent=`近一年均值 ${L.ma250.toFixed(2)}%，现在比它${L.dev>=0?"高":"低"} ${Math.abs(L.dev).toFixed(0)} 个基点；近 3 年区间 ${L.lo3}%~${L.hi3}%。利率越高，债基越便宜。这类基金久期约 ${L.dur} 年：利率上升 0.5 个百分点，净值大约跌 ${(L.dur*0.5).toFixed(1)}%。`;
-      q("kv").innerHTML=[["十年国债",L.close.toFixed(2)+"%"],["近一年均值",L.ma250.toFixed(2)+"%"],["近一年分位",pc(L.pct1,0)],["近 60 日变化",(L.chg60>0?"+":"")+L.chg60+"bp"]].map(([a,b])=>`<div><div class="label">${a}</div><div class="v">${b}</div></div>`).join("");
+      const ch=L.cheap??Math.max(0,Math.min(100,(L.dev+30)/60*100)),bz=bondZone(L.dev);
+      q("lab").textContent="债券便宜指数 · "+L.date;q("big").textContent=ch.toFixed(0);q("of").textContent="/ 100";
+      q("act").className="action "+bz[2];q("act").textContent=bz[0]+" · "+bz[1];
+      q("why").textContent=`十年国债 ${L.close.toFixed(2)}%，近一年均值 ${L.ma250.toFixed(2)}%，现在比均值${L.dev>=0?"高":"低"} ${Math.abs(L.dev).toFixed(0)} 个基点，债券${bz[0]==="正常"?"价格正常":bz[0]}。利率越高，债券越便宜；债基不择时，只决定要不要额外加钱。`;
+      q("kv").innerHTML=[["十年国债",L.close.toFixed(2)+"%"],["近一年均值",L.ma250.toFixed(2)+"%"],["比均值",(L.dev>0?"+":"")+L.dev.toFixed(0)+"bp"],["近 60 日变化",(L.chg60>0?"+":"")+L.chg60+"bp"]].map(([a,b])=>`<div><div class="label">${a}</div><div class="v">${b}</div></div>`).join("");
       q("dimNote").textContent="债券基金的涨跌主要看利率：利率下行净值涨，利率上行净值跌。";
-      q("dims").innerHTML=`<div class="dim"><div class="top"><span class="name">比近一年均值</span><span class="w">加仓提示</span></div><div class="row"><span class="sv">${L.dev>0?"+":""}${L.dev.toFixed(0)}<small> bp</small></span><span class="lv ${L.dev>=15?"g2":L.dev<=-15?"r1":"c0"}">${L.zone}</span></div><div class="det">高 15bp 以上，有余钱可以多加；低 15bp 以上，不额外加。</div></div>`+
-        `<div class="dim"><div class="top"><span class="name">近一年分位</span><span class="w">参考</span></div><div class="row"><span class="sv">${(L.pct1*100).toFixed(0)}<small> %</small></span><span class="lv ${L.pct1>=.7?"g1":L.pct1<.3?"r1":"c0"}">${L.pct1>=.7?"利率偏高":L.pct1<.3?"利率偏低":"中间"}</span></div><div class="meter"><i style="width:${Math.max(2,L.pct1*100)}%;background:var(--grow)"></i></div><div class="ends"><span>低</span><span>高</span></div><div class="det">现在的利率比近一年 ${pc(L.pct1,0)} 的时间高。</div></div>`;
+      q("dims").innerHTML=`<div class="dim"><div class="top"><span class="name">债券便宜指数</span><span class="w">决定加不加</span></div><div class="row"><span class="sv">${ch.toFixed(0)}<small> /100</small></span><span class="lv ${bz[3]}">${bz[0]}</span></div><div class="meter"><i style="width:${Math.max(2,ch)}%;background:var(--grow)"></i></div><div class="ends"><span>贵</span><span>便宜</span></div><div class="det">比近一年均值低 30bp 记 0，高 30bp 记 100。≥75（高 15bp 以上）可以多加；<25（低 15bp 以上）不加仓。</div></div>`+
+        `<div class="dim"><div class="top"><span class="name">风险提示</span><span class="w">久期约 ${L.dur} 年</span></div><div class="row"><span class="sv" style="font-size:20px">−${(L.dur*0.5).toFixed(1)}%</span><span class="lv c0">利率 +0.5%</span></div><div class="det">利率上升 0.5 个百分点，净值大约跌 ${(L.dur*0.5).toFixed(1)}%。近 3 年利率区间 ${L.lo3}%~${L.hi3}%。几个月内要用的钱放中短债或货币基金。</div></div>`;
       c1.set(d.series,{tip:(dt,v)=>`${dt}<br>十年国债 <b>${v.toFixed(2)}%</b>`});
       q("c1n").textContent="2012 年以来利率整体一路下行，所以债基这些年一直在涨。";
     }else if(isG){
@@ -800,8 +803,10 @@ function Val(view,file,kind){
       c1.set(d.series,{tip:(dt,v)=>`${dt}<br>回撤 <b>${v.toFixed(1)}%</b>`});
       q("c1n").textContent="虚线为回撤 10% 和 30%，绿色区域为回撤 20% 以上。";
     }
-    c2.set(d.dev_series.map(([a,b])=>[a,b*100]),{tip:(dt,v)=>isB?`${dt}<br>近一年分位 <b>${v.toFixed(0)}%</b>`:`${dt}<br>偏离年线 <b>${v>0?"+":""}${v.toFixed(1)}%</b>`});
-    q("fwd").innerHTML=d.forward.map(r=>`<tr><td>${r.zone}</td><td class="r num">${r.n}</td><td class="r num">${r.avg==null?"—":sign(r.avg)}</td><td class="r num">${r.win==null?"—":pc(r.win,0)}</td><td class="r num">${r.worst==null?"—":sign(r.worst)}</td></tr>`).join("");
+    if(isB)c2.set(d.cheap_series||[],{tip:(dt,v)=>`${dt}<br>债券便宜指数 <b>${v.toFixed(0)}</b> · ${v>=75?"便宜":v<25?"偏贵":"正常"}`});
+    else c2.set(d.dev_series.map(([a,b])=>[a,b*100]),{tip:(dt,v)=>`${dt}<br>偏离年线 <b>${v>0?"+":""}${v.toFixed(1)}%</b>`});
+    const bCur=isB?(d.latest.dev>=15?0:d.latest.dev<=-15?2:1):-1,bLab=["便宜：利率比均值高 ≥15bp","正常：±15bp 内","偏贵：利率比均值低 ≥15bp"];
+    q("fwd").innerHTML=d.forward.map((r,i)=>`<tr class="${i===bCur?"hl":""}"><td>${isB&&bLab[i]?bLab[i]+(i===bCur?"（现在）":""):r.zone}</td><td class="r num">${r.n}</td><td class="r num">${r.avg==null?"—":sign(r.avg)}</td><td class="r num">${r.win==null?"—":pc(r.win,0)}</td><td class="r num">${r.worst==null?"—":sign(r.worst)}</td></tr>`).join("");
     q("fwdNote").textContent=`按每个交易日买入、持有 250 个交易日后的价格涨幅统计（不含分红），样本从 ${d.bt_start} 开始。同一段行情里的天数互相重叠，样本天数多不代表独立次数多。`;
     const names=isV
       ?{value_tp:"便宜指数 + 止盈 + 闲钱放红利（现行）",plain:"普通定投",value:"按便宜指数调整金额",value_ma:"同上，跌破年线时不加码",timing:"跌破年线清仓，站回再买"}
@@ -818,7 +823,7 @@ function Val(view,file,kind){
     q("rules").innerHTML=(isV
       ?[["≥ 80","很便宜，3 倍定投"],["60–80","偏便宜，2 倍定投"],["40–60","正常定投"],["20–40","偏贵，0.6 倍定投"],["< 20","很贵，0.3 倍定投，其余进现金池"],["年线","跌破不卖，仅作参考"]]
       .concat([["没买完的钱","放红利低波100"],["止盈","偏贵区间（<40）持仓盈利 ≥50% 卖 1/3，≥100% 再卖一半，钱回红利"]])
-      :isB?[["每周 / 每月","照常定投，不择时"],["比近一年均值高 ≥15bp","有余钱可以多加（参考）"],["比近一年均值低 ≥15bp","不额外加"],["适合","一两年以上不用的钱，降低整体波动"]]
+      :isB?[["每周 / 每月","照常定投，不择时"],["便宜（≥75）","利率比近一年均值高 ≥15bp，有余钱可以多加"],["正常（25–75）","照常定投"],["偏贵（<25）","利率比近一年均值低 ≥15bp，照常定投，不加仓"],["适合","一两年以上不用的钱，降低整体波动"]]
       :isG?[["每周","正常定投"],["回撤 ≥15%","2 倍定投"],["比年线高 >25%","过热，暂停买入，定投款买红利低波100"],["年线","跌破不卖，仅作参考"]]
       :[["每周","照常定投，不择时"],["回撤档位","只作参考，不改金额"],["溢价 > 5%","停买场内 ETF，改买场外联接基金"],["年线","跌破不卖，仅作风险提示"]])
       .map(([k,v])=>`<div class="rule"><span class="k">${k}</span><span>${v}</span></div>`).join("");

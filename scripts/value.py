@@ -401,6 +401,8 @@ def run_bond():
         idx.append(idx[-1] * (1 + Y[i - 1] / 100 * (D_[i] - D_[i - 1]).days / 365 - B_DUR * (Y[i] - Y[i - 1]) / 100))
     m250 = ma(Y, 250)
     dev = [(Y[k] - m250[k]) * 100 if m250[k] else None for k in range(len(Y))]   # 单位：基点
+    # 债券便宜指数 0~100（越高越便宜）：比均值低 30bp 记 0，高 30bp 记 100；25 / 75 正好对应 ±15bp
+    cheap = [None if v is None else max(0.0, min(100.0, (v + 30) / 60 * 100)) for v in dev]
     pct1 = [None] * len(Y)
     for k in range(250, len(Y)):
         w = Y[k - 250:k]
@@ -424,12 +426,13 @@ def run_bond():
     data = {
         "updated": now_str(), "name": "债基", "kind": "bond",
         "latest": {"date": dates[i], "close": Y[i], "prev_close": Y[i - 1], "ma250": round(m250[i], 3),
-                   "dev": round(dev[i], 1), "pct1": round(pct1[i], 3), "lo3": round(min(Y[-750:]), 3),
+                   "dev": round(dev[i], 1), "cheap": round(cheap[i], 1), "pct1": round(pct1[i], 3), "lo3": round(min(Y[-750:]), 3),
                    "hi3": round(max(Y[-750:]), 3), "zone": zn, "mult": m, "action": act, "dur": B_DUR,
                    "chg60": round((Y[i] - Y[i - 60]) * 100, 1)},
         "backtest": bt, "bt_start": dates[i0], "div": 0, "forward": fwd, "ma_events": [],
         "series": [[d, round(v, 4)] for d, v in zip(dates[i0:], Y[i0:])],
         "dev_series": [[dates[k], round(pct1[k], 4)] for k in range(i0, len(Y)) if pct1[k] is not None],
+        "cheap_series": [[dates[k], round(cheap[k], 1)] for k in range(i0, len(Y)) if cheap[k] is not None],
     }
     dump("bond.json", data)
 
