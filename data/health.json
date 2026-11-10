@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-10 21:51",
+ "updated": "2026-11-11 01:15",
  "ok": true,
  "items": {
   "cyb50": {
@@ -9,7 +9,7 @@
    "last": "2026-11-10",
    "days": 3993,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "hl100": {
@@ -19,7 +19,7 @@
    "last": "2026-11-10",
    "days": 4093,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "hl100_pe": {
@@ -29,7 +29,7 @@
    "last": "2026-11-10",
    "days": 2312,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "hl100_tr": {
@@ -39,7 +39,7 @@
    "last": "2026-11-10",
    "days": 4093,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "kc50": {
@@ -49,7 +49,7 @@
    "last": "2026-11-10",
    "days": 1661,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "a500": {
@@ -59,7 +59,7 @@
    "last": "2026-11-10",
    "days": 4090,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "hs300": {
@@ -69,7 +69,7 @@
    "last": "2026-11-10",
    "days": 5306,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "pe300": {
@@ -79,7 +79,7 @@
    "last": "2026-11-10",
    "days": 3667,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "pe_a500": {
@@ -89,7 +89,7 @@
    "last": "2026-11-10",
    "days": 526,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "cn10y": {
@@ -99,7 +99,7 @@
    "last": "2026-11-10",
    "days": 4218,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "us10y": {
@@ -109,7 +109,7 @@
    "last": "2026-11-09",
    "days": 4222,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": false
   },
   "ndx": {
@@ -119,7 +119,7 @@
    "last": "2026-11-09",
    "days": 3223,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": false
   },
   "gold": {
@@ -129,15 +129,15 @@
    "last": "2026-11-10",
    "days": 3229,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "pb_below": {
    "name": "全A破净率",
    "source": "乐咕乐股(AKShare)",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 5288,
+   "last": "2026-11-10",
+   "days": 5289,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -149,7 +149,7 @@
    "last": "2026-11-09",
    "days": 4033,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   },
   "margin_ratio": {
@@ -159,7 +159,7 @@
    "last": "2026-11-09",
    "days": 4033,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   },
   "mkt_amt": {
@@ -169,7 +169,7 @@
    "last": "2026-11-10",
    "days": 4091,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "pe_cyb": {
@@ -179,7 +179,7 @@
    "last": "2026-11-10",
    "days": 519,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "pe_kc": {
@@ -189,15 +189,15 @@
    "last": "2026-11-10",
    "days": 355,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "sh510300": {
    "name": "华泰柏瑞沪深300ETF 份额",
    "source": "上交所",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 953,
+   "last": "2026-11-10",
+   "days": 954,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -206,8 +206,8 @@
    "name": "易方达沪深300ETF 份额",
    "source": "上交所",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 953,
+   "last": "2026-11-10",
+   "days": 954,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -216,22 +216,19 @@
    "name": "华夏沪深300ETF 份额",
    "source": "上交所",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 953,
+   "last": "2026-11-10",
+   "days": 954,
    "failed": [],
    "stale_days": 1,
    "ref": true
   },
   "sz159919": {
    "name": "嘉实沪深300ETF 份额",
-   "source": "本地缓存",
-   "mode": "缓存",
-   "last": "2026-11-09",
-   "days": 953,
-   "failed": [
-    "深交所日频：ConnectionError ('Connection aborted.', ConnectionResetError(104, 'Connectio",
-    "深交所当前：和缓存没有重叠的日期，无法核对"
-   ],
+   "source": "深交所日频",
+   "mode": "增量",
+   "last": "2026-11-10",
+   "days": 954,
+   "failed": [],
    "stale_days": 1,
    "ref": true
   },
@@ -242,7 +239,7 @@
    "last": "2026-11-10",
    "days": 3528,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "unav510310": {
@@ -252,7 +249,7 @@
    "last": "2026-11-10",
    "days": 3328,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "unav510330": {
@@ -262,7 +259,7 @@
    "last": "2026-11-10",
    "days": 3370,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "unav159919": {
@@ -272,7 +269,7 @@
    "last": "2026-11-10",
    "days": 3528,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "cap300": {
@@ -282,7 +279,7 @@
    "last": "2026-11-10",
    "days": 1,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "etf513100": {
@@ -292,7 +289,7 @@
    "last": "2026-11-10",
    "days": 642,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "nav513100": {
@@ -302,7 +299,7 @@
    "last": "2026-11-09",
    "days": 3249,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": false
   },
   "nav006555": {
@@ -312,7 +309,7 @@
    "last": "2026-11-09",
    "days": 1878,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   },
   "nav539002": {
@@ -322,7 +319,7 @@
    "last": "2026-11-09",
    "days": 3547,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   },
   "nav007280": {
@@ -332,7 +329,7 @@
    "last": "2026-11-10",
    "days": 1739,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "nav021189": {
@@ -342,7 +339,7 @@
    "last": "2026-11-09",
    "days": 582,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   },
   "etf159687": {
@@ -352,7 +349,7 @@
    "last": "2026-11-10",
    "days": 929,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "nav159687": {
@@ -362,7 +359,7 @@
    "last": "2026-11-09",
    "days": 939,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   }
  }
