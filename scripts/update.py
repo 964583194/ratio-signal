@@ -236,6 +236,7 @@ def main():
                                      os.path.join(ROOT, "data", "kc.json"), KC_LO, KC_HI, KC_SELLS, DIV_KC,
                                      "2021-01-01", "科创50", tr(), div_score())),
         ("中证A500 / 沪深300 / 纳指100 / 黄金", lambda: __import__("value").run()),
+        ("海外小仓位", lambda: __import__("overseas").run()),   # 要读 ndx.json，放在后面
     ]
     for name, job in jobs:
         try:

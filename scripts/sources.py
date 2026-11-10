@@ -267,15 +267,20 @@ def sina_us(sym=".ndx"):
     return {r["d"]: float(r["c"]) for r in rows}
 
 
-def em_lsjz(code, pages=10):
+def em_lsjz(code, pages=10, field="DWJZ"):
+    """天天基金历史净值表；field="LJJZ" 取累计净值（分红加回）"""
     out = {}
     for p in range(1, pages + 1):
         u = f"https://api.fund.eastmoney.com/f10/lsjz?fundCode={code}&pageIndex={p}&pageSize=20"
         rows = (jget(u, "https://fundf10.eastmoney.com/").get("Data") or {}).get("LSJZList") or []
         if not rows:
             break
-        out.update({r["FSRQ"]: float(r["DWJZ"]) for r in rows if r.get("DWJZ")})
+        out.update({r["FSRQ"]: float(r[field]) for r in rows if r.get(field)})
     return out
+
+
+def _ms(x):
+    return dt.datetime.utcfromtimestamp(x / 1000 + 8 * 3600).strftime("%Y-%m-%d")
 
 
 def em_pzd(code):
@@ -283,14 +288,29 @@ def em_pzd(code):
     js = http(f"https://fund.eastmoney.com/pingzhongdata/{code}.js", "https://fund.eastmoney.com/")
     m = re.search(r"Data_netWorthTrend\s*=\s*(\[.*?\]);", js, re.S)
     rows = json.loads(m.group(1)) if m else []
-    return {dt.datetime.utcfromtimestamp(r["x"] / 1000 + 8 * 3600).strftime("%Y-%m-%d"): float(r["y"]) for r in rows}
+    return {_ms(r["x"]): float(r["y"]) for r in rows}
 
 
-def sina_nav(code, n=200):
+def em_pzd_acc(code):
+    """天天基金 pingzhongdata：完整累计净值走势（分红加回，用于算回撤和年线）"""
+    js = http(f"https://fund.eastmoney.com/pingzhongdata/{code}.js", "https://fund.eastmoney.com/")
+    m = re.search(r"Data_ACWorthTrend\s*=\s*(\[.*?\]);", js, re.S)
+    rows = json.loads(m.group(1)) if m else []
+    return {_ms(r[0]): float(r[1]) for r in rows if r and r[1] is not None}
+
+
+def sina_nav(code, n=200, field="jjjz"):
     url = ("https://stock.finance.sina.com.cn/fundInfo/api/openapi.php/CaihuiFundInfoService.getNav"
            f"?symbol={code}&datefrom=&dateto=&page=1&num={n}")
     rows = ((jget(url).get("result") or {}).get("data") or {}).get("data") or []
-    return {r["fbrq"][:10]: float(r["jjjz"]) for r in rows}
+    return {r["fbrq"][:10]: float(r[field]) for r in rows if r.get(field)}
+
+
+def fund_acc(code):
+    """海外小仓位基金：累计净值，三个接口互为备用"""
+    return [("天天基金", lambda s: em_pzd_acc(code)),
+            ("东方财富", lambda s: em_lsjz(code, 4 if s else 250, "LJJZ")),
+            ("新浪", lambda s: sina_nav(code, 60 if s else 5000, "ljjz"))]
 
 
 # ================================================================ 数据清单：每项 3~5 个接口
@@ -383,10 +403,26 @@ CATALOG = {
         ("东方财富", lambda s: em_lsjz("513100", 3 if s else 10)),
         ("新浪", lambda s: sina_nav("513100", 60 if s else 200)),
     ]),
+    # ---- 海外小仓位（只作提醒，失败不算异常）
+    "nav006555": ("浦银全球智能科技 累计净值", 200, fund_acc("006555")),
+    "nav539002": ("建信新兴市场混合 累计净值", 200, fund_acc("539002")),
+    "nav007280": ("摩根日本精选 累计净值", 200, fund_acc("007280")),
+    "nav021189": ("南方亚太精选ETF联接 累计净值", 200, fund_acc("021189")),
+    "etf159687": ("亚太精选ETF 159687 收盘", 100, [
+        ("东方财富", lambda s: em_kline("0.159687", _ymd(s, "20230101"))),
+        ("腾讯", lambda s: tx_kline2("sz159687", 60 if s else 640)),
+        ("新浪", lambda s: sina_kline("sz159687", 60 if s else 600)),
+    ]),
+    "nav159687": ("亚太精选ETF 159687 净值", 100, [
+        ("天天基金", lambda s: em_pzd("159687")),
+        ("东方财富", lambda s: em_lsjz("159687", 3 if s else 10)),
+        ("新浪", lambda s: sina_nav("159687", 60 if s else 200)),
+    ]),
 }
 
 # 和缓存比对时允许的差异：价格类相对 1%，收益率类绝对 0.15 个百分点
-REF_KEYS = {"pb_below", "margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc", "etf300"}
+OVERSEAS_KEYS = {"nav006555", "nav539002", "nav007280", "nav021189", "etf159687", "nav159687"}
+REF_KEYS = {"pb_below", "margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc", "etf300"} | OVERSEAS_KEYS
 TOL = {"cn10y": ("abs", 0.15), "us10y": ("abs", 0.15)}
 INCR_DAYS = 60          # 增量更新时回看的天数（同时用于和缓存比对）
 

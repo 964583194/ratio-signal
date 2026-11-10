@@ -170,6 +170,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
   <p id="subO">所有页签的现状和本周操作 · <span id="o_next"></span></p>
   <p id="subH" hidden>沪深300（000300）· 2005 年以来真实行情 · 估值：市盈率与十年国债 · 数据更新于 <span class="num" id="h_updated">—</span></p>
   <p id="subA" hidden>价格：中证A500（000510）· 估值：沪深300 市盈率与十年国债 · 数据更新于 <span class="num" id="a_updated">—</span></p>
+  <p id="subOS" hidden>4 只 QDII 基金 + 纳指100 · 合计一万多的小仓位，只作提醒，不进定投组合 · 数据更新于 <span class="num" id="os_updated">—</span></p>
   <p id="subN" hidden>纳斯达克100 指数（美元计价）· 回撤、年线与国内 ETF 溢价率 · 数据更新于 <span class="num" id="n_updated">—</span></p>
   <p id="subG" hidden>黄金ETF（518880）· 回撤、年线偏离 · 数据更新于 <span class="num" id="g_updated">—</span></p>
   <p id="subB" hidden>中债7-10年政策性金融债指数类基金 · 用十年国债收益率判断 · 数据更新于 <span class="num" id="b_updated">—</span></p>
@@ -181,9 +182,9 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
   <button type="button" role="tab" id="tabRot" data-view="rotation" aria-selected="false">创业板轮动</button>
   <button type="button" role="tab" id="tabKc" data-view="kc" aria-selected="false">科创板轮动</button>
   <button type="button" role="tab" id="tabDiv" data-view="dividend" aria-selected="false">红利打分</button>
-  <button type="button" role="tab" id="tabA" data-view="a500" aria-selected="false">中证A500</button>
-  <button type="button" role="tab" id="tabH" data-view="hs300" aria-selected="false">沪深300</button>
+  <button type="button" role="tab" id="tabBroad" data-view="broad" aria-selected="false">A500 / 沪深300</button>
   <button type="button" role="tab" id="tabN" data-view="ndx" aria-selected="false">纳指100</button>
+  <button type="button" role="tab" id="tabOS" data-view="overseas" aria-selected="false">海外</button>
   <button type="button" role="tab" id="tabG" data-view="gold" aria-selected="false">黄金</button>
   <button type="button" role="tab" id="tabB" data-view="bond" aria-selected="false">债基</button>
 </nav></div>
@@ -199,7 +200,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
   <p class="note">0~100 分，越高越接近底部：75 以上接近底部，60~75 偏冷，30 以下偏热。五项各换算成历史百分位后取平均：破净率高、股债利差高、融资占比低、成交额地量、创业板指市盈率低（表里的“分位”是指标本身的历史分位）。只作参考；规则里只用破净率判断“见底才加码”。</p>
 </section>
 <section class="panel"><h2>怎么看</h2>
-  <p class="note" style="margin:0">创业板轮动、科创板轮动按周操作，每周五按周四收盘的信号下单，卖出信号出现时当天会发邮件；红利打分按交易日操作；中证A500、沪深300、黄金每周定投，按页签里的倍数调整金额；纳指100 每周照常定投。各板块没买完的钱都放红利低波100。点表格里的名称可以看详情。</p>
+  <p class="note" style="margin:0">创业板轮动、科创板轮动按周操作，每周五按周四收盘的信号下单，卖出信号出现时当天会发邮件；红利打分按交易日操作；A500 / 沪深300（二选一）、黄金每周定投，按页签里的倍数调整金额；纳指100 每周照常定投。各板块没买完的钱都放红利低波100。“海外”页签是几只 QDII 小仓位，只作提醒，不算在比例里。点表格里的名称可以看详情。</p>
 </section>
 </div>
 
@@ -390,8 +391,15 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 </div>
 
 
+<div id="viewBroad" hidden>
+<section class="panel" style="padding-bottom:12px">
+  <div class="ranges" role="group" aria-label="切换指数" id="broadSw" style="margin:0 0 8px"><button type="button" data-b="a500" aria-pressed="true">中证A500</button><button type="button" data-b="hs300">沪深300</button></div>
+  <p class="note" style="margin:0">两个指数用同一个便宜指数（都看沪深300 的市盈率和十年国债），结论总是一样，<b>买其中一个就行</b>。A500 覆盖更广；沪深300 有 2005 年以来的真实行情，用来验证规则。</p>
+</section>
 <div id="viewA" hidden></div>
 <div id="viewH" hidden></div>
+</div>
+<div id="viewOS" hidden></div>
 <div id="viewG" hidden></div>
 <div id="viewB" hidden></div>
 <div id="viewN" hidden></div>
@@ -817,7 +825,7 @@ function Val(view,file,kind){
     q("bt").innerHTML=Object.entries(names).filter(([k])=>d.backtest[k]).map(([k,n])=>{const b=d.backtest[k];
       return `<tr class="${k===best?"hl":""}"><td>${n}</td><td class="r num">${pc(b.xirr,2)}</td><td class="r num">${pc(b.mdd)}</td><td class="r num">${b.final.toLocaleString()}</td><td class="r num">${b.pool.toLocaleString()}</td></tr>`}).join("");
     q("btNote").textContent=isB?`${d.bt_start} 起，每周 1000 元。指数按“票息 + 久期 ${d.latest.dur} 年 × 利率变化”用十年国债估算，和实际基金会有差距。这些年利率一路下行，按利率高低调整金额反而略差，所以照常定投就好，利率只作加仓参考。`:isG?`${d.bt_start} 起（ETF 2013 年上市，头一年用来算年线），每周首个交易日 1000 元。现行规则：比年线高 25% 以上暂停，钱放红利低波100；回撤 15% 以上买 2 倍。黄金不分红。`:(isV
-      ?`${d.bt_start} 起，每周首个交易日拿出 1000 元${kind==="a500"?"（A500 在 2024 年 9 月发布，之前的价格是按规则倒推的回测数据，真实行情的验证见“沪深300”页签）":"（全部为真实行情）"}；便宜指数 ≥80 / 60~80 / 40~60 / 20~40 / <20 分别买 3 / 2 / 1 / 0.6 / 0.3 倍，钱不够就买池子里有的，股息率按 2.5% 加回。旧方案没买的进现金池（年化 1.5%）；现行方案没买的放红利低波100，并且在偏贵区间（<40）持仓盈利 ≥50% 卖 1/3、≥100% 再卖一半，卖出的钱回红利。`
+      ?`${d.bt_start} 起，每周首个交易日拿出 1000 元${kind==="a500"?"（A500 在 2024 年 9 月发布，之前的价格是按规则倒推的回测数据，真实行情的验证请切换到上面的“沪深300”）":"（全部为真实行情）"}；便宜指数 ≥80 / 60~80 / 40~60 / 20~40 / <20 分别买 3 / 2 / 1 / 0.6 / 0.3 倍，钱不够就买池子里有的，股息率按 2.5% 加回。旧方案没买的进现金池（年化 1.5%）；现行方案没买的放红利低波100，并且在偏贵区间（<40）持仓盈利 ≥50% 卖 1/3、≥100% 再卖一半，卖出的钱回红利。`
       :`${d.bt_start} 起，美元计价，未计汇率与溢价。股息率按 0.7% 加回。纳指过去十年强势上涨，攒钱等回撤反而少赚，普通定投最好；跌破年线就清仓会错过反弹，收益最差。`);
     if(q("ma"))q("ma").innerHTML=d.ma_events.slice().reverse().map(([a,b,n])=>`<tr><td class="num">${a}</td><td class="num">${b||"至今未站回"}</td><td class="r num">${n}</td></tr>`).join("");
     q("rules").innerHTML=(isV
@@ -857,7 +865,7 @@ function nextUpdate(){
 function loadOverview(){
   $("o_next").textContent=nextUpdate();
   fetch("data/state.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(st=>{
-    const W={"创业板轮动":25,"科创板轮动":15,"纳指100":20,"红利打分":15,"黄金":15,"沪深300":5,"中证A500":5};
+    const W={"创业板轮动":25,"科创板轮动":15,"纳指100":20,"红利打分":15,"黄金":15,"A500 / 沪深300":10};
     const cls=s=>/卖出|很贵|偏贵|减仓|异常/.test(s)?"r1":/低区|很便宜|偏便宜|加码|多买|深度|大幅/.test(s)?"g1":"c0";
     $("o_rows").innerHTML=Object.entries(st).map(([n,v])=>{
       const name=v.tab?`<a href="#${v.tab}">${n}</a>`:n;
@@ -866,14 +874,51 @@ function loadOverview(){
     $("o_note").textContent="比例是每周定投款在各板块的建议分配。和每周五早上的周报邮件内容一致；日期是各指数最近一个交易日。";
   }).catch(e=>{$("o_rows").innerHTML=`<tr><td colspan="4" class="note">读取失败，请稍后刷新（${e.message}）</td></tr>`});
 }
+// ---------------- 海外小仓位（只作提醒）
+function loadOS(){
+  const root=$("viewOS");root.innerHTML=`<section class="panel"><div class="note">加载中</div></section>`;
+  fetch("data/overseas.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error(r.status===404?"还没有生成数据，下次自动更新后会出现":"HTTP "+r.status);return r.json()}).then(d=>{
+    $("os_updated").textContent=d.updated;
+    const sg=x=>x==null?"—":(x>0?"+":"")+pc(x);
+    const tag=(cls,t)=>`<span class="lv ${cls}">${t}</span>`;
+    const ndx=d.ndx?`<tr><td><a href="#ndx">纳指100</a><div class="note" style="margin:2px 0 0">定投中 · ${d.ndx.date}</div></td><td class="r num">${pc(d.ndx.dd)}</td><td>${tag(d.ndx.dd>=.2?"g1":"c0",d.ndx.zone)}<div style="margin-top:4px">${d.ndx.action}</div></td></tr>`:"";
+    const rows=d.funds.map(f=>{const L=f.latest;return `<tr><td><a href="#overseas" onclick="event.preventDefault();document.getElementById('os_${f.code}').scrollIntoView({behavior:'smooth'})">${f.name}</a><div class="note" style="margin:2px 0 0">${f.code} · ${L.date}</div></td><td class="r num">${pc(L.dd)}</td><td>${tag(L.cls,L.zone)}<div style="margin-top:4px">${L.action}</div></td></tr>`}).join("");
+    const pr=d.premium;
+    root.innerHTML=
+      `<section class="panel"><h2>现在怎么样</h2>
+        <div class="scroll"><table class="otbl"><thead><tr><th>基金</th><th class="r">离最高点</th><th>结论</th></tr></thead><tbody>${rows}${ndx}</tbody></table></div>
+        <p class="note">用累计净值算（分红加回）。这几只是小仓位，不进定投组合，也不占比例；结论只是提醒，不是买卖信号。</p>
+        ${d.corr_tech!=null?`<p class="note" style="margin-top:6px">浦银全球智能科技 和 建信新兴市场混合 近一年周涨跌相关性 <b class="num">${d.corr_tech.toFixed(2)}</b>${d.corr_tech>=.8?"：基本是同一类资产，往这块加钱时没必要两只都加。":d.corr_tech>=.6?"：重合较多。":"。"}</p>`:""}
+        ${pr?`<p class="note" style="margin-top:6px">亚太精选场内 ETF（159687）${pr.date} 溢价 <b class="num">${sg(pr.value)}</b>：${pr.value>.05?"溢价太高，不买场内，买场外联接（021189 / 021190）。":pr.value>.03?"略高，优先买场外联接。":"正常，场内场外都可以。"}</p>`:""}
+      </section>`+
+      d.funds.map(f=>{const L=f.latest,b=f.bt;return `<section class="panel" id="os_${f.code}"><h2>${f.name} <span class="note" style="font-weight:400">${f.code}</span></h2>
+        <p class="note" style="margin:-6px 0 8px">${f.desc}</p>
+        <div>${tag(L.cls,L.zone)} <span style="margin-left:6px">${L.action}</span></div>
+        <div class="kv"><div><div class="label">累计净值</div><div class="v">${L.nav.toFixed(4)}</div></div><div><div class="label">离最高点</div><div class="v">${pc(L.dd)}</div><div class="s">历史最深 ${pc(L.hist_mdd)}</div></div><div><div class="label">偏离年线</div><div class="v">${sg(L.dev)}</div></div><div><div class="label">近一年</div><div class="v">${sg(L.ret1y)}</div></div></div>
+        <h3 style="font-size:14px;margin:14px 0 6px">离最高点的回撤（%）</h3>
+        <div class="ranges" role="group" aria-label="时间范围" data-for="os_c_${f.code}"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y">近3年</button><button type="button" data-r="all" aria-pressed="true">全部</button></div>
+        <div class="chartwrap"><svg class="chart" id="os_c_${f.code}" viewBox="0 0 720 200" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+        ${b?`<p class="note">回测（${b.start} 起，每周 1000 元）：普通定投年化 <b>${b.plain.xirr==null?"—":pc(b.plain.xirr)}</b>、最大回撤 ${pc(b.plain.mdd)}；按提醒规则（过热暂停、回撤 ≥20% 买 2 倍，没买的钱放现金）年化 <b>${b.rule.xirr==null?"—":pc(b.rule.xirr)}</b>、最大回撤 ${pc(b.rule.mdd)}${b.rule.xirr!=null&&b.plain.xirr!=null?(b.rule.xirr>b.plain.xirr+.005?"，规则略好。":b.rule.xirr<b.plain.xirr-.005?"，规则不如普通定投，结论只作参考。":"，两者差不多。"):"。"}</p>`:`<p class="note">成立时间太短，暂时没有回测。</p>`}
+      </section>`}).join("")+
+      `<section class="panel rules"><h2>规则速查</h2><div class="scroll"><table><tbody>
+        <tr><td>偏离年线 &gt; +25%</td><td>过热，暂停加钱，已有的不动（和黄金页同一条规则）</td></tr>
+        <tr><td>离最高点 ≥ 20%</td><td>大幅回撤，有余钱可以多加；≥30% 深度回撤</td></tr>
+        <tr><td>离最高点 10%~20%</td><td>回调，照常持有</td></tr>
+        <tr><td>亚太精选场内溢价 &gt; 5%</td><td>不买场内 159687，买场外联接</td></tr>
+        <tr><td>主动管理基金</td><td>连续两年明显跑输同类或大盘，考虑换成指数基金</td></tr>
+      </tbody></table></div></section>`;
+    d.funds.forEach(f=>{const c=LineChart($("os_c_"+f.code),{W:720,H:200,lines:[{v:-20,c:"var(--grow)",dash:"3 3",w:1},{v:0,c:"var(--line)",w:1}]});
+      c.set(f.series,{tip:(dt,v)=>`${dt}<br>离最高点 <b>${v.toFixed(1)}%</b>`})});
+  }).catch(e=>{root.innerHTML=`<section class="panel err"><h2>读取数据失败</h2><p class="note">${e.message}</p></section>`});
+}
 // ---------------- 页签
 const VIEWS={overview:["viewO","tabO","subO","指数定投信号看板"],
              rotation:["viewRot","tabRot","subRot","创业板 · 轮动信号"],
              kc:["viewKc","tabKc","subKc","科创板 · 轮动信号"],
              dividend:["viewDiv","tabDiv","subDiv","红利低波100 · 每日定投打分"],
-             a500:["viewA","tabA","subA","中证A500 · 便宜还是贵"],
-             hs300:["viewH","tabH","subH","沪深300 · 便宜还是贵"],
+             broad:["viewBroad","tabBroad","subA","A500 / 沪深300 · 便宜还是贵"],
              ndx:["viewN","tabN","subN","纳指100 · 什么时候能买"],
+             overseas:["viewOS","tabOS","subOS","海外小仓位 · 提醒"],
              gold:["viewG","tabG","subG","黄金 · 压舱石"],
              bond:["viewB","tabB","subB","债基 · 要不要加仓"]};
 let mChart=null;
@@ -895,13 +940,27 @@ async function loadMarket(){
       mChart.set(m.hist,{tip:(dt,v)=>`${dt}<br>见底评分 <b>${v.toFixed(0)}</b>`});}
   }catch(e){$("m_panel").innerHTML='<div class="note">见底评分读取失败</div>';}
 }
-const LOADERS={overview:loadOverview,rotation:rotView.load,kc:kcView.load,dividend:loadDiv,a500:aView.load,hs300:hView.load,ndx:nView.load,gold:gView.load,bond:bView.load},LOADED={};
+const LOADERS={overview:loadOverview,rotation:rotView.load,kc:kcView.load,dividend:loadDiv,ndx:nView.load,overseas:loadOS,gold:gView.load,bond:bView.load},LOADED={};
+// A500 / 沪深300 合并成一个页签；旧链接 #a500、#hs300 仍然能打开对应的那一个
+let BROAD="a500";const BLOADED={};
+function setBroad(b){
+  BROAD=b;const a=b==="a500";
+  $("viewA").hidden=!a;$("viewH").hidden=a;
+  $("subA").hidden=!a;$("subH").hidden=a;
+  document.querySelectorAll("#broadSw button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.b===b));
+  if(!BLOADED[b]){BLOADED[b]=true;(a?aView:hView).load()}
+}
+document.querySelectorAll("#broadSw button").forEach(x=>x.addEventListener("click",()=>setBroad(x.dataset.b)));
 function showView(){
-  const hk=location.hash.slice(1),k=VIEWS[hk]?hk:"overview";
+  let hk=location.hash.slice(1);
+  if(hk==="a500"||hk==="hs300"){BROAD=hk;hk="broad"}
+  const k=VIEWS[hk]?hk:"overview";
+  $("subH").hidden=true;
   Object.entries(VIEWS).forEach(([key,[v,t,s]])=>{const on=key===k;$(v).hidden=!on;$(s).hidden=!on;$(t).setAttribute("aria-selected",on)});
   $("h1").textContent=VIEWS[k][3];
   try{$(VIEWS[k][1]).scrollIntoView({inline:"nearest",block:"nearest"})}catch(e){}
-  if(!LOADED[k]){LOADED[k]=true;LOADERS[k]()}
+  if(k==="broad")setBroad(BROAD);
+  else if(!LOADED[k]){LOADED[k]=true;LOADERS[k]()}
 }
 document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{location.hash=b.dataset.view;showView()}));
 window.addEventListener("hashchange",showView);

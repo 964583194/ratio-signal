@@ -61,6 +61,21 @@ def a500(d):
     return L["zone"], f"便宜指数 {L['cheap']:.1f}（{L['zone']}）", f"{L['action']}{ma}", "a500"
 
 
+def overseas(d):
+    """海外小仓位：只有各基金的状态变化才提醒"""
+    fs = d["funds"]
+    state = "|".join(f"{f['name'][:4]}{f['latest']['zone']}" for f in fs)
+    now = "；".join(f"{f['name']} 回撤 {pc(f['latest']['dd'])}（{f['latest']['zone']}）" for f in fs)
+    hot = [f["name"] for f in fs if f["latest"]["zone"] == "过热"]
+    add = [f["name"] for f in fs if f["latest"]["zone"] in ("大幅回撤", "深度回撤")]
+    act = ("；".join(([f"{'、'.join(hot)} 过热，暂停加钱"] if hot else []) + ([f"{'、'.join(add)} 回撤较大，有余钱可以多加"] if add else []))
+           or "都照常持有")
+    pr = d.get("premium")
+    if pr and pr["value"] > 0.05:
+        act += f"；亚太精选场内 ETF 溢价 {pc(pr['value'])}，买场外联接"
+    return state, now, act, "overseas"
+
+
 def ndx(d, prev_prem):
     L, pr = d["latest"], d.get("premium")
     # 溢价率用滞后区间，避免在 5% 附近来回提醒：>5% 记为“高”，≤3% 记为“低”，中间保持上次
@@ -86,7 +101,7 @@ def bond(d):
     return L["zone"], f"十年国债 {L['close']:.2f}%，比近一年均值{'高' if L['dev'] >= 0 else '低'} {abs(L['dev']):.0f}bp", L["action"], "bond"
 
 
-WEIGHTS = {"创业板轮动": 25, "科创板轮动": 15, "纳指100": 20, "红利打分": 15, "黄金": 15, "沪深300": 5, "中证A500": 5}
+WEIGHTS = {"创业板轮动": 25, "科创板轮动": 15, "纳指100": 20, "红利打分": 15, "黄金": 15, "A500 / 沪深300": 10}
 
 
 def collect(prev):
@@ -94,11 +109,11 @@ def collect(prev):
     pairs = [("创业板轮动", "ratio.json", lambda d: rotation(d, "创业板50", "rotation")),
              ("科创板轮动", "kc.json", lambda d: rotation(d, "科创50", "kc")),
              ("红利打分", "dividend.json", dividend),
-             ("中证A500", "a500.json", a500),
-             ("沪深300", "hs300.json", lambda d: a500(d)[:3] + ("hs300",)),
+             ("A500 / 沪深300", "a500.json", lambda d: a500(d)[:3] + ("broad",)),   # 两个用同一个便宜指数
              ("纳指100", "ndx.json", lambda d: ndx(d, (prev.get("纳指100") or {}).get("prem"))),
              ("黄金", "gold.json", gold),
-             ("债基", "bond.json", bond)]
+             ("债基", "bond.json", bond),
+             ("海外小仓位", "overseas.json", overseas)]
     for name, f, fn in pairs:
         d = load(f)
         if not d:
@@ -177,7 +192,7 @@ def main():
 
     if os.environ.get("REPORT") == "1" and not first:
         post(f"【周报】{TODAY} 本周操作", "数据截至各指数最近一个交易日（A股为周四收盘）。创业板轮动、科创板轮动每周五按周四收盘的信号操作（卖出信号出现时当天另发邮件），"
-             "红利打分按日操作，A500、沪深300、黄金按倍数每周定投，纳指照常定投；没买完的钱都放红利低波100。比例是每周定投款的分配。\n\n" + table(cur), "【周报】")
+             "红利打分按日操作，A500 / 沪深300（二选一）、黄金按倍数每周定投，纳指照常定投；没买完的钱都放红利低波100。比例是每周定投款的分配。\n\n" + table(cur), "【周报】")
 
     with open(STATE, "w", encoding="utf-8") as f:
         json.dump(cur, f, ensure_ascii=False, indent=1)
