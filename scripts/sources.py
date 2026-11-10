@@ -213,22 +213,105 @@ def ak_pb_below(since=None):
             if not since or str(r["date"])[:10] >= since}
 
 
-def sse_etf300(since=None):
-    """上交所 ETF 份额：510300 + 510310 + 510330（万份），只取最近几个交易日"""
-    out = {}
-    d = dt.date.today()
-    for _ in range(8):
-        q = ("https://query.sse.com.cn/commonQuery.do?isPagination=true&pageHelp.pageSize=1000&pageHelp.pageNo=1"
-             f"&sqlId=COMMON_SSE_ZQPZ_ETFZL_XXPL_ETFGM_SEARCH_L&STAT_DATE={d.isoformat()}")
-        try:
-            r = jget(q, "https://www.sse.com.cn/").get("result") or []
-            v = sum(float(x["TOT_VOL"]) for x in r if x.get("SEC_CODE") in ("510300", "510310", "510330"))
-            if v:
-                out[d.isoformat()] = round(v, 2)
-        except Exception:  # noqa: BLE001
-            pass
-        d -= dt.timedelta(days=1)
+_SSE_DAY = {}
+
+
+def sse_scale_day(d):
+    """上交所 ETF 规模（份）某一天的全部 ETF：{代码: 份额}。带 jsonCallBack 的请求方式（不带会被 403）"""
+    if d in _SSE_DAY:
+        return _SSE_DAY[d]
+    u = ("https://query.sse.com.cn/commonQuery.do?jsonCallBack=jsonpCallback1&isPagination=true&pageHelp.pageSize=10000"
+         "&pageHelp.pageNo=1&pageHelp.beginPage=1&pageHelp.cacheSize=1&pageHelp.endPage=1"
+         f"&sqlId=COMMON_SSE_ZQPZ_ETFZL_XXPL_ETFGM_SEARCH_L&STAT_DATE={d}&_={int(time.time() * 1000)}")
+    t = http(u, "https://www.sse.com.cn/market/funddata/volumn/etfvolumn/")
+    t = t[t.index("(") + 1:t.rindex(")")]
+    rows = (json.loads(t).get("pageHelp") or {}).get("data") or json.loads(t).get("result") or []
+    _SSE_DAY[d] = {r["SEC_CODE"]: float(r["TOT_VOL"]) * 1e4 for r in rows if r.get("TOT_VOL")}
+    return _SSE_DAY[d]
+
+
+def _wdays(since, back=12):
+    """从 since（或今天往前 back 天）到今天的工作日"""
+    d0 = dt.date.fromisoformat(since) if since else dt.date.today() - dt.timedelta(days=back)
+    out, d = [], d0
+    while d <= dt.date.today():
+        if d.weekday() < 5:
+            out.append(d.isoformat())
+        d += dt.timedelta(days=1)
     return out
+
+
+def sse_shares(code, since):
+    out = {}
+    for d in _wdays(since)[-10:]:      # 每天只补最近两周，历史已在缓存
+        try:
+            v = sse_scale_day(d).get(code)
+        except Exception:  # noqa: BLE001
+            v = None
+        if v:
+            out[d] = v
+    if not out:
+        raise RuntimeError("没有取到")
+    return out
+
+
+def ak_sse_shares(code, since):
+    import akshare as ak  # noqa: PLC0415
+    out = {}
+    for d in _wdays(since)[-8:]:
+        try:
+            df = ak.fund_etf_scale_sse(date=d.replace("-", ""))
+        except Exception:  # noqa: BLE001
+            continue
+        x = df[df["基金代码"].astype(str) == code]
+        if len(x):
+            out[d] = float(x["基金份额"].iloc[0])
+    if not out:
+        raise RuntimeError("没有取到")
+    return out
+
+
+def ak_szse_shares(code, since):
+    """深交所基金规模日频（AKShare 封装，一次最多 6 个月）"""
+    import akshare as ak  # noqa: PLC0415
+    d0 = dt.date.fromisoformat(since) if since else dt.date.today() - dt.timedelta(days=150)
+    df = ak.fund_scale_daily_szse(start_date=d0.strftime("%Y%m%d"), end_date=dt.date.today().strftime("%Y%m%d"))
+    x = df[df["基金代码"].astype(str) == code]
+    out = {str(r["日期"])[:10]: float(r["基金份额"]) for _, r in x.iterrows()}
+    if not out:
+        raise RuntimeError("没有取到")
+    return out
+
+
+def szse_shares_now(code, since):
+    """深交所 ETF 列表里的“当前规模(份)”，只有最新一天"""
+    import io as _io  # noqa: PLC0415
+    import pandas as pd  # noqa: PLC0415
+    b = http("https://www.szse.cn/api/report/ShowReport?SHOWTYPE=xlsx&CATALOGID=1945&TABKEY=tab1",
+             "https://www.szse.cn/", raw=True)
+    df = pd.read_excel(_io.BytesIO(b), dtype={"证券代码": str})
+    x = df[df["证券代码"].astype(str).str.zfill(6) == code]
+    v = float(str(x["当前规模(份)"].iloc[0]).replace(",", ""))
+    d = dt.date.today()
+    while d.weekday() >= 5:
+        d -= dt.timedelta(days=1)
+    return {d.isoformat(): v}
+
+
+def em_cap300(since):
+    """沪深300 流通市值（元，东方财富，只有当天）"""
+    out = {}
+    for sec in ("1.000300", "90.BK0500"):
+        try:
+            j = jget(f"https://push2.eastmoney.com/api/qt/stock/get?secid={sec}&fields=f117,f124", "https://quote.eastmoney.com/")
+            v, ts = j["data"]["f117"], j["data"].get("f124")
+            if v:
+                d = dt.datetime.utcfromtimestamp(ts + 8 * 3600).date() if ts else dt.date.today()
+                out[d.isoformat()] = float(v)
+                return out
+        except Exception:  # noqa: BLE001
+            continue
+    raise RuntimeError("没有取到")
 
 
 def ust_gov(years=2):
@@ -392,7 +475,15 @@ CATALOG = {
     "mkt_amt": ("两市成交额", 2000, [("东方财富", mkt_amount)]),
     "pe_cyb": ("创业板指市盈率(周)", 400, [("蛋卷基金", lambda s: dj_pe("SZ399006"))]),
     "pe_kc": ("科创50市盈率(周)", 250, [("蛋卷基金", lambda s: dj_pe("SH000688"))]),
-    "etf300": ("沪深300ETF份额(国家队)", 1, [("上交所", sse_etf300)]),
+    "sh510300": ("华泰柏瑞沪深300ETF 份额", 200, [("上交所", lambda s: sse_shares("510300", s)), ("AKShare", lambda s: ak_sse_shares("510300", s))]),
+    "sh510310": ("易方达沪深300ETF 份额", 200, [("上交所", lambda s: sse_shares("510310", s)), ("AKShare", lambda s: ak_sse_shares("510310", s))]),
+    "sh510330": ("华夏沪深300ETF 份额", 200, [("上交所", lambda s: sse_shares("510330", s)), ("AKShare", lambda s: ak_sse_shares("510330", s))]),
+    "sz159919": ("嘉实沪深300ETF 份额", 200, [("深交所日频", lambda s: ak_szse_shares("159919", s)), ("深交所当前", lambda s: szse_shares_now("159919", s))]),
+    "unav510300": ("510300 单位净值", 200, [("天天基金", lambda s: em_pzd("510300")), ("东方财富", lambda s: em_lsjz("510300", 3 if s else 60)), ("新浪", lambda s: sina_nav("510300", 60 if s else 1000))]),
+    "unav510310": ("510310 单位净值", 200, [("天天基金", lambda s: em_pzd("510310")), ("东方财富", lambda s: em_lsjz("510310", 3 if s else 60)), ("新浪", lambda s: sina_nav("510310", 60 if s else 1000))]),
+    "unav510330": ("510330 单位净值", 200, [("天天基金", lambda s: em_pzd("510330")), ("东方财富", lambda s: em_lsjz("510330", 3 if s else 60)), ("新浪", lambda s: sina_nav("510330", 60 if s else 1000))]),
+    "unav159919": ("159919 单位净值", 200, [("天天基金", lambda s: em_pzd("159919")), ("东方财富", lambda s: em_lsjz("159919", 3 if s else 60)), ("新浪", lambda s: sina_nav("159919", 60 if s else 1000))]),
+    "cap300": ("沪深300 流通市值", 1, [("东方财富", em_cap300)]),
     "etf513100": ("纳指ETF 513100 收盘", 100, [
         ("东方财富", lambda s: em_kline("1.513100", _ymd(s, "20240101"))),
         ("腾讯", lambda s: tx_kline2("sh513100", 60 if s else 640)),
@@ -422,7 +513,8 @@ CATALOG = {
 
 # 和缓存比对时允许的差异：价格类相对 1%，收益率类绝对 0.15 个百分点
 OVERSEAS_KEYS = {"nav006555", "nav539002", "nav007280", "nav021189", "etf159687", "nav159687"}
-REF_KEYS = {"pb_below", "margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc", "etf300"} | OVERSEAS_KEYS
+ETF300_KEYS = {"sh510300", "sh510310", "sh510330", "sz159919", "unav510300", "unav510310", "unav510330", "unav159919", "cap300"}
+REF_KEYS = {"pb_below", "margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc"} | OVERSEAS_KEYS | ETF300_KEYS
 TOL = {"cn10y": ("abs", 0.15), "us10y": ("abs", 0.15)}
 INCR_DAYS = 60          # 增量更新时回看的天数（同时用于和缓存比对）
 
