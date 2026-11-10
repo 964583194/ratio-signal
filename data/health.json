@@ -1,25 +1,25 @@
 {
- "updated": "2026-11-10 06:59",
+ "updated": "2026-11-10 17:04",
  "ok": true,
  "items": {
   "cyb50": {
    "name": "创业板50 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 3992,
+   "last": "2026-11-10",
+   "days": 3993,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "hl100": {
    "name": "红利低波100 收盘",
    "source": "中证指数官网",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 4092,
+   "last": "2026-11-10",
+   "days": 4093,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "hl100_pe": {
@@ -36,40 +36,40 @@
    "name": "红利低波100 全收益",
    "source": "中证指数官网",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 4092,
+   "last": "2026-11-10",
+   "days": 4093,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "kc50": {
    "name": "科创50 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 1660,
+   "last": "2026-11-10",
+   "days": 1661,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "a500": {
    "name": "中证A500 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 4089,
+   "last": "2026-11-10",
+   "days": 4090,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "hs300": {
    "name": "沪深300 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 5305,
+   "last": "2026-11-10",
+   "days": 5306,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "pe300": {
@@ -116,20 +116,20 @@
    "name": "纳指100 收盘",
    "source": "腾讯",
    "mode": "增量",
-   "last": "2026-11-06",
-   "days": 3222,
+   "last": "2026-11-09",
+   "days": 3223,
    "failed": [],
-   "stale_days": 4,
+   "stale_days": 1,
    "ref": false
   },
   "gold": {
    "name": "黄金ETF 518880 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 3228,
+   "last": "2026-11-10",
+   "days": 3229,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "pb_below": {
@@ -146,30 +146,30 @@
    "name": "两市融资余额",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-06",
-   "days": 4032,
+   "last": "2026-11-09",
+   "days": 4033,
    "failed": [],
-   "stale_days": 4,
+   "stale_days": 1,
    "ref": true
   },
   "margin_ratio": {
    "name": "融资余额占流通市值",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-06",
-   "days": 4032,
+   "last": "2026-11-09",
+   "days": 4033,
    "failed": [],
-   "stale_days": 4,
+   "stale_days": 1,
    "ref": true
   },
   "mkt_amt": {
    "name": "两市成交额",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 4090,
+   "last": "2026-11-10",
+   "days": 4091,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "pe_cyb": {
@@ -194,13 +194,11 @@
   },
   "etf300": {
    "name": "沪深300ETF份额(国家队)",
-   "source": "本地缓存",
-   "mode": "缓存",
+   "source": "上交所",
+   "mode": "增量",
    "last": "2026-11-09",
    "days": 6,
-   "failed": [
-    "上交所：没有数据"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": true
   },
@@ -208,10 +206,10 @@
    "name": "纳指ETF 513100 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 641,
+   "last": "2026-11-10",
+   "days": 642,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "nav513100": {
@@ -223,6 +221,66 @@
    "failed": [],
    "stale_days": 4,
    "ref": false
+  },
+  "nav006555": {
+   "name": "浦银全球智能科技 累计净值",
+   "source": "天天基金",
+   "mode": "全量",
+   "last": "2026-11-06",
+   "days": 1877,
+   "failed": [],
+   "stale_days": 4,
+   "ref": true
+  },
+  "nav539002": {
+   "name": "建信新兴市场混合 累计净值",
+   "source": "天天基金",
+   "mode": "全量",
+   "last": "2026-11-06",
+   "days": 3546,
+   "failed": [],
+   "stale_days": 4,
+   "ref": true
+  },
+  "nav007280": {
+   "name": "摩根日本精选 累计净值",
+   "source": "天天基金",
+   "mode": "全量",
+   "last": "2026-11-09",
+   "days": 1738,
+   "failed": [],
+   "stale_days": 1,
+   "ref": true
+  },
+  "nav021189": {
+   "name": "南方亚太精选ETF联接 累计净值",
+   "source": "天天基金",
+   "mode": "全量",
+   "last": "2026-11-06",
+   "days": 581,
+   "failed": [],
+   "stale_days": 4,
+   "ref": true
+  },
+  "etf159687": {
+   "name": "亚太精选ETF 159687 收盘",
+   "source": "东方财富",
+   "mode": "全量",
+   "last": "2026-11-10",
+   "days": 929,
+   "failed": [],
+   "stale_days": 0,
+   "ref": true
+  },
+  "nav159687": {
+   "name": "亚太精选ETF 159687 净值",
+   "source": "天天基金",
+   "mode": "全量",
+   "last": "2026-11-06",
+   "days": 938,
+   "failed": [],
+   "stale_days": 4,
+   "ref": true
   }
  }
 }
