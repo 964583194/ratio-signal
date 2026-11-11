@@ -347,6 +347,43 @@ def ak_loan(since):
     return out
 
 
+def ust_real10(since):
+    """美国 10 年期实际利率（财政部每日实际收益率曲线），增量时只取今年和去年"""
+    y1 = dt.date.today().year
+    y0 = y1 - 1 if since else 2010
+    out = {}
+    for y in range(y0, y1 + 1):
+        txt = http(f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/{y}/all"
+                   f"?type=daily_treasury_real_yield_curve&field_tdr_date_value={y}&page&_format=csv", timeout=60)
+        for r in csv.DictReader(io.StringIO(txt)):
+            if r.get("10 YR"):
+                m, d, yy = r["Date"].split("/")
+                out[f"{yy}-{m}-{d}"] = float(r["10 YR"])
+    if not out:
+        raise RuntimeError("没有取到")
+    return out
+
+
+def ak_spdr(since):
+    """SPDR 黄金 ETF 持仓（吨），经 AKShare"""
+    import akshare as ak  # noqa: PLC0415
+    df = ak.macro_cons_gold()
+    out = {str(r["日期"])[:10]: float(r["总库存"]) for _, r in df.iterrows() if str(r["总库存"]) not in ("", "nan")}
+    if not out:
+        raise RuntimeError("没有取到")
+    return out
+
+
+def ak_ag0(since):
+    """上期所白银主力合约收盘（元/千克），经 AKShare"""
+    import akshare as ak  # noqa: PLC0415
+    df = ak.futures_main_sina(symbol="AG0")
+    out = {str(r["日期"])[:10]: float(r["收盘价"]) for _, r in df.iterrows()}
+    if not out:
+        raise RuntimeError("没有取到")
+    return {k: v for k, v in out.items() if not since or k >= since} or out
+
+
 def em_cap300(since):
     """沪深300 流通市值（元，东方财富，只有当天）"""
     out = {}
@@ -537,6 +574,10 @@ CATALOG = {
     # ---- 宏观（月度，市场温度的“方向”用；每月中旬公布上个月）
     "m1": ("M1 同比", 100, [("东方财富", ak_money("货币(M1)-同比增长"))]),
     "loan": ("新增人民币贷款", 100, [("东方财富", ak_loan)]),
+    # ---- 黄金分析页
+    "real10": ("美国 10 年期实际利率", 1000, [("美国财政部", ust_real10)]),
+    "spdr": ("SPDR 黄金 ETF 持仓", 1000, [("AKShare", ak_spdr)]),
+    "ag0": ("白银期货主力", 1000, [("新浪", ak_ag0)]),
     "etf513100": ("纳指ETF 513100 收盘", 100, [
         ("东方财富", lambda s: em_kline("1.513100", _ymd(s, "20240101"))),
         ("腾讯", lambda s: tx_kline2("sh513100", 60 if s else 640)),
@@ -568,8 +609,9 @@ CATALOG = {
 OVERSEAS_KEYS = {"nav006555", "nav539002", "nav007280", "nav021189", "etf159687", "nav159687"}
 ETF300_KEYS = {"buffett", "sh510300", "sh510310", "sh510330", "sz159919", "unav510300", "unav510310", "unav510330", "unav159919", "cap300"}
 MONTHLY_KEYS = {"m1", "loan"}     # 月度数据：最新一条本来就是一个多月前的
-REF_KEYS = {"pb_below", "margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc"} | OVERSEAS_KEYS | ETF300_KEYS | MONTHLY_KEYS
-TOL = {"cn10y": ("abs", 0.15), "us10y": ("abs", 0.15), "m1": ("abs", 0.5), "loan": ("rel", 0.05)}
+GOLD_KEYS = {"real10", "spdr", "ag0"}
+REF_KEYS = {"pb_below", "margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc"} | OVERSEAS_KEYS | ETF300_KEYS | MONTHLY_KEYS | GOLD_KEYS
+TOL = {"cn10y": ("abs", 0.15), "us10y": ("abs", 0.15), "m1": ("abs", 0.5), "loan": ("rel", 0.05), "real10": ("abs", 0.15)}
 INCR_DAYS = 60          # 增量更新时回看的天数（同时用于和缓存比对）
 
 

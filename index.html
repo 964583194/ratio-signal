@@ -775,7 +775,7 @@ function Val(view,file,kind){
         <div><span class="big num" id="${P}big">—</span><span class="num of" id="${P}of"></span></div>
         <span class="action" id="${P}act">加载中</span></div>
         <div><p class="note" id="${P}why" style="margin:0"></p></div></div>
-      <div class="kv" id="${P}kv"></div><div id="${P}alert"></div></section>`+
+      <div class="kv" id="${P}kv"></div><div id="${P}alert"></div></section>`+(isG?`<a class="panel oneline" href="gold.html"><b>黄金分析</b><span class="note">ETF 资金、趋势、波动率，现在是什么性质的下跌</span><span class="chev">›</span></a>`:"")+
     sec("指标体检",`<p class="note" style="margin:-6px 0 12px" id="${P}dimNote"></p><div class="dims" id="${P}dims"></div>`)+
     sec(isV?"便宜指数走势":isB?"十年国债收益率（%）":"离最高点的回撤",chartBox(P+"c1",260)+`<p class="note" id="${P}c1n"></p>`)+
     sec(isB?"债券便宜指数走势":"偏离年线（MA250）",chartBox(P+"c2",220)+`<p class="note">${isB?"越高越便宜。绿色区域（≥75，利率比近一年均值高 15bp 以上）便宜，可以多加；红色区域（<25，低 15bp 以上）偏贵，照常定投、不加仓。":"0 线以下表示收盘价低于年线。连续 2 天收在年线下方才算“有效跌破”。"}</p>`)+

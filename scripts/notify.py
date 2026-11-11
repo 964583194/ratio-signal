@@ -84,6 +84,16 @@ def topsig(d):
     return f"亮{L['count']}个", now, L["action"] + "（只作提醒，不改规则）", "temp"
 
 
+def goldflow(d):
+    """黄金分析：只在 ETF 资金恐慌撤出（SPDR 60 日持仓减少 ≥8%）出现 / 消失时提醒"""
+    L = d["latest"]
+    o = L["lights"]["outflow"]
+    on = o["on"]
+    now = f"SPDR 黄金 ETF 持仓 {o['tons']:.0f} 吨，近 60 日 {'+' if (o['value'] or 0) > 0 else ''}{pc(o['value'] or 0)}"
+    act = "资金恐慌撤出，历史上是好买点，有余钱可以多加" if on else "没有资金恐慌撤出，按黄金页规则执行"
+    return ("资金撤出" if on else "正常"), now, act, "gold"
+
+
 def etf300(d):
     """托底资金（国家队）：状态变化就提醒（先观察，不进规则）"""
     L = d["latest"]
@@ -147,7 +157,8 @@ def collect(prev):
              ("债基", "bond.json", bond),
              ("海外小仓位", "overseas.json", overseas),
              ("托底资金（国家队）", "etf300.json", etf300),
-             ("见顶信号灯", "topsig.json", topsig)]
+             ("见顶信号灯", "topsig.json", topsig),
+             ("黄金资金", "goldmodel.json", goldflow)]
     for name, f, fn in pairs:
         d = load(f)
         if not d:
