@@ -11,21 +11,11 @@ Q = ["南方亚太精选ETF联接","银华中小盘混合A","财通成长优选�
  "银华国证港股通创新药","博时中债7-10年政策性金融债","华宝致远混合(QDII)C","华夏全球科技先锋混合","易方达全球成长精选"]
 df = ak.fund_name_em()
 rows = [(str(r["基金代码"]), str(r["基金简称"]), str(r["基金类型"])) for _, r in df.iterrows()]
-print("全部基金", len(rows))
-def norm(s): return re.sub(r"[()（）\s]|发起式|发起", "", s.replace("人民币", "").replace("股票", "").replace("指数", ""))
-def g(s): return {s[i:i+2] for i in range(len(s)-1)}
-def score(q, name):
-    A, B = g(norm(q)), g(norm(name))
-    if not A or not B: return 0
-    sc = len(A & B) / len(A) - 0.01 * len(B - A)
-    if q.endswith("C") and not name.endswith("C"): sc -= .15
-    if q.endswith("A") and not name.endswith("A"): sc -= .15
-    return sc
+KW = {"华泰柏瑞电力": ["华泰柏瑞", "电力"], "广发半导体材料": ["广发", "半导体材料"], "易方达软件": ["易方达", "软件"], "博时政金债": ["博时", "7-10", "政"]}
 res = {}
-for q in Q:
-    cand = sorted(rows, key=lambda r: -score(q, r[1]))[:4]
-    res[q] = [[c, n, t, round(score(q, n), 2)] for c, n, t in cand]
-    print(q, "→", res[q][0], "| 备选", res[q][1:3])
+for q, ks in KW.items():
+    res[q] = [[c, n, t, 1] for c, n, t in rows if all(k in n for k in ks)][:8]
+    print(q, res[q])
 def nav(code):
     req = urllib.request.Request(f"https://fund.eastmoney.com/pingzhongdata/{code}.js?v={int(time.time())}", headers={"User-Agent": "Mozilla/5.0", "Referer": "https://fund.eastmoney.com/"})
     t = urllib.request.urlopen(req, timeout=30).read().decode("utf-8", "ignore")
@@ -37,8 +27,8 @@ def nav(code):
         out.append([time.strftime("%Y-%m-%d", time.gmtime(p["x"] / 1000 + 8 * 3600)), round(v, 6)])
     return out
 navs = {}
-for q in Q:
-    for c, n, t, sc in res[q][:2]:     # 前两个候选都取，方便人工确认 A/C
+for q in res:
+    for c, n, t, sc in res[q][:8]:     # 前两个候选都取，方便人工确认 A/C
         if c in navs: continue
         try:
             navs[c] = nav(c); print("净值", c, n, len(navs[c]), navs[c][0][0], navs[c][-1])
