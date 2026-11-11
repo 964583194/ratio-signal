@@ -620,6 +620,10 @@ def _check(key, new, cache, incremental):
             bad += diff > tol
         if bad > len(common) * 0.2:
             return f"与已有数据对不上（{bad}/{len(common)} 天差异过大）"
+    elif cache and len(new) <= 3:     # 只给当天值的接口（如流通市值）：和缓存最新一天比，差太多才拒绝
+        a, b = new[last], cache[max(cache)]
+        if b and abs(a / b - 1) > 0.15:
+            return f"和缓存最新值差 {abs(a / b - 1):.0%}，无法核对"
     elif cache:
         return "和缓存没有重叠的日期，无法核对"
     return None
