@@ -22,7 +22,7 @@
   <h1 id="h1">创业板50 ÷ 红利低波100 轮动信号</h1>
   <p id="subRot" hidden>数据每个交易日更新，按周操作（每周五按周四收盘的信号下单）· 更新于 <span class="num" id="updated">—</span></p>
   <p id="subKc" hidden>数据每个交易日更新，按周操作（每周五按周四收盘的信号下单）· 更新于 <span class="num" id="k_updated">—</span></p>
-  <p id="subO">本周要做什么 · <span id="o_next"></span></p>
+  <p id="subO"><b class="num" id="o_clock" style="color:var(--ink)"></b><br>本周要做什么 · <span id="o_next"></span></p>
   <p id="subT" hidden>现在在哪个区间、往哪个方向走 · 只作提醒，不改定投规则 · 数据 <span class="num" id="t_date">—</span></p>
   <p id="subH" hidden>沪深300（000300）· 2005 年以来真实行情 · 估值：市盈率与十年国债 · 数据更新于 <span class="num" id="h_updated">—</span></p>
   <p id="subA" hidden>价格：中证A500（000510）· 估值：沪深300 市盈率与十年国债 · 数据更新于 <span class="num" id="a_updated">—</span></p>
@@ -722,6 +722,12 @@ function nextUpdate(){
 }
 // 统一配色：绿=可以买 / 多买，灰=照常或暂停等待，橙=过热或偏贵（不加钱），红=卖出 / 减仓 / 异常
 const OCLS=s=>/卖出预警|过热|偏贵|利率偏低/.test(s)?"h1":/卖出|很贵|减仓|异常/.test(s)?"r1":/买入区|低区|便宜|加码|多买|深度|大幅|回撤 ≥/.test(s)?"g1":"c0";
+// 总览标题下面的日期时间（按北京时间，每 20 秒刷新）
+function tickClock(){
+  const n=new Date(Date.now()+8*3600e3),p=x=>String(x).padStart(2,"0");
+  $("o_clock").textContent=`${n.getUTCFullYear()}年${n.getUTCMonth()+1}月${n.getUTCDate()}日 周${"日一二三四五六"[n.getUTCDay()]} ${p(n.getUTCHours())}:${p(n.getUTCMinutes())}`;
+}
+tickClock();setInterval(tickClock,20000);
 function loadOverview(){
   $("o_next").textContent=nextUpdate();
   fetch("data/state.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(st=>{
