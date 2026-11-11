@@ -1,15 +1,15 @@
 {
- "updated": "2026-11-11 08:19",
+ "updated": "2026-11-11 10:34",
  "ok": true,
  "items": {
   "cyb50": {
    "name": "创业板50 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 3993,
+   "last": "2026-11-11",
+   "days": 3994,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "hl100": {
@@ -46,30 +46,30 @@
    "name": "科创50 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 1661,
+   "last": "2026-11-11",
+   "days": 1662,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "a500": {
    "name": "中证A500 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 4090,
+   "last": "2026-11-11",
+   "days": 4091,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "hs300": {
    "name": "沪深300 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 5306,
+   "last": "2026-11-11",
+   "days": 5307,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "pe300": {
@@ -126,10 +126,10 @@
    "name": "黄金ETF 518880 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 3229,
+   "last": "2026-11-11",
+   "days": 3230,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "pb_below": {
@@ -146,30 +146,30 @@
    "name": "两市融资余额",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 4033,
+   "last": "2026-11-10",
+   "days": 4034,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "margin_ratio": {
    "name": "融资余额占流通市值",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 4033,
+   "last": "2026-11-10",
+   "days": 4034,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "mkt_amt": {
    "name": "两市成交额",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 4091,
+   "last": "2026-11-11",
+   "days": 4092,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "pe_cyb": {
@@ -294,14 +294,34 @@
    "stale_days": 1,
    "ref": true
   },
+  "m1": {
+   "name": "M1 同比",
+   "source": "东方财富",
+   "mode": "增量",
+   "last": "2026-09-01",
+   "days": 225,
+   "failed": [],
+   "stale_days": 71,
+   "ref": true
+  },
+  "loan": {
+   "name": "新增人民币贷款",
+   "source": "东方财富",
+   "mode": "增量",
+   "last": "2026-09-01",
+   "days": 225,
+   "failed": [],
+   "stale_days": 71,
+   "ref": true
+  },
   "etf513100": {
    "name": "纳指ETF 513100 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 642,
+   "last": "2026-11-11",
+   "days": 643,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "nav513100": {
@@ -358,10 +378,10 @@
    "name": "亚太精选ETF 159687 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 929,
+   "last": "2026-11-11",
+   "days": 930,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "nav159687": {
