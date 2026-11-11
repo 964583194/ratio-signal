@@ -922,9 +922,9 @@ function loadOverview(){
     const dates=new Set();
     $("o_rows").innerHTML=Object.keys(W).filter(n=>st[n]).map(n=>{const v=st[n];dates.add(v.date);
       const parts=v.act.split("；"),main=parts[0].replace(/^本周定投款/,""),rest=/轮动/.test(n)?"":parts.slice(1).join("；");
-      return `<a href="#${v.tab}"><div class="n">${n}<small>${W[n]?W[n]+"%":"另配，不占比例"}</small></div><div class="a"><span class="lv ${OCLS(v.state)}">${v.state.split("|")[0]}</span>${main}${rest?`<small>${rest}</small>`:""}</div><span class="chev">›</span></a>`}).join("");
+      return `<a href="#${v.tab}"><div class="n">${n}</div><div class="a"><span class="lv ${OCLS(v.state)}">${v.state.split("|")[0]}</span>${main}${rest?`<small>${rest}</small>`:""}</div><span class="chev">›</span></a>`}).join("");
     const os=st["海外小仓位"];$("o_os").textContent=os?os.act:"";
-    $("o_note").textContent=`比例是每周定投款在各板块的分配，和每周五早上的周报邮件一致。点一行看原因和阈值。数据日期 ${[...dates].sort().pop()||"—"}。`;
+    $("o_note").textContent=`和每周五早上的周报邮件一致。点一行看原因和阈值。数据日期 ${[...dates].sort().pop()||"—"}。`;
   }).catch(e=>{$("o_rows").innerHTML=`<div class="note">读取失败，请稍后刷新（${e.message}）</div>`});
   renderTemp($("o_temp"),true);
   getJ("myfunds.json").then(d=>{if(d){const c=d.count,L=d.labels;$("o_my").textContent=`${d.funds.length} 只：`+Object.keys(L).filter(k=>c[k]).map(k=>L[k][0]+" "+c[k]).join("、")}});
