@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-11 12:03",
+ "updated": "2026-11-11 13:56",
  "ok": true,
  "items": {
   "cyb50": {
@@ -310,6 +310,36 @@
    "days": 225,
    "failed": [],
    "stale_days": 71,
+   "ref": true
+  },
+  "real10": {
+   "name": "美国 10 年期实际利率",
+   "source": "美国财政部",
+   "mode": "增量",
+   "last": "2026-11-10",
+   "days": 4217,
+   "failed": [],
+   "stale_days": 1,
+   "ref": true
+  },
+  "spdr": {
+   "name": "SPDR 黄金 ETF 持仓",
+   "source": "AKShare",
+   "mode": "增量",
+   "last": "2026-11-10",
+   "days": 2906,
+   "failed": [],
+   "stale_days": 1,
+   "ref": true
+  },
+  "ag0": {
+   "name": "白银期货主力",
+   "source": "新浪",
+   "mode": "增量",
+   "last": "2026-11-10",
+   "days": 3528,
+   "failed": [],
+   "stale_days": 1,
    "ref": true
   },
   "etf513100": {
