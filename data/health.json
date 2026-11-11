@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-11 10:34",
+ "updated": "2026-11-11 10:36",
  "ok": true,
  "items": {
   "cyb50": {
@@ -274,14 +274,12 @@
   },
   "cap300": {
    "name": "沪深300 流通市值",
-   "source": "本地缓存",
-   "mode": "缓存",
-   "last": "2026-11-10",
-   "days": 1,
-   "failed": [
-    "东方财富：和缓存没有重叠的日期，无法核对"
-   ],
-   "stale_days": 1,
+   "source": "东方财富",
+   "mode": "增量",
+   "last": "2026-11-11",
+   "days": 2,
+   "failed": [],
+   "stale_days": 0,
    "ref": true
   },
   "buffett": {
