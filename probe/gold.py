@@ -1,49 +1,35 @@
-"""探测黄金模型要用的数据"""
-import json, sys
+import json, sys, csv, io, urllib.request
 sys.path.insert(0, "scripts")
 import sources as S
 out = {}
-def tryit(name, fn):
+def get(url, t=120):
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    return urllib.request.urlopen(req, timeout=t).read().decode("utf-8", "replace")
+# 1) FRED，加长超时、只要 2010 年起
+for s in ("DFII10",):
     try:
-        d = fn()
-        ks = sorted(d)
-        print(f"== {name}: {len(ks)} 条 {ks[0]} ~ {ks[-1]} 最新 {d[ks[-1]]}")
-        out[name] = d
+        txt = get(f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={s}&cosd=2010-01-01", 180)
+        rd = csv.reader(io.StringIO(txt)); next(rd)
+        d = {r[0]: float(r[1]) for r in rd if len(r) > 1 and r[1] not in (".", "")}
+        print("== FRED", s, len(d), min(d), max(d)); out["fred_" + s] = d
     except Exception as e:
-        print(f"== {name} 失败 {e!r}")
-for s in ("DFII10", "DTWEXBGS", "T10YIE"):
-    tryit("fred_" + s, lambda s=s: S.fred(s))
-import akshare as ak
-def sge(sym, col="close"):
-    df = ak.spot_hist_sge(symbol=sym)
-    print(sym, list(df.columns)); return {str(r["date"])[:10]: float(r[col]) for _, r in df.iterrows()}
-tryit("sge_au", lambda: sge("Au99.99"))
-tryit("sge_ag", lambda: sge("Ag(T+D)"))
-def fut(sym):
-    df = ak.futures_main_sina(symbol=sym)
-    print(sym, list(df.columns)); return {str(r["日期"])[:10]: float(r["收盘价"]) for _, r in df.iterrows()}
-tryit("shfe_ag0", lambda: fut("AG0"))
-def spdr():
-    df = ak.macro_cons_gold()
-    print("spdr", list(df.columns), df.tail(2).to_string())
-    c = [x for x in df.columns if "库存" in x or "持仓" in x or "总" in x][0]
-    return {str(r["日期"])[:10]: float(r[c]) for _, r in df.iterrows() if str(r[c]) not in ("nan", "")}
-tryit("spdr", spdr)
-def cftc():
-    for fn in ("macro_usa_cftc_nc_holding", "macro_usa_cftc_c_holding", "macro_usa_cftc_merchant_goods_holding"):
-        if not hasattr(ak, fn): continue
-        try:
-            df = getattr(ak, fn)()
-            gc = [c for c in df.columns if "黄金" in c]
-            print(fn, len(df), gc[:8])
-            if gc:
-                dcol = df.columns[0]
-                return {str(r[dcol])[:10]: [float(r[c]) if str(r[c]) not in ("nan", "") else None for c in gc] for _, r in df.iterrows()} | {"_cols": gc}
-        except Exception as e:
-            print(fn, "失败", e)
-    raise RuntimeError("没有黄金列")
-tryit("cftc", cftc)
-s = json.dumps(out, ensure_ascii=False, separators=(",", ":"), default=str)
+        print("== FRED 失败", e)
+# 2) 美国财政部：每日实际收益率曲线（10 年），按年取
+d = {}
+for y in range(2010, 2027):
+    try:
+        txt = get(f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/{y}/all?type=daily_treasury_real_yield_curve&field_tdr_date_value={y}&page&_format=csv", 60)
+        rd = csv.DictReader(io.StringIO(txt))
+        for r in rd:
+            v = r.get("10 YR")
+            if v:
+                m, dd, yy = r["Date"].split("/"); d[f"{yy}-{m}-{dd}"] = float(v)
+        print("财政部", y, "累计", len(d))
+    except Exception as e:
+        print("财政部", y, "失败", e)
+if d:
+    print("== treasury_real10", len(d), min(d), max(d)); out["ust_real10"] = d
+s = json.dumps(out, separators=(",", ":"))
 for i in range(0, len(s), 1500):
     print(f"CHUNK{i // 1500:05d}:" + s[i:i + 1500])
 print("CHUNKEND")
