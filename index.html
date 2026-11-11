@@ -22,7 +22,7 @@
   <h1 id="h1">创业板50 ÷ 红利低波100 轮动信号</h1>
   <p id="subRot" hidden>数据每个交易日更新，按周操作（每周五按周四收盘的信号下单）· 更新于 <span class="num" id="updated">—</span></p>
   <p id="subKc" hidden>数据每个交易日更新，按周操作（每周五按周四收盘的信号下单）· 更新于 <span class="num" id="k_updated">—</span></p>
-  <p id="subO"><b class="num" id="o_clock" style="color:var(--ink)"></b><br>本周要做什么 · <span id="o_next"></span></p>
+  <p id="subO"><b class="num" id="o_clock" style="color:var(--ink)"></b><br>本周要做什么 · 数据 <span class="num" id="o_data">—</span> 更新 · <span id="o_next"></span></p>
   <p id="subT" hidden>现在在哪个区间、往哪个方向走 · 只作提醒，不改定投规则 · 数据 <span class="num" id="t_date">—</span></p>
   <p id="subH" hidden>沪深300（000300）· 2005 年以来真实行情 · 估值：市盈率与十年国债 · 数据更新于 <span class="num" id="h_updated">—</span></p>
   <p id="subA" hidden>价格：中证A500（000510）· 估值：沪深300 市盈率与十年国债 · 数据更新于 <span class="num" id="a_updated">—</span></p>
@@ -765,19 +765,24 @@ function tickClock(){
 tickClock();setInterval(tickClock,20000);
 function loadOverview(){
   $("o_next").textContent=nextUpdate();
-  fetch("data/state.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(st=>{
+  fetch("data/state.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);if(r.headers.get("X-From-Cache"))offlineNote();return r.json()}).then(st=>{
     const W={"创业板轮动":25,"科创板轮动":15,"红利打分":15,"A500 / 沪深300":10,"黄金":15,"纳指100":20,"债基":0};
     const dates=new Set();
     $("o_rows").innerHTML=Object.keys(W).filter(n=>st[n]).map(n=>{const v=st[n];dates.add(v.date);
-      const parts=v.act.split("；"),main=parts[0].replace(/^本周定投款/,""),rest=/轮动/.test(n)?"":parts.slice(1).join("；");
+      const parts=v.act.split("；"),main=parts[0].replace(/^本周定投款/,"").replace(/^买红利低波100（(.+)）$/,"$1"),rest=/轮动/.test(n)?"":parts.slice(1).join("；");
       return `<a href="#${v.tab}"><div class="n">${n}</div><div class="a"><span class="lv ${OCLS(v.state)}">${v.state.split("|")[0]}</span>${main}${rest?`<small>${rest}</small>`:""}</div><span class="chev">›</span></a>`}).join("");
     $("o_note").textContent=`和每周五早上的周报邮件一致。点一行看原因和阈值。数据日期 ${[...dates].sort().pop()||"—"}。`;
   }).catch(e=>{$("o_rows").innerHTML=`<div class="note">读取失败，请稍后刷新（${e.message}）</div>`});
   renderTemp($("o_temp"),true);loadPlan();
+  getJ("health.json").then(h=>{if(h&&h.updated)$("o_data").textContent=h.updated.slice(5).replace("-","月").replace(" ","日 ")});
   getJ("myfunds.json").then(d=>{if(d){const c=d.count,L=d.labels;$("o_my").textContent=`${d.funds.length} 只：`+Object.keys(L).filter(k=>c[k]).map(k=>L[k][0]+" "+c[k]).join("、")}});
 }
 // ---------------- 市场温度：五档区间 + 方向（data/temp.json，scripts/temp.py 计算）
-const getJ=f=>fetch("data/"+f+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null);
+// 取数据；连不上网时 sw.js 会给缓存的旧数据并打上 X-From-Cache，这里在页面顶部提示
+const getJ=f=>fetch("data/"+f+"?t="+Date.now(),{cache:"no-store"}).then(r=>{if(r.headers.get("X-From-Cache"))offlineNote();return r.ok?r.json():null}).catch(()=>null);
+function offlineNote(){if($("offline"))return;const d=document.createElement("div");d.id="offline";d.className="panel";d.style.cssText="border-color:var(--div);background:var(--div-soft);padding:10px 14px";
+  d.innerHTML="<b>网络没连上，下面显示的是上次存在手机里的旧数据。</b><span class=\"note\" style=\"margin:0\"> 换个网络或稍后下拉刷新。</span>";
+  const t=document.querySelector(".tabwrap");t.parentNode.insertBefore(d,t)}
 const ZN=["底部","偏冷","正常","偏热","顶部"],ZFILL=["rgba(47,143,91,.34)","rgba(47,143,91,.13)",null,"rgba(201,138,18,.22)","rgba(200,55,45,.24)"];
 const zbar=z=>`<div class="zbar">${ZN.map((n,i)=>`<div class="zc${i}${i===z?" on":""}">${n}</div>`).join("")}</div>`;
 const sgn=x=>x==null?"—":(x>0?"+":"")+pc(x);
