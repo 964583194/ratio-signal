@@ -242,6 +242,7 @@ details.sub{margin-top:10px}details.sub>summary{cursor:pointer;font-size:13px;co
 </section>
 <section class="panel"><h2>市场温度<a class="hmore" href="#temp">看详情 ›</a></h2><div id="o_temp"><div class="note">加载中</div></div></section>
 <a class="panel oneline" href="#overseas"><b>海外小仓位</b><span class="note" id="o_os">加载中</span><span class="chev">›</span></a>
+<a class="panel oneline" href="funds.html"><b>我的基金</b><span class="note" id="o_my">每只能不能加</span><span class="chev">›</span></a>
 </div>
 
 <div id="viewT" hidden>
@@ -926,6 +927,7 @@ function loadOverview(){
     $("o_note").textContent=`比例是每周定投款在各板块的分配，和每周五早上的周报邮件一致。点一行看原因和阈值。数据日期 ${[...dates].sort().pop()||"—"}。`;
   }).catch(e=>{$("o_rows").innerHTML=`<div class="note">读取失败，请稍后刷新（${e.message}）</div>`});
   renderTemp($("o_temp"),true);
+  getJ("myfunds.json").then(d=>{if(d){const c=d.count,L=d.labels;$("o_my").textContent=`${d.funds.length} 只：`+Object.keys(L).filter(k=>c[k]).map(k=>L[k][0]+" "+c[k]).join("、")}});
 }
 // ---------------- 市场温度：五档区间 + 方向（data/temp.json，scripts/temp.py 计算）
 const getJ=f=>fetch("data/"+f+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null);

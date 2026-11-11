@@ -214,7 +214,7 @@ def div_score():
 # ---------------------------------------------------------------- 主流程
 def main():
     changed = S.refresh_all()
-    outputs = ["market.json", "ratio.json", "kc.json", "dividend.json", "a500.json", "hs300.json", "ndx.json", "gold.json", "bond.json", "topsig.json", "temp.json"]
+    outputs = ["market.json", "ratio.json", "kc.json", "dividend.json", "a500.json", "hs300.json", "ndx.json", "gold.json", "bond.json", "topsig.json", "temp.json", "myfunds.json"]
     missing = [f for f in outputs if not os.path.exists(os.path.join(ROOT, "data", f))]
     if not changed and not missing and os.environ.get("FORCE") != "1":
         print("数据没有变化（非交易日或接口还没更新），跳过计算")
@@ -240,6 +240,7 @@ def main():
                                      "2021-01-01", "科创50", tr(), div_score())),
         ("中证A500 / 沪深300 / 纳指100 / 黄金", lambda: __import__("value").run()),
         ("海外小仓位", lambda: __import__("overseas").run()),   # 要读 ndx.json，放在后面
+        ("我的基金", lambda: __import__("myfunds").run()),     # 要读 temp.json 和各页签结果，放最后
     ]
     for name, job in jobs:
         try:
