@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="交易系统">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="几个指数的定投信号，每个交易日自动更新">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <div class="wrap">
@@ -27,7 +27,7 @@
   <p id="subH" hidden>沪深300（000300）· 2005 年以来真实行情 · 估值：市盈率与十年国债 · 数据更新于 <span class="num" id="h_updated">—</span></p>
   <p id="subA" hidden>价格：中证A500（000510）· 估值：沪深300 市盈率与十年国债 · 数据更新于 <span class="num" id="a_updated">—</span></p>
   <p id="subN" hidden>纳斯达克100 指数（美元计价）· 回撤、年线与国内 ETF 溢价率 · 数据更新于 <span class="num" id="n_updated">—</span></p>
-  <p id="subG" hidden>黄金ETF（518880）· 回撤、年线偏离 · 数据更新于 <span class="num" id="g_updated">—</span></p>
+  <p id="subG" hidden>黄金ETF（518880）· 压舱石：平时照常买，便宜多入一点，涨得极端卖一部分 · 数据更新于 <span class="num" id="g_updated">—</span></p>
   <p id="subB" hidden>中债7-10年政策性金融债指数类基金 · 用十年国债收益率判断 · 数据更新于 <span class="num" id="b_updated">—</span></p>
   <p id="subDiv" hidden>每个交易日 200 元 · 四维打分 0~20 分决定买多少 · 数据更新于 <span class="num" id="dUpdated">—</span></p>
 </header>
@@ -518,7 +518,7 @@ function Val(view,file,kind){
         <div><span class="big num" id="${P}big">—</span><span class="num of" id="${P}of"></span></div>
         <span class="action" id="${P}act">加载中</span></div>
         <div><p class="note" id="${P}why" style="margin:0"></p></div></div>
-      <div class="kv" id="${P}kv"></div><div id="${P}alert"></div></section>`+(isG?`<a class="panel oneline" href="gold.html"><b>黄金分析</b><span class="note">ETF 资金、趋势、波动率，现在是什么性质的下跌</span><span class="chev">›</span></a>`:"")+
+      <div class="kv" id="${P}kv"></div><div id="${P}alert"></div></section>`+
     sec("指标体检",`<p class="note" style="margin:-6px 0 12px" id="${P}dimNote"></p><div class="dims" id="${P}dims"></div>`)+
     sec(isV?"便宜指数走势":isB?"十年国债收益率（%）":"离最高点的回撤",chartBox(P+"c1",260)+`<p class="note" id="${P}c1n"></p>`)+
     sec(isB?"债券便宜指数走势":"偏离年线（MA250）",chartBox(P+"c2",220)+`<p class="note">${isB?"越高越便宜。绿色区域（≥75，利率比近一年均值高 15bp 以上）便宜，可以多加；红色区域（<25，低 15bp 以上）偏贵，照常定投、不加仓。":"0 线以下表示收盘价低于年线。连续 2 天收在年线下方才算“有效跌破”。"}</p>`)+
@@ -635,8 +635,92 @@ function Val(view,file,kind){
 const aView=Val("viewA","data/a500.json","a500");
 const hView=Val("viewH","data/hs300.json","hs300");
 const nView=Val("viewN","data/ndx.json","ndx");
-const gView=Val("viewG","data/gold.json","gold");
 const bView=Val("viewB","data/bond.json","bond");
+// ---------------- 黄金（六档：压舱石，平时照常买，便宜时多入一点，涨得极端时卖一部分；规则在 goldmodel.py）
+const GCOND={sell:"比年线高 30% 以上",hot:"比年线高 25% 以上",more:"ETF 资金恐慌撤出（60 日持仓减少 ≥8%）",wait:"刚开始跌（还在 10 个月线上方），或波动很大",cheap:"比年线低 5% 以上",buy:"其他时候"};
+const GFILL={S:"rgba(200,55,45,.30)",H:"rgba(201,138,18,.24)",M:"rgba(47,143,91,.40)",W:"rgba(201,138,18,.11)",C:"rgba(47,143,91,.16)",B:null};
+function loadGold(){
+  const root=$("viewG");root.innerHTML=`<section class="panel"><div class="note">加载中</div></section>`;
+  Promise.all([getJ("goldmodel.json"),getJ("gold.json")]).then(([d,g])=>{
+    if(!d||!g){root.innerHTML=`<section class="panel err"><h2>读取数据失败</h2><p class="note">稍后刷新</p></section>`;return}
+    $("g_updated").textContent=g.updated;
+    const L=d.latest,Lt=L.lights,S=d.series,T=d.stats,E=d.outflow_episodes,SS=d.states,sg1=x=>x==null?"—":(x>0?"+":"")+pc(x,0);
+    const dates=S.map(r=>r[0]),px=S.map(r=>r[1]),m210=S.map(r=>r[2]),sp=S.map(r=>r[3]),vol=S.map(r=>r[4]),ry=S.map(r=>r[5]);
+    const m250=px.map((v,i)=>i>=249?px.slice(i-249,i+1).reduce((a,b)=>a+b,0)/250:null);
+    const sp60=sp.map((v,i)=>i>=60&&v&&sp[i-60]?(v/sp[i-60]-1)*100:null);
+    const tk=(lo,hi,n=5)=>{const st=niceStep((hi-lo)*(5/n));const a=Math.floor(lo/st)*st,b=Math.ceil(hi/st)*st,t=[];for(let v=a;v<=b+st/2;v+=st)t.push(+v.toFixed(6));return t};
+    const box=(id,h)=>`<div class="chartwrap"><svg class="chart" id="${id}" viewBox="0 0 720 ${h}" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>`;
+    const h6=v=>v&&v["120"]?`${sgn(v["120"].avg)}<br><small>上涨 ${pc(v["120"].up,0)}</small>`:"—";
+    const cur=SS.find(s=>s.key===L.key);
+    root.innerHTML=`
+    <section class="panel"><div class="label">黄金 · 本周结论 · ${L.date}</div>
+      <div class="glab"><span class="lv ${L.cls}">${L.label}</span><span class="gm num">本周 ${L.mult===0?"不买":L.mult+" 倍"}</span></div>
+      <div class="verdict" style="margin-top:8px">${L.why} → ${L.action}</div>
+      <p class="note">黄金在组合里是压舱石：和 A 股几乎不相关（周涨跌相关约 0），A 股大跌时它基本不跌。所以平时照常买，便宜时多入一点，只在涨得极端时卖一部分。</p>
+      <div class="ladder">${SS.map(s=>`<div class="${s.key===L.key?"on":""}"><span class="lv ${s.cls}">${s.label}</span><span class="c">${GCOND[s.key]}<small>${s.action}</small></span><span class="r num">${h6(s)}</span></div>`).join("")}</div>
+      <p class="note">从上往下，先满足的那一档算。右边是 2014 年以来处在这一档时，之后半年黄金ETF 的平均涨跌和上涨比例。${cur&&cur["120"]?`现在这一档历史上之后半年平均 ${sgn(cur["120"].avg)}，期间平均最多再跌 ${pc(-cur.dd,1)}。`:""}</p>
+    </section>
+    <section class="panel"><h2>现在的位置</h2><div class="g4">
+      <div><span class="t">比年线（250 日）</span><div class="v">${sgn(L.dev250)}</div><div class="s">低 5% 以上算便宜；高 25% 暂停、30% 卖一部分</div></div>
+      <div><span class="t">离最高点</span><div class="v">${pc(L.dd,0)}</div><div class="s">最高 ${g.latest.high.toFixed(3)}（${g.latest.high_date}）</div></div>
+      <div><span class="t">10 个月线</span><div class="v">${sgn(Lt.trend.dev)}</div><div class="s">${Lt.trend.up?"在上方，趋势向上":"在下方，趋势还在走弱"}</div></div>
+      <div><span class="t">波动率（20 日年化）</span><div class="v">${Lt.vol.value==null?"—":pc(Lt.vol.value,0)}</div><div class="s">近 5 年 ${Lt.vol.pct==null?"—":pc(Lt.vol.pct,0)} 分位；≥30% 或 90% 分位算很大</div></div>
+      <div><span class="t">ETF 资金（近 60 日）</span><div class="v">${sgn(Lt.outflow.value)}</div><div class="s">SPDR 持仓 ${Lt.outflow.tons?Lt.outflow.tons.toFixed(0):"—"} 吨；减少 ≥8% 才算恐慌撤出</div></div>
+      <div><span class="t">黄金ETF</span><div class="v">${g.latest.close.toFixed(3)}</div><div class="s">年线 ${g.latest.ma250.toFixed(3)}</div></div></div>
+    </section>
+    <section class="panel"><h2>走势和每天的结论</h2>
+      <h3 class="h3" style="margin-top:0">黄金ETF、年线、10 个月线${big("gd_c1","黄金ETF（背景色是每天的结论）")}</h3>
+      <div class="zleg">${SS.map(s=>`<span><i style="background:${GFILL["SHMWCB"["sell hot more wait cheap buy".split(" ").indexOf(s.key)]]||"var(--panel)"};border:1px solid var(--line)"></i>${s.label}</span>`).join("")}</div>
+      <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 黄金ETF　<span style="color:var(--grow);font-weight:700">- - -</span> 年线　<span style="color:var(--div);font-weight:700">· · ·</span> 10 个月线</p>${box("gd_c1",250)}
+      <p class="concl"><b>结论：</b>现在比年线 ${sgn(L.dev250)}、离最高点 ${pc(L.dd,0)}，${Lt.trend.up?"在 10 个月线上方":"在 10 个月线下方，跌了很久"}。2014~2024 年黄金从没比年线高过 25%；“可以卖一部分”只在 2025~2026 年出现过 ${d.sell_episodes.length} 次，最近一次是 ${d.sell_episodes.length?d.sell_episodes[d.sell_episodes.length-1].from.slice(0,7):"—"}，之后半年 ${d.sell_episodes.length?sgn(d.sell_episodes[d.sell_episodes.length-1].r120):"—"}。<b>→ ${L.action}。</b></p>
+    </section>
+    <section class="panel"><h2>ETF 资金：有没有恐慌撤出</h2>
+      <p class="note" style="margin:-6px 0 8px">全球最大的黄金 ETF（SPDR GLD）持仓，60 个交易日减少 8% 以上 = 大资金恐慌撤出，历史上是好买点，触发“可以多买”。</p>
+      <h3 class="h3" style="margin-top:0">持仓 60 日变化与金价${big("gd_c2","SPDR 持仓 60 日变化（左轴 %）与黄金ETF（右轴）")}</h3>
+      <p class="note" style="margin:0 0 6px"><span style="color:var(--grow);font-weight:700">——</span> 60 日变化（%，绿色区 ≤−8%）　<span style="color:var(--ink);font-weight:700">——</span> 黄金ETF（右轴）</p>${box("gd_c2",220)}
+      <p class="concl"><b>结论：</b>现在 ${sgn(Lt.outflow.value)}，${Lt.outflow.on?"<b>正在恐慌撤出</b>":"没有恐慌撤出"}。2014 年以来出现过 ${E.length} 次，${E.filter(e=>e.r120!=null).length} 次里 ${E.filter(e=>e.r120!=null&&e.r120>0).length} 次之后半年上涨，期间平均最多再跌只有 ${pc(-T.outflow.dd,1)}。资金大量涌入反而不是卖点（之后半年上涨 ${pc(T.inflow["120"].up,0)}）。</p>
+      <details class="sub"><summary>看历次撤出 ▾</summary><div class="scroll"><table><thead><tr><th>时段</th><th class="r">之后半年</th><th class="r">期间最多再跌</th></tr></thead><tbody>
+      ${E.slice().reverse().map(e=>`<tr><td class="num">${e.from.slice(0,7)}${e.to.slice(0,7)!==e.from.slice(0,7)?"~"+e.to.slice(0,7):""}</td><td class="r num">${sg1(e.r120)}</td><td class="r num">${e.dn==null?"—":pc(e.dn,0)}</td></tr>`).join("")}</tbody></table></div></details>
+    </section>
+    <section class="panel"><h2>波动率：稳没稳</h2>
+      <h3 class="h3" style="margin-top:0">波动率与金价${big("gd_c3","黄金ETF 20 日年化波动率（左轴 %）与黄金ETF（右轴）")}</h3>
+      <p class="note" style="margin:0 0 6px"><span style="color:var(--mark);font-weight:700">——</span> 波动率（%，红色区 ≥30%）　<span style="color:var(--ink);font-weight:700">——</span> 黄金ETF（右轴）。长期平均约 15%。</p>${box("gd_c3",210)}
+      <p class="concl"><b>结论：</b>现在 ${Lt.vol.value==null?"—":pc(Lt.vol.value,0)}（近 5 年 ${pc(Lt.vol.pct,0)} 分位），${Lt.vol.hot?"<b>很大，先等等</b>":Lt.vol.pct>=.8?"偏高但不算很大":"正常"}。波动很大的时候，之后半年平均只有 ${sgn(T.vol_hot["120"]?T.vol_hot["120"].avg:null)}，期间平均最多再跌 ${pc(-T.vol_hot.dd,1)}（平时 ${pc(-T.all.dd,1)}），所以这种时候先少买。</p>
+    </section>
+    <section class="panel" id="g_hist"><h2>规则回测</h2>
+      <div class="scroll"><table><thead><tr><th>方案</th><th class="r">年化</th><th class="r">最大回撤</th></tr></thead><tbody>
+        ${[["value","六档（现行）"],["old","旧规则：回撤 ≥15% 买 2 倍"],["plain","普通定投"]].map(([k,n])=>g.backtest[k]?`<tr class="${k==="value"?"hl":""}"><td>${n}</td><td class="r num">${pc(g.backtest[k].xirr,2)}</td><td class="r num">${pc(g.backtest[k].mdd)}</td></tr>`:"").join("")}</tbody></table></div>
+      <p class="note">${g.bt_start} 起，每周 1000 元，没买的钱放红利低波100（全收益），钱不够就买池子里有的；“卖 1/3”没算进回测。几种做法年化都在 13% 左右，黄金靠择时赚不了多少，规则主要是让你知道什么时候多入、什么时候别追。</p>
+      <h3 class="h3">“可以卖一部分”那几次</h3>
+      <div class="scroll"><table><thead><tr><th>时段</th><th class="r">之后 60 日</th><th class="r">之后半年</th></tr></thead><tbody>
+      ${d.sell_episodes.map(e=>`<tr><td class="num">${e.from.slice(0,7)}${e.to.slice(0,7)!==e.from.slice(0,7)?"~"+e.to.slice(0,7):""}</td><td class="r num">${sg1(e.r60)}</td><td class="r num">${sg1(e.r120)}</td></tr>`).join("")||`<tr><td colspan="3" class="note">没有</td></tr>`}</tbody></table></div>
+      <p class="note">卖 1/3 是保险，不保证卖在高点：2025 年 4 月那次卖早了，2026 年初那次躲过了大跌。卖出的钱放红利低波100，价格回到年线附近或 ETF 资金恐慌撤出时再买回。</p>
+    </section>
+    <section class="panel" id="g_unused"><h2>测过但不用的</h2>
+      <p><b>实际利率</b>（美国 10 年期 TIPS，现在 ${L.ref.real10==null?"—":L.ref.real10.toFixed(2)+"%"}）</p>
+      <p class="note" style="margin-top:0">过去最常用的黄金模型。2013~2020 年和金价同期变化相关 ${T.real_corr["2013-2020"]}（很强），2022 年后只剩 ${T.real_corr["2022-2026"]}；而且对之后的走势几乎没有预测力，2022 年起各国央行大量买金，实际利率很高的几年反而是黄金大牛市。</p>
+      <h3 class="h3">实际利率与黄金ETF${big("gd_c4","美国 10 年期实际利率（左轴 %）与黄金ETF（右轴）")}</h3>${box("gd_c4",200)}
+      <p class="note"><b>金银比</b>（现在近 5 年 ${L.ref.ratio_pct==null?"—":pc(L.ref.ratio_pct,0)} 分位）：白银相对强时，2020~2021 年三次之后黄金都跌，但 2024 年、2025~2026 年两次没应验，不用。<b>期货持仓（CFTC）</b>：投机盘最拥挤之后金价反而继续涨（样本主要是牛市），不用。<b>跌破 10 个月线卖</b>：跌下来时已经晚了；“上方持有、下方空仓”年化 ${pc(T.timing.trend.cagr,1)}，不如一直拿着的 ${pc(T.timing.hold.cagr,1)}。</p>
+      <p class="note">数据：黄金ETF 东方财富；SPDR 持仓、白银 AKShare；实际利率 美国财政部。</p>
+    </section>
+`;
+    const lt=tk(Math.min(...px),Math.max(...px));
+    DualChart($("gd_c1"),{W:720,H:250,dates,leftRange:[lt[0],lt[lt.length-1]],leftTicks:lt,leftFmt:v=>v.toFixed(v<10?1:0),bg:d.state_series.split("").map(c=>GFILL[c]),
+      left:[{v:px,c:"var(--ink)",w:1.5},{v:m250,c:"var(--grow)",w:1.4,dash:"6 4"},{v:m210,c:"var(--div)",w:1.4,dash:"2 3"}],right:{v:px,c:"transparent"},
+      tip:i=>`${dates[i]}<br><b>${(SS.find(s=>s.key===["sell","hot","more","wait","cheap","buy"]["SHMWCB".indexOf(d.state_series[i])])||{}).label||""}</b><br>黄金ETF ${px[i].toFixed(3)}<br>比年线 ${m250[i]?sgn(px[i]/m250[i]-1):"—"} · 比 10 个月线 ${m210[i]?sgn(px[i]/m210[i]-1):"—"}`});
+    const l2=tk(Math.min(...sp60.filter(v=>v!=null)),Math.max(...sp60.filter(v=>v!=null)));
+    DualChart($("gd_c2"),{W:720,H:220,dates,leftRange:[l2[0],l2[l2.length-1]],leftTicks:l2,leftFmt:v=>v+"%",bands:[{from:l2[0],to:-8,fill:"var(--grow-soft)"}],
+      left:[{v:sp60,c:"var(--grow)",w:1.5}],right:{v:px,c:"var(--ink)"},tip:i=>`${dates[i]}<br>SPDR ${sp[i]?sp[i].toFixed(0)+" 吨":"—"}<br>60 日 <b>${sp60[i]==null?"—":(sp60[i]>0?"+":"")+sp60[i].toFixed(1)+"%"}</b><br>黄金ETF ${px[i].toFixed(3)}`});
+    const vv=vol.map(v=>v==null?null:v*100),l3=tk(0,Math.max(...vv.filter(v=>v!=null)));
+    DualChart($("gd_c3"),{W:720,H:210,dates,leftRange:[0,l3[l3.length-1]],leftTicks:l3,leftFmt:v=>v+"%",bands:[{from:30,to:l3[l3.length-1],fill:"var(--mark-soft)"}],
+      left:[{v:vv,c:"var(--mark)",w:1.3}],right:{v:px,c:"var(--ink)"},tip:i=>`${dates[i]}<br>波动率 <b>${vv[i]==null?"—":vv[i].toFixed(0)+"%"}</b><br>黄金ETF ${px[i].toFixed(3)}`});
+    const l4=tk(Math.min(...ry.filter(v=>v!=null)),Math.max(...ry.filter(v=>v!=null)));
+    DualChart($("gd_c4"),{W:720,H:200,dates,leftRange:[l4[0],l4[l4.length-1]],leftTicks:l4,leftFmt:v=>v.toFixed(1)+"%",
+      left:[{v:ry,c:"var(--div)",w:1.5}],right:{v:px,c:"var(--ink)"},tip:i=>`${dates[i]}<br>实际利率 <b>${ry[i]==null?"—":ry[i].toFixed(2)+"%"}</b><br>黄金ETF ${px[i].toFixed(3)}`});
+    root.querySelectorAll(".bigbtn").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
+    foldHist("viewG");
+  });
+}
 // ---------------- 数据源状态
 fetch("data/health.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(hh=>{
   const it=Object.values(hh.items||{}),cache=it.filter(v=>v.source==="本地缓存"),stale=it.filter(v=>!v.ref&&(v.stale_days==null||v.stale_days>12));   // 参考类、月度数据过期不算异常（和后台体检一致）
@@ -657,7 +741,7 @@ function nextUpdate(){
   return "";
 }
 // 统一配色：绿=可以买 / 多买，灰=照常或暂停等待，橙=过热或偏贵（不加钱），红=卖出 / 减仓 / 异常
-const OCLS=s=>/卖出预警|过热|偏贵|利率偏低/.test(s)?"h1":/卖出|很贵|减仓|异常/.test(s)?"r1":/买入区|低区|便宜|加码|多买|深度|大幅|回撤 ≥/.test(s)?"g1":"c0";
+const OCLS=s=>/卖出预警|过热|偏贵|利率偏低|先等等|^不动/.test(s)?"h1":/卖出|很贵|减仓|异常|卖一部分/.test(s)?"r1":/买入区|低区|便宜|加码|多买|深度|大幅|回撤 ≥/.test(s)?"g1":"c0";
 // 本周下单清单：data/plan.json 是每 1000 元的清单（notify.py 生成，和周报同一套），按自己的预算等比例换算
 function loadPlan(){
   let B=1000;try{const v=+localStorage.getItem("weeklyBudget");if(v>0)B=v}catch(e){}
@@ -915,7 +999,7 @@ const VIEWS={overview:["viewO","tabO","subO","交易系统"],
 // 轮动页签里有两个子页：创业板 / 科创板
 const GROUPS={rotation:[["rotation","创业板50"],["kc","科创50"]]};
 GROUPS.kc=GROUPS.rotation;
-const LOADERS={overview:loadOverview,temp:loadTemp,rotation:rotView.load,kc:kcView.load,dividend:loadDiv,ndx:nView.load,gold:gView.load,bond:bView.load},LOADED={};
+const LOADERS={overview:loadOverview,temp:loadTemp,rotation:rotView.load,kc:kcView.load,dividend:loadDiv,ndx:nView.load,gold:loadGold,bond:bView.load},LOADED={};
 // A500 / 沪深300 合并成一个页签；旧链接 #a500、#hs300 仍然能打开对应的那一个
 let BROAD="a500";const BLOADED={};
 function setBroad(b){
@@ -945,7 +1029,7 @@ document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",
 window.addEventListener("hashchange",showView);
 $("grpSw").addEventListener("click",e=>{const b=e.target.closest("button");if(b)location.hash=b.dataset.k});
 // 回测、历史检验这些复盘内容收进页签最下面的“历史与回测”，默认收起
-const FOLD=/^(回测|历史检验|近几次有效跌破|近一年信号|性格对比)/;
+const FOLD=/^(回测|历史检验|近几次有效跌破|近一年信号|性格对比|规则回测|测过但不用的)/;
 function foldHist(id){
   const v=$(id);if(!v)return;
   const secs=[...v.children].filter(x=>x.tagName==="SECTION"&&FOLD.test(((x.querySelector("h2")||{}).textContent||"").trim()));

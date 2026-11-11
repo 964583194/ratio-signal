@@ -337,19 +337,19 @@ def run_ndx():
     dump("ndx.json", data)
 
 
-G_ZONES = [(0.15, 2.0, "回撤 ≥15%", "2 倍定投"), (-1, 1.0, "正常", "正常定投")]
-G_HOT = 0.25    # 比年线高 25% 以上暂停买入
+G_HOT = 0.25    # 比年线高 25% 以上暂停买入（旧规则也有）
 
 
-def g_mult(dd, dev):
+def g_mult_old(dd, dev):
+    """旧规则（2026-11-11 前）：回撤 ≥15% 买 2 倍，比年线高 25% 以上暂停。只留作回测对比"""
     if dev is not None and dev > G_HOT:
-        return 0.0, "过热", "暂停买入，定投款买红利低波100"
-    for th, m, n, a in G_ZONES:
-        if dd >= th:
-            return m, n, a
+        return 0.0
+    return 2.0 if dd >= .15 else 1.0
 
 
 def run_gold():
+    """黄金：六档规则在 goldmodel.states()，这里出每周倍数、回测和历史检验（gold.json）"""
+    import goldmodel as GM  # noqa: PLC0415
     raw, _ = S.get_series("gold", 2000)
     dates = sorted(raw)
     px = [raw[d] for d in dates]
@@ -361,22 +361,22 @@ def run_gold():
     m250 = ma(px, 250)
     below = below_flags(px, m250)
     dev = [px[k] / m250[k] - 1 if m250[k] else None for k in range(len(px))]
+    ST = GM.states(dates, px)
     i0 = 250
     D = [dt.date.fromisoformat(d) for d in dates[i0:]]
-    P, DD, B = px[i0:], dd[i0:], below[i0:]
-    mult = [g_mult(a, b)[0] for a, b in zip(DD, dev[i0:])]
-    bt = {"plain": backtest(D, P, 0.0), "value": backtest2(D, P, 0.0, mult, tp=False)}
-    fwd = forward(P, [("比年线高 25% 以上（过热）", lambda i: dev[i0 + i] > G_HOT),
-                      ("回撤 ≥15%", lambda i: DD[i] >= .15), ("回撤 5%~15%", lambda i: .05 <= DD[i] < .15),
-                      ("接近高点（回撤 <5%）", lambda i: DD[i] < .05),
-                      ("有效跌破年线", lambda i: B[i]), ("全部交易日", lambda i: True)])
+    P, DD = px[i0:], dd[i0:]
+    mult = [GM.SMAP[k][2] for k, _ in ST[i0:]]
+    old = [g_mult_old(a, b) for a, b in zip(DD, dev[i0:])]
+    bt = {"plain": backtest(D, P, 0.0), "value": backtest2(D, P, 0.0, mult, tp=False), "old": backtest2(D, P, 0.0, old, tp=False)}
+    fwd = forward(P, [(lab, (lambda k: lambda i: ST[i0 + i][0] == k)(k)) for k, lab, *_ in GM.STATES] + [("全部交易日", lambda i: True)])
     i = len(dates) - 1
-    m, zn, act = g_mult(dd[i], dev[i])
+    key, why = ST[i]
+    lab, cls, m, act = GM.SMAP[key]
     hi_i = max(range(len(px)), key=lambda k: px[k])
     data = {
         "updated": now_str(), "name": "黄金", "kind": "gold",
         "latest": {"date": dates[i], "close": px[i], "prev_close": px[i - 1], "high": px[hi_i],
-                   "high_date": dates[hi_i], "dd": round(dd[i], 4), "zone": zn, "mult": m, "action": act,
+                   "high_date": dates[hi_i], "dd": round(dd[i], 4), "zone": lab, "state": key, "cls": cls, "why": why, "mult": m, "action": act,
                    "ma250": round(m250[i], 3), "dev": round(dev[i], 4), "below": below[i], "hot": G_HOT},
         "backtest": bt, "bt_start": dates[i0], "div": 0,
         "forward": fwd,

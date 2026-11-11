@@ -89,16 +89,6 @@ def topsig(d):
     return f"亮{L['count']}个", now, L["action"] + "（只作提醒，不改规则）", "temp"
 
 
-def goldflow(d):
-    """黄金分析：只在 ETF 资金恐慌撤出（SPDR 60 日持仓减少 ≥8%）出现 / 消失时提醒"""
-    L = d["latest"]
-    o = L["lights"]["outflow"]
-    on = o["on"]
-    now = f"SPDR 黄金 ETF 持仓 {o['tons']:.0f} 吨，近 60 日 {'+' if (o['value'] or 0) > 0 else ''}{pc(o['value'] or 0)}"
-    act = "资金恐慌撤出，历史上是好买点，有余钱可以多加" if on else "没有资金恐慌撤出，按黄金页规则执行"
-    return ("资金撤出" if on else "正常"), now, act, "gold"
-
-
 def etf300(d):
     """托底资金（国家队）：状态变化就提醒（先观察，不进规则）"""
     L = d["latest"]
@@ -139,8 +129,9 @@ def ndx(d, prev_prem):
 
 
 def gold(d):
+    """黄金六档：结论一变就提醒（ETF 资金恐慌撤出、涨得极端可以卖一部分 都在里面）"""
     L = d["latest"]
-    return L["zone"], f"回撤 {pc(L['dd'])}，比年线{'高' if L['dev'] >= 0 else '低'} {pc(abs(L['dev']))}（{L['zone']}）", L["action"], "gold"
+    return L["zone"], f"{L['why']}；离最高点 {pc(L['dd'])}，比年线{'高' if L['dev'] >= 0 else '低'} {pc(abs(L['dev']))}", L["action"], "gold"
 
 
 def bond(d):
@@ -166,8 +157,7 @@ def collect(prev):
              ("债基", "bond.json", bond),
              ("海外小仓位", "overseas.json", overseas),
              ("托底资金（国家队）", "etf300.json", etf300),
-             ("见顶信号灯", "topsig.json", topsig),
-             ("黄金资金", "goldmodel.json", goldflow)]
+             ("见顶信号灯", "topsig.json", topsig)]
     for name, f, fn in pairs:
         d = load(f)
         if not d:
@@ -272,7 +262,8 @@ def build_plan(cur):
         if not d:
             continue
         share, mm = base * WEIGHTS[w] / 100, d["latest"]["mult"]
-        rows.append({"name": name, "what": what, "amt": share * mm, "fixed": 0, "note": d["latest"]["action"]})
+        rows.append({"name": name, "what": what, "amt": share * mm, "fixed": 0,
+                     "note": (d["latest"]["zone"] + "：" if name == "黄金" else "") + d["latest"]["action"]})
         if mm < 1:
             rows.append({"name": name, "what": "红利低波100", "amt": share * (1 - mm), "fixed": 0, "note": "没买完的部分买红利"})
     nd = load("ndx.json")

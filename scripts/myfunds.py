@@ -103,7 +103,9 @@ def system_view(sysk, code):
     if not L:
         return None
     m = L.get("mult")
-    if sysk == "bond":
+    if sysk == "gold":    # 黄金六档
+        tag = {"sell": "cut", "hot": "wait", "more": "add", "wait": "wait", "cheap": "add"}.get(L.get("state"), "hold")
+    elif sysk == "bond":
         tag = "add" if L.get("zone") == "便宜" else "hold"
     elif sysk == "ndx":
         tag = "hold"

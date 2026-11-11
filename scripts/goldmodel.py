@@ -1,4 +1,12 @@
-"""黄金分析（独立页面 gold.html）：只作参考，黄金页签的定投规则不变（回撤 ≥15% 买 2 倍，比年线高 25% 以上暂停）。
+"""黄金：压舱石，平时照常买，便宜时多入一点，涨得极端时卖一部分。黄金页签的结论和每周倍数都由这里的 states() 决定。
+
+六档（从上往下，先满足的算；2026-11-11 定，回测见页面）：
+  可以卖一部分  比年线高 30% 以上：卖 1/3（每段行情一次），这周不买
+  不动          比年线高 25% 以上：暂停买，定投款买红利低波100
+  可以多买      ETF 资金恐慌撤出（SPDR 持仓 60 日减少 ≥8%）：2 倍
+  先等等        刚开始跌（离最高点 ≥15% 但还在 10 个月线上方），或波动很大（≥30% 或近 5 年 90% 分位以上）：0.5 倍
+  便宜，入一点  比年线低 5% 以上：1.5 倍
+  买            其余：1 倍
 
 逐个回测过的 5 个现成模型（黄金ETF 518880，2014 年起）：
   用      ETF 资金撤出：SPDR 黄金 ETF 持仓 60 个交易日减少 ≥8%（大资金恐慌撤出，历史上是好买点）
@@ -35,6 +43,68 @@ def pct_in(vals, i, w, minn=200):
     v = vals[i]
     xs = [x for x in vals[max(0, i - w):i + 1] if x is not None]
     return None if v is None or len(xs) < minn else sum(x < v for x in xs) / len(xs)
+
+
+STATES = [  # key, 结论, 颜色, 倍数, 本周操作
+    ("sell", "可以卖一部分", "r1", 0.0, "卖出 1/3（每段行情只卖一次），这周不买，定投款买红利低波100"),
+    ("hot", "不动", "h1", 0.0, "暂停买入，定投款买红利低波100"),
+    ("more", "可以多买", "g2", 2.0, "2 倍定投"),
+    ("wait", "先等等", "h1", 0.5, "先少买：0.5 倍定投，剩下的放红利低波100"),
+    ("cheap", "便宜，入一点", "g1", 1.5, "1.5 倍定投"),
+    ("buy", "买", "c0", 1.0, "照常 1 倍定投"),
+]
+SMAP = {k: (lab, cls, m, act) for k, lab, cls, m, act in STATES}
+
+
+def states(days, px):
+    """逐日判断六档，返回 [(key, 原因)]。要用 SPDR 持仓（缓存兜底）"""
+    n = len(px)
+    try:
+        spf = ffill(S.get_series("spdr")[0])
+    except Exception:  # noqa: BLE001
+        spf = lambda d: None  # noqa: E731
+    SP = [spf(d) for d in days]
+    m210, m250, a1, a2, peak, out = [None] * n, [None] * n, 0.0, 0.0, 0.0, []
+    for i, v in enumerate(px):
+        a1 += v
+        a2 += v
+        if i >= 210:
+            a1 -= px[i - 210]
+        if i >= 250:
+            a2 -= px[i - 250]
+        if i >= 209:
+            m210[i] = a1 / 210
+        if i >= 249:
+            m250[i] = a2 / 250
+    vol = [None] * n
+    for i in range(21, n):
+        r = [math.log(px[j] / px[j - 1]) for j in range(i - 19, i + 1)]
+        vol[i] = st.pstdev(r) * math.sqrt(252)
+    for i in range(n):
+        peak = max(peak, px[i])
+        dd = px[i] / peak - 1
+        if m250[i] is None:
+            out.append(("buy", "年线还算不出来，照常买"))
+            continue
+        dev = px[i] / m250[i] - 1
+        w = [x for x in vol[max(0, i - 1250):i + 1] if x is not None]
+        vp = sum(x < vol[i] for x in w) / len(w) if vol[i] is not None and len(w) > 200 else 0
+        s60 = SP[i] / SP[i - 60] - 1 if i >= 60 and SP[i] and SP[i - 60] else None
+        if dev > .30:
+            out.append(("sell", f"比年线高 {dev:.0%}，涨得极端"))
+        elif dev > .25:
+            out.append(("hot", f"比年线高 {dev:.0%}，涨太急"))
+        elif s60 is not None and s60 <= OUTFLOW:
+            out.append(("more", f"ETF 资金恐慌撤出（近 60 日持仓 {s60:+.0%}）"))
+        elif dd <= -.15 and m210[i] and px[i] > m210[i]:
+            out.append(("wait", f"离最高点 {dd:.0%}，但还在 10 个月线上方，刚开始跌"))
+        elif vol[i] is not None and (vol[i] >= VOL_HI or vp >= .9):
+            out.append(("wait", f"波动很大（{vol[i]:.0%}），还没稳定"))
+        elif dev <= -.05:
+            out.append(("cheap", f"比年线低 {-dev:.0%}，便宜"))
+        else:
+            out.append(("buy", f"比年线 {dev:+.0%}，位置正常"))
+    return out
 
 
 def run():
@@ -143,40 +213,33 @@ def run():
 
     # ---- 现在
     i = n - 1
-    G = {}
-    try:
-        with open(os.path.join(ROOT, "data", "gold.json"), encoding="utf-8") as fh:
-            G = json.load(fh)["latest"]
-    except Exception:  # noqa: BLE001
-        pass
     dev = px[i] / ma250[i] - 1
-    rule = G.get("action") or ("暂停买入" if dev > .25 else "2 倍定投" if dd[i] <= -.15 else "正常定投")
     lights = {
         "outflow": {"on": is_out(i), "value": sp60[i], "tons": SP[i]},
         "trend": {"up": above(i), "dev": round(px[i] / ma210[i] - 1, 4)},
         "vol": {"hot": vhot(i), "value": None if vol[i] is None else round(vol[i], 4), "pct": None if volp[i] is None else round(volp[i], 3)},
     }
-    w_price = f"已经便宜（离最高点 {dd[i]:.0%}）" if dd[i] <= -.15 else f"涨太急（比年线高 {dev:.0%}）" if dev > .25 else f"价格正常（离最高点 {dd[i]:.0%}）"
-    w_flow = "ETF 资金在恐慌撤出" if lights["outflow"]["on"] else "还没有资金恐慌撤出"
-    w_trend = "趋势向上" if lights["trend"]["up"] else "趋势还在走弱"
-    w_vol = "波动很大、还没稳定" if lights["vol"]["hot"] else "波动偏高" if (volp[i] or 0) >= .8 else "波动正常"
-    if lights["outflow"]["on"]:
-        act = f"{rule}；资金恐慌撤出历史上是好买点，有余钱可以再多加一些"
-    elif dd[i] <= -.15:
-        act = f"{rule}照做，不追加更多"
-    else:
-        act = rule
-    verdict = f"{w_price}，{w_flow}，{w_trend}，{w_vol} → {act}"
-    state = "资金撤出" if lights["outflow"]["on"] else ("过热" if dev > .25 else "便宜" if dd[i] <= -.15 else "正常")
+    ST = states(days, px)
+    key, why = ST[i]
+    lab, cls, mult, act = SMAP[key]
+    verdict = f"{lab}：{why} → {act}"
+    state = lab
+    # 各档历史表现（之后 60 / 120 个交易日）
+    state_stats = {k: stat([j for j in K if ST[j][0] == k]) for k, *_ in STATES}
+    sell_eps = []
+    for e in episodes(lambda j: ST[j][0] == "sell"):
+        sell_eps.append(e)
     data = {
         "updated": dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M"),
-        "latest": {"date": days[i], "close": px[i], "dd": round(dd[i], 4), "dev250": round(dev, 4), "rule": rule, "rule_zone": G.get("zone"),
+        "latest": {"date": days[i], "close": px[i], "dd": round(dd[i], 4), "dev250": round(dev, 4), "key": key, "label": lab, "cls": cls, "mult": mult, "why": why,
                    "lights": lights, "verdict": verdict, "action": act, "state": state,
                    "ref": {"real10": RY[i], "real10_chg3m": None if RY[i] is None or RY[i - 63] is None else round(RY[i] - RY[i - 63], 2),
                            "ratio_pct": None if ratp[i] is None else round(ratp[i], 3)}},
         "series": [[days[k], px[k], None if ma210[k] is None else round(ma210[k], 4), SP[k], None if vol[k] is None else round(vol[k], 4), RY[k]]
                    for k in range(n) if days[k] >= START],
-        "stats": stats, "outflow_episodes": eps,
+        "stats": stats, "outflow_episodes": eps, "sell_episodes": sell_eps,
+        "states": [{"key": k, "label": lab_, "cls": c_, "mult": m_, "action": a_, **state_stats[k]} for k, lab_, c_, m_, a_ in STATES],
+        "state_series": "".join("SHMWCB"["sell hot more wait cheap buy".split().index(ST[j][0])] for j in range(n) if days[j] >= START),
     }
     with open(OUT, "w", encoding="utf-8") as fh:
         json.dump(data, fh, ensure_ascii=False, separators=(",", ":"))
