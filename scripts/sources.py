@@ -386,15 +386,16 @@ def ak_ag0(since):
 
 # ================================================================ 备用数据源（主源失败时才用）
 def calibrated(key, fn):
-    """口径不同但比例稳定的备用源：按和缓存重叠的日期算出比例，折算成主源口径（没有重叠就不用）"""
+    """口径不同但比例稳定的备用源：用和缓存重叠的最近 5 天算比例，折算成主源口径，只补最近 5 天及以后的数据。
+    （比如沪深300 市盈率：比例在一个季度内很稳，季报公布后会跳一档，所以只用最近几天；主源停的期间又碰上季报，会差几个百分点）"""
     def f(since):
         new, old = fn(since), load_cache(key)
-        common = [d for d in sorted(set(new) & set(old))[-60:] if new[d]]
+        common = [d for d in sorted(set(new) & set(old)) if new[d]][-5:]
         if len(common) < 3:
             raise RuntimeError("和缓存重叠太少，没法折算口径")
         ks = sorted(old[d] / new[d] for d in common)
         k = ks[len(ks) // 2]
-        return {d: v * k for d, v in new.items()}
+        return {d: v * k for d, v in new.items() if d >= common[0]}
     return f
 
 
@@ -434,7 +435,14 @@ def em_pb_snapshot(since):
     for pn in range(1, 80):
         q = urllib.parse.urlencode({"pn": pn, "pz": 200, "po": 1, "np": 1, "fltt": 2, "invt": 2, "fid": "f12",
                                     "fs": "m:0 t:6,m:0 t:80,m:1 t:2,m:1 t:23", "fields": "f12,f23", "ut": "fa5fd1943c7b386f172d6893dbfba10b"})
-        rows = ((jget("https://push2.eastmoney.com/api/qt/clist/get?" + q, "https://quote.eastmoney.com/") or {}).get("data") or {}).get("diff") or []
+        d = None
+        for k in range(3):
+            try:
+                d = jget("https://push2.eastmoney.com/api/qt/clist/get?" + q, "https://quote.eastmoney.com/")
+                break
+            except Exception:  # noqa: BLE001
+                time.sleep(2 * (k + 1))
+        rows = ((d or {}).get("data") or {}).get("diff") or []
         if not rows:
             break
         for r in rows:
@@ -475,14 +483,6 @@ def ak_m1_b(since):
     df = ak.macro_china_supply_of_money()
     c = "货币(狭义货币M1)同比增长"
     return {_month(r["统计时间"]): float(r[c]) for _, r in df.iterrows() if str(r[c]) not in ("", "nan", "None")}
-
-
-def ak_loan_b(since):
-    """新增人民币贷款（AKShare 另一个接口，亿元）"""
-    import akshare as ak  # noqa: PLC0415
-    df = ak.macro_rmb_loan()
-    c = "新增人民币贷款-总额"
-    return {_month(r["月份"]): float(r[c]) for _, r in df.iterrows() if str(r[c]) not in ("", "nan", "None")}
 
 
 def sge_ag(since):
@@ -686,7 +686,7 @@ CATALOG = {
     "buffett": ("巴菲特指标（总市值÷GDP）", 200, [("乐咕乐股", ak_buffett)]),
     # ---- 宏观（月度，市场温度的“方向”用；每月中旬公布上个月）
     "m1": ("M1 同比", 100, [("东方财富", ak_money("货币(M1)-同比增长")), ("AKShare 货币供应", ak_m1_b)]),
-    "loan": ("新增人民币贷款", 100, [("东方财富", ak_loan), ("AKShare 金十", ak_loan_b)]),
+    "loan": ("新增人民币贷款", 100, [("东方财富", ak_loan)]),     # 另一个接口（金十）口径不同，对不上，不用
     # ---- 黄金分析页
     "real10": ("美国 10 年期实际利率", 1000, [("美国财政部", ust_real10)]),
     "spdr": ("SPDR 黄金 ETF 持仓", 1000, [("AKShare", ak_spdr)]),
