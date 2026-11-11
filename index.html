@@ -703,7 +703,7 @@ const gView=Val("viewG","data/gold.json","gold");
 const bView=Val("viewB","data/bond.json","bond");
 // ---------------- 数据源状态
 fetch("data/health.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(hh=>{
-  const it=Object.values(hh.items||{}),cache=it.filter(v=>v.source==="本地缓存"),stale=it.filter(v=>v.stale_days==null||v.stale_days>12);
+  const it=Object.values(hh.items||{}),cache=it.filter(v=>v.source==="本地缓存"),stale=it.filter(v=>!v.ref&&(v.stale_days==null||v.stale_days>12));   // 参考类、月度数据过期不算异常（和后台体检一致）
   $("health").textContent=stale.length?`数据源异常：${stale.map(v=>v.name).join("、")} 已超过 12 天没更新`
     :cache.length?`数据源：${cache.map(v=>v.name).join("、")} 今天所有接口都失败，暂用缓存（${hh.updated}）`
     :`数据源：${it.length} 项全部正常（${hh.updated} 体检）`;

@@ -1,5 +1,6 @@
 """
 见底评分与市场参考指标（只作参考，不直接决定买卖；破净率另外用于轮动的“见底才大举加仓”）。
+页面上已经不显示见底评分（由 temp.py 的见底信号灯取代），这里保留是因为轮动要用破净率、周报要用破净率和融资数据。
 
 见底评分 0~100，越高越接近底部，五项各自换算成历史百分位后取平均：
   破净率高（10 年）、股债利差高（10 年）、融资余额占流通市值低（3 年）、
@@ -120,11 +121,6 @@ def run():
     def last(keys, d, back=0):
         return d[keys[-1 - back]] if len(keys) > back else None
     m20 = (last(mk, mg) / last(mk, mg, 20) - 1) if len(mk) > 20 else None
-    try:   # 国家队：来自托底资金指标（etf300.py 先算）
-        with open(os.path.join(ROOT, "data", "etf300.json"), encoding="utf-8") as fh:
-            EL = json.load(fh)["latest"]
-    except Exception:  # noqa: BLE001
-        EL = None
     pbp = it["pb"]["pct"]
     zone = "接近底部" if sc is not None and sc >= 75 else "偏冷" if sc is not None and sc >= 60 else \
         "偏热" if sc is not None and sc < 30 else "正常"
@@ -139,7 +135,6 @@ def run():
             "amt_val": last(ak, am), "amt20": round(last(a2k, am20), 0) if a2k else None,
             "pe_cyb": last(ck, cpe), "pe_kc": last(kk, kpe),
             "pe_kc_pct": pct_at(kk, kpe, kk[-1], 10, 50) if kk else None,
-            "etf300": EL and {"zone": EL["zone"], "pct": EL["pct"], "chg20": EL["chg20"], "ratio": EL["ratio"], "date": EL["date"]},
         },
     }
     with open(os.path.join(ROOT, "data", "market.json"), "w", encoding="utf-8") as f:
