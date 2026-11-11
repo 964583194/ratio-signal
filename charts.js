@@ -1,11 +1,15 @@
 // 交易系统共用图表：LineChart（单线，带时间范围切换）、DualChart（双纵轴，按月刻度）、openBig（横屏大图）
-function niceStep(span){const raw=span/5,m=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/m;return (f<1.5?1:f<3?2:f<7?5:10)*m}
 // ---------------- 通用交互折线图：时间范围切换 + 按住/悬停看数值
 function niceStep(span){const raw=span/5,m=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/m;return (f<1.5?1:f<3?2:f<7?5:10)*m}
 function LineChart(svg,opt){
   const W=opt.W,H=opt.H,pr=14,pt=12;let pl=44,pb=26,fs=11;
   const wrap=svg.parentNode,tip=wrap.querySelector(".tip");
   const bar=document.querySelector(`.ranges[data-for="${svg.id}"]`);
+  if(bar&&!opt.noBig){   // 每张单线图都可以横屏看大图
+    const bb=document.createElement("button");bb.type="button";bb.className="bigbtn";bb.textContent="⤢ 大图";bb.style.marginLeft="auto";
+    bb.addEventListener("click",e=>{e.stopPropagation();const sec=svg.closest("section"),h=sec&&sec.querySelector("h3,h2");
+      openBig(svg.id,((h&&h.textContent)||"").replace(/⤢.*$/,"").trim())});
+    bar.appendChild(bb)}
   let full=[],range=opt.range||"all",cur=[],X=null,Y=null,ctx={};
   bar.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;range=b.dataset.r;
     bar.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));draw()});
@@ -68,7 +72,7 @@ function LineChart(svg,opt){
   svg.addEventListener("pointermove",e=>{if(e.pointerType==="mouse"||e.buttons||e.pressure>0)show(e)});
   svg.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse")hide()});
   document.addEventListener("pointerdown",e=>{if(!svg.contains(e.target))hide()});
-  return {set(series,o){full=series;Object.assign(opt,o||{});draw()}};
+  return {set(series,o){full=series;Object.assign(opt,o||{});svg.__lc={full,opt};draw()}};
 }
 // 双纵轴折线图：左轴若干条（同一刻度），右轴一条；按住看当天数值
 function DualChart(svg, o) {
@@ -113,9 +117,26 @@ function DualChart(svg, o) {
   svg.addEventListener("pointerdown", show); svg.addEventListener("pointermove", e => { if (e.pointerType === "mouse" || e.buttons) show(e) });
 }
 
+// 单线图（LineChart）的数据换成 DualChart 的参数，给横屏大图用
+function lcToDual({ full, opt }) {
+  const dates = full.map(p => p[0]), v = full.map(p => p[1]);
+  const ovs = (opt.overlays || []).map(x => { const m = new Map(x.data); return { v: dates.map(d => m.has(d) ? m.get(d) : null), c: x.c, w: x.w || 1.3, dash: x.dash } });
+  const all = v.concat(...ovs.map(x => x.v)).filter(x => x != null);
+  let lo, hi, ticks;
+  if (opt.fixedY) { [lo, hi] = opt.fixedY; ticks = opt.ticks }
+  else { const st = niceStep(Math.max(...all) - Math.min(...all)); lo = Math.floor(Math.min(...all) / st) * st; hi = Math.ceil(Math.max(...all) / st) * st;
+    ticks = []; for (let t = lo; t <= hi + st / 2; t += st) ticks.push(+t.toFixed(6)) }
+  const dec = hi - lo >= 5 ? 0 : 2;
+  return { dates, leftRange: [lo, hi], leftTicks: ticks, leftFmt: t => t.toFixed(dec), left: [{ v, c: "var(--ink)", w: 1.6 }, ...ovs],
+    right: { v, c: "transparent" }, bands: (opt.bands || []).map(b => ({ from: b.from == null ? lo : b.from, to: b.to == null ? hi : b.to, fill: b.fill })),
+    tip: i => opt.tip ? opt.tip(dates[i], v[i], i) : dates[i] + " " + v[i] };
+}
 // 横屏看大图：手机竖着拿时整张图转 90 度铺满屏幕；横着拿或电脑上直接全屏
 function openBig(id, title) {
-  const o = document.getElementById(id).__opt; if (!o) return;
+  const el = document.getElementById(id);
+  let o = el.__opt;
+  if (!o && el.__lc) o = lcToDual(el.__lc);   // 单线图：换成双轴图的格式来画（右轴不显示）
+  if (!o) return;
   const port = innerHeight > innerWidth, Wv = port ? innerHeight : innerWidth, Hv = port ? innerWidth : innerHeight;
   const ov = document.createElement("div"); ov.className = "bigov";
   ov.innerHTML = `<div class="bigin" style="width:${Wv}px;height:${Hv}px;${port ? `transform:translateX(${innerWidth}px) rotate(90deg);transform-origin:top left;` : ""}">

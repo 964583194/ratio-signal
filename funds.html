@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="交易系统">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="几个指数的定投信号，每个交易日自动更新">
-<link rel="stylesheet" href="style.css?v=1">
+<link rel="stylesheet" href="style.css?v=2">
 </head><body><div class="wrap">
 <header class="top"><div class="eyebrow">交易系统 · 我的基金</div><h1>我的基金 · 能不能加</h1>
 <p>名单里只有基金名称，不含金额 · <span id="cnt">—</span> 只 · 数据 <span class="num" id="upd">—</span> · <a href="./">← 回交易系统</a></p></header>
@@ -23,7 +23,7 @@
 <section class="panel"><h2>这几个结论准不准</h2><div id="ev"></div></section>
 <footer>海外小仓位的提醒规则和走势在最下面。名单在仓库的 data/myfunds_list.json（只有代码和名称），增减基金改那里或告诉 Claude。只作提醒，不构成投资建议。</footer>
 </div>
-<script src="charts.js?v=1"></script>
+<script src="charts.js?v=3"></script>
 <script>
 (function(){
 const $=id=>document.getElementById(id),pc=(x,d=0)=>(x*100).toFixed(d)+"%",sg=(x,d=0)=>x==null?"—":(x>0?"+":"")+pc(x,d);

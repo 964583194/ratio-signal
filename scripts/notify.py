@@ -1,14 +1,19 @@
 """
 信号提醒与周报：在仓库里新建 Issue 并 @ 仓库主人，GitHub 会把它发到主人的通知邮箱。
 
-- 信号变化提醒：和上次保存的状态（data/state.json）比较，有变化才发。
-- 周报：环境变量 REPORT=1 时发（工作流在周五早上设置）。
-- 第一次运行（还没有 state.json）发一封“提醒已开启”，附当前状态，用来确认邮箱能收到。
+每次运行最多发一封，内容合并整理：
+- 信号变化：和上次保存的状态（data/state.json）比较，分“要操作的”（定投板块）和“提醒”（市场温度、见顶灯、
+  托底资金、黄金资金、我的基金、海外小仓位）两组。
+- 到期复盘（data/reminders.json）：日期到了就并进同一封。
+- 周报：环境变量 REPORT=1 时发（周五早上），开头是一句话总结和“每 1000 元本周下单清单”，当次变化和到期复盘也并进周报，不再另发。
+- 第一次运行（还没有 state.json）发一封“提醒已开启”。
+同时写 data/plan.json（每周下单清单，每 1000 元），给总览页按自己的预算换算。
 只在 GitHub Actions 里真正发送；本地运行只打印。
 """
 import datetime as dt
 import json
 import os
+import re
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -143,6 +148,10 @@ def bond(d):
     return L["zone"], f"十年国债 {L['close']:.2f}%，比近一年均值{'高' if L['dev'] >= 0 else '低'} {abs(L['dev']):.0f}bp", L["action"], "bond"
 
 
+def short(n):
+    return re.sub(r"ETF发起式联接|ETF联接|发起式|\(QDII\)|（QDII）|混合|股票|指数|[AC]$", "", n)
+
+
 WEIGHTS = {"创业板轮动": 25, "科创板轮动": 15, "纳指100": 20, "红利打分": 15, "黄金": 15, "A500 / 沪深300": 10}
 
 
@@ -167,6 +176,16 @@ def collect(prev):
         out[name] = {"state": state, "now": now, "act": act, "tab": tab, "date": d["latest"]["date"]}
         if name == "纳指100":
             out[name]["prem"] = state.split("溢价")[-1]
+    mf = load("myfunds.json")
+    if mf:
+        F = mf["funds"]
+        add = sorted(f["code"] for f in F if f["tag"] == "add")
+        cut = sorted(f["code"] for f in F if f["tag"] == "cut")
+        nm = lambda cs: "、".join(short(f["name"]) for f in F if f["code"] in cs) or "无"  # noqa: E731
+        c = mf["count"]
+        out["我的基金"] = {"state": "加:" + ",".join(add) + "|减:" + ",".join(cut), "tab": "funds.html", "date": mf["updated"][:10],
+                       "now": f"{len(F)} 只：可以加 {c['add']}、照常 {c['hold']}、先别加 {c['wait']}、可以减 {c['cut']}",
+                       "act": f"可以加：{nm(add)}" + (f"；可以减：{nm(cut)}" if cut else "")}
     m, t = load("market.json"), load("temp.json")
     if t:
         L = t["latest"]
@@ -219,41 +238,149 @@ def table(cur):
     return "\n".join(rows)
 
 
+OPS = list(WEIGHTS) + ["债基"]          # 要操作的（定投板块）
+
+
+def build_plan(cur):
+    """每周下单清单（每 1000 元）：按组合比例和各板块本周信号。没买的钱放红利低波100；红利打分空仓的钱存着。"""
+    base, rows = 1000, []
+    for name, f, g in (("创业板轮动", "ratio.json", "创业板50"), ("科创板轮动", "kc.json", "科创50")):
+        d = load(f)
+        if not d:
+            continue
+        share = base * WEIGHTS[name] / 100
+        acts = d["plan"]["actions"]
+        first = acts[0] if acts else ""
+        fixed = sum(int(x) for x in re.findall(r"加码\s*(\d+)\s*元", "；".join(acts)))
+        if "买" + g in first and "暂停买" + g not in first:
+            rows.append({"name": name, "what": g, "amt": share, "fixed": fixed, "note": d["plan"]["zone_name"]})
+        else:
+            rows.append({"name": name, "what": "红利低波100", "amt": share, "fixed": 0, "note": f"{d['plan']['zone_name']}，这部分买红利"})
+    dv = load("dividend.json")
+    if dv:
+        share = base * WEIGHTS["红利打分"] / 100
+        L = dv["latest"]
+        m = (L["amount"] or 0) / 200
+        if L["score"] <= 6:
+            rows.append({"name": "红利打分", "what": "红利低波100", "amt": 0, "fixed": 0, "note": "评分很低，按页签分批卖出；这部分存着"})
+        elif m == 0:
+            rows.append({"name": "红利打分", "what": "红利低波100", "amt": 0, "fixed": 0, "note": f"{L['tier']}，暂停，这部分存着（现金池）"})
+        else:
+            rows.append({"name": "红利打分", "what": "红利低波100", "amt": share * m, "fixed": 0, "note": f"{L['tier']} {m:g} 倍，分到每个交易日买", "daily": True})
+    for name, f, what, w in (("A500 / 沪深300", "a500.json", "A500（或沪深300）", "A500 / 沪深300"), ("黄金", "gold.json", "黄金", "黄金")):
+        d = load(f)
+        if not d:
+            continue
+        share, mm = base * WEIGHTS[w] / 100, d["latest"]["mult"]
+        rows.append({"name": name, "what": what, "amt": share * mm, "fixed": 0, "note": d["latest"]["action"]})
+        if mm < 1:
+            rows.append({"name": name, "what": "红利低波100", "amt": share * (1 - mm), "fixed": 0, "note": "没买完的部分买红利"})
+    nd = load("ndx.json")
+    if nd:
+        pr = (nd.get("premium") or {}).get("value")
+        rows.append({"name": "纳指100", "what": "纳指100 场外联接" if pr and pr > .05 else "纳指100", "amt": base * WEIGHTS["纳指100"] / 100, "fixed": 0,
+                     "note": f"照常定投；场内溢价 {pr * 100:.1f}%，买场外" if pr and pr > .05 else "照常定投"})
+    for r in rows:
+        r["amt"] = round(r["amt"])
+    data = {"date": TODAY, "base": base, "rows": rows,
+            "buy": sum(r["amt"] for r in rows), "fixed": sum(r["fixed"] for r in rows),
+            "note": "金额按每周预算等比例换算；“另外加码”是固定金额（破净率见底时），不随预算变。超出预算的部分从备用金出。"}
+    with open(os.path.join(DATA, "plan.json"), "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=1)
+    return data
+
+
+def plan_md(P):
+    lines = ["| 板块 | 买什么 | 金额 | 说明 |", "|---|---|---|---|"]
+    for r in P["rows"]:
+        amt = f"{r['amt']} 元" + ("（分到每天）" if r.get("daily") else "") + (f" + 另外加码 {r['fixed']} 元" if r["fixed"] else "")
+        lines.append(f"| {r['name']} | {r['what']} | {amt} | {r['note']} |")
+    over = P["buy"] - P["base"]
+    lines.append(f"\n合计 {P['buy']} 元" + (f"（比预算多 {over} 元，从备用金出）" if over > 0 else f"（预算里有 {-over} 元没花，存着）" if over < 0 else "")
+                 + (f"，另外加码 {P['fixed']} 元" if P["fixed"] else "") + "。按自己的预算等比例换算，网页总览可以直接填预算。")
+    return "\n".join(lines)
+
+
+def change_lines(changes, cur, prev):
+    """按“要操作的 / 提醒 / 数据源”分组的变化说明"""
+    mf = load("myfunds.json") or {"funds": []}
+    names = {f["code"]: short(f["name"]) for f in mf["funds"]}
+    groups = {"要操作的": [], "提醒": [], "数据源": []}
+    for n, a, b in changes:
+        g = "要操作的" if n in OPS else "数据源" if n == "数据源" else "提醒"
+        if n == "我的基金":
+            pa, pb = [dict(x.split(":") for x in st.split("|")) for st in (a, b)]
+            sa, sb = (set(filter(None, pa["加"].split(","))), set(filter(None, pa["减"].split(",")))), \
+                     (set(filter(None, pb["加"].split(","))), set(filter(None, pb["减"].split(","))))
+            parts = []
+            for lab, x, y in (("新变成可以加", sb[0], sa[0]), ("不再是可以加", sa[0], sb[0]), ("新出现可以减", sb[1], sa[1]), ("不再是可以减", sa[1], sb[1])):
+                if x - y:
+                    parts.append(f"{lab}：{'、'.join(names.get(c, c) for c in sorted(x - y))}")
+            groups[g].append(f"- **我的基金**：{'；'.join(parts)}\n  - 现在：{cur[n]['now']}")
+            continue
+        groups[g].append(f"- **{n}**：{a.replace('|', '，')} → **{b.replace('|', '，')}**\n  - 现在：{cur[n]['now']}\n  - 操作：{cur[n]['act']}")
+    return groups
+
+
+def headline():
+    """一句话总结：市场温度 + 黄金 + 我的基金"""
+    out = []
+    t, g, mf = load("temp.json"), load("goldmodel.json"), load("myfunds.json")
+    if t:
+        out.append(f"- **市场温度**：{t['latest']['verdict']}")
+    if g:
+        out.append(f"- **黄金**：{g['latest']['verdict']}")
+    if mf:
+        c = mf["count"]
+        add = [short(f["name"]) for f in mf["funds"] if f["tag"] == "add"]
+        out.append(f"- **我的基金**：可以加 {c['add']}（{'、'.join(add) or '无'}）、照常 {c['hold']}、先别加 {c['wait']}、可以减 {c['cut']}")
+    return "\n".join(out)
+
+
 def main():
     prev = load("state.json")
     first = prev is None
     prev = prev or {}
     cur = collect(prev)
-
+    P = build_plan(cur)
     changes = [(n, prev[n]["state"], v["state"]) for n, v in cur.items()
                if n in prev and prev[n].get("state") != v["state"]]
+    rem = load("reminders.json") or []
+    due = [r for r in rem if not r.get("done") and r["date"] <= TODAY]
+    report = os.environ.get("REPORT") == "1" and not first
+    G = change_lines(changes, cur, prev) if changes else {}
+    chg = "\n\n".join(f"**{k}**\n\n" + "\n".join(v) for k, v in G.items() if v)
+    dues = "\n\n".join(f"### {r['title']}\n\n{r['body']}" for r in due)
+
     if first:
         post(f"【提醒已开启】{TODAY} 信号看板", "以后信号有变化时会发这样的邮件，每周五早上还会发一封周报。下面是当前状态：\n\n"
              + table(cur), "【提醒已开启】")
-    elif changes:
-        names = "、".join(n for n, _, _ in changes)
-        lines = [f"- **{n}**：{a.replace('|', '，')} → **{b.replace('|', '，')}**\n  - 现在：{cur[n]['now']}\n  - 操作：{cur[n]['act']}" for n, a, b in changes]
-        post(f"【信号提醒】{TODAY} {names}有变化", "\n".join(lines) + "\n\n**全部状态**\n\n" + table(cur), "【信号提醒】")
+    elif report:
+        body = (headline() + "\n\n### 本周下单清单（每 1000 元）\n\n" + plan_md(P)
+                + (f"\n\n### 这次有变化\n\n{chg}" if chg else "") + (f"\n\n## 到期复盘\n\n{dues}" if dues else "")
+                + "\n\n### 全部状态\n\n数据截至各指数最近一个交易日（A股为周四收盘）。轮动每周五按周四收盘的信号操作，卖出信号出现时当天另发邮件；"
+                  "红利打分按日操作，A500 / 沪深300（二选一）、黄金按倍数每周定投，纳指照常定投；没买完的钱都放红利低波100。\n\n" + table(cur))
+        post(f"【周报】{TODAY} 本周操作" + ("（含信号变化）" if chg else "") + ("（含到期复盘）" if due else ""), body, "【周报】")
+    elif changes or due:
+        tt = []
+        if G.get("要操作的"):
+            tt.append("要操作：" + "、".join(n for n, _, _ in changes if n in OPS))
+        info = [n for n, _, _ in changes if n not in OPS]
+        if info:
+            tt.append("提醒：" + "、".join(info))
+        if due:
+            tt.append("到期复盘")
+        body = (chg + (f"\n\n## 到期复盘\n\n{dues}" if dues else "") + "\n\n### 全部状态\n\n" + table(cur)).lstrip()
+        post(f"【信号提醒】{TODAY} " + "；".join(tt), body, "【信号提醒】")
     else:
         print("信号没有变化，不发提醒")
 
-    if os.environ.get("REPORT") == "1" and not first:
-        post(f"【周报】{TODAY} 本周操作", "数据截至各指数最近一个交易日（A股为周四收盘）。创业板轮动、科创板轮动每周五按周四收盘的信号操作（卖出信号出现时当天另发邮件），"
-             "红利打分按日操作，A500 / 沪深300（二选一）、黄金按倍数每周定投，纳指照常定投；没买完的钱都放红利低波100。比例是每周定投款的分配。\n\n" + table(cur), "【周报】")
-
     with open(STATE, "w", encoding="utf-8") as f:
         json.dump(cur, f, ensure_ascii=False, indent=1)
-
-    # 到期提醒：data/reminders.json 里日期已到、还没发过的，各发一次
-    rp = os.path.join(DATA, "reminders.json")
-    rem = load("reminders.json") or []
-    hit = False
-    for r in rem:
-        if not r.get("done") and r["date"] <= TODAY:
-            post(r["title"], r["body"], r["title"])
-            r["done"], r["sent"], hit = True, TODAY, True
-    if hit:
-        with open(rp, "w", encoding="utf-8") as f:
+    if due and not first:
+        for r in due:
+            r["done"], r["sent"] = True, TODAY
+        with open(os.path.join(DATA, "reminders.json"), "w", encoding="utf-8") as f:
             json.dump(rem, f, ensure_ascii=False, indent=1)
 
 
