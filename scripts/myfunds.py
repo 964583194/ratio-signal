@@ -1,7 +1,7 @@
 """我的基金：只看名单里的基金代码（不含金额），每只给一个结论：可以加 / 照常 / 先别加 / 可以减。只作提醒。
 
 净值：天天基金 pingzhongdata 的日增长率连乘（分红已加回），缓存在 data/raw/myfunds_nav.json。
-系统里已有信号的（A500、纳指100、黄金、债基、海外页的 4 只）直接用系统结论。
+系统里已有信号的（A500、纳指100、黄金、债基）直接用系统结论；海外小仓位 4 只用 overseas.py 的提醒规则。
 其余基金用通用规则（41 只基金合在一起回测验证过，见 stats）：
   可以减   比年线高 25% 以上，且市场温度在偏热 / 顶部区
   先别加   比年线高 25% 以上（涨太急）；或在年线下方且年线还在往下（下跌趋势）；或市场在偏热 / 顶部区
@@ -96,7 +96,7 @@ def system_view(sysk, code):
             if x["code"] == code:
                 L = x["latest"]
                 tag = "add" if L["cls"] in ("g1", "g2") else "wait" if L["zone"] == "过热" else "hold"
-                return tag, f"海外页：{L['zone']}，{L['action']}", "overseas"
+                return tag, f"海外小仓位规则：{L['zone']}，{L['action']}", "#os"
         return None
     d = _load(os.path.join(ROOT, "data", f"{sysk}.json"), {})
     L = d.get("latest") or {}
@@ -203,7 +203,7 @@ def run():
         groups.setdefault(r["group"], []).append(r["code"])
     gsim = {}
     for g, cs in groups.items():
-        if g == "系统内" or len(cs) < 2:
+        if g == "系统内" or len(cs) < 2:   # 系统内各只是不同资产，不比相似度
             continue
         rets = {}
         for c in cs:

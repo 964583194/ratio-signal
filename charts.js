@@ -1,5 +1,75 @@
-// 交易系统共用图表（从 index.html 抽出来，给独立页面用）
+// 交易系统共用图表：LineChart（单线，带时间范围切换）、DualChart（双纵轴，按月刻度）、openBig（横屏大图）
 function niceStep(span){const raw=span/5,m=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/m;return (f<1.5?1:f<3?2:f<7?5:10)*m}
+// ---------------- 通用交互折线图：时间范围切换 + 按住/悬停看数值
+function niceStep(span){const raw=span/5,m=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/m;return (f<1.5?1:f<3?2:f<7?5:10)*m}
+function LineChart(svg,opt){
+  const W=opt.W,H=opt.H,pr=14,pt=12;let pl=44,pb=26,fs=11;
+  const wrap=svg.parentNode,tip=wrap.querySelector(".tip");
+  const bar=document.querySelector(`.ranges[data-for="${svg.id}"]`);
+  let full=[],range=opt.range||"all",cur=[],X=null,Y=null,ctx={};
+  bar.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;range=b.dataset.r;
+    bar.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));draw()});
+  function slice(){
+    if(range==="all")return full;
+    const last=new Date(full[full.length-1][0]+"T00:00:00Z");
+    last.setUTCFullYear(last.getUTCFullYear()-(range==="1y"?1:3));
+    const f=last.toISOString().slice(0,10);return full.filter(p=>p[0]>=f)}
+  function draw(){
+    cur=slice();const n=cur.length;if(n<2)return;
+    const ovs=(opt.overlays||[]).map(o=>{const m=new Map(o.data);return {...o,v:cur.map(p=>m.has(p[0])?m.get(p[0]):null)}});
+    // 手机上 SVG 会被缩小，按实际宽度放大文字，保证约 10px 可读
+    const cw=svg.clientWidth||W;fs=Math.min(22,Math.max(11,10.5*W/cw));svg.style.setProperty("--fs",fs+"px");
+    pb=Math.round(fs*1.9);
+    let ymin,ymax,ticks;
+    if(opt.fixedY){[ymin,ymax]=opt.fixedY;ticks=opt.ticks}
+    else{const all=cur.map(p=>p[1]).concat(...ovs.map(o=>o.v.filter(x=>x!=null)));let lo=Math.min(...all),hi=Math.max(...all);const pad=(hi-lo)*.08||.01;
+      const st=niceStep((hi-lo+2*pad)*(H<250?1.4:1));ymin=Math.floor((lo-pad)/st)*st;ymax=Math.ceil((hi+pad)/st)*st;ticks=[];
+      for(let v=ymin;v<=ymax+st/2;v+=st)ticks.push(+v.toFixed(6))}
+    const st0=ticks[1]-ticks[0],yl=ticks.map(v=>opt.fixedY||st0>=1?String(Math.round(v)):v.toFixed(Math.max(2,-Math.floor(Math.log10(st0+1e-12)))));
+    pl=Math.round(Math.max(...yl.map(t=>t.length))*fs*.62+fs*.8);
+    X=i=>pl+i/(n-1)*(W-pl-pr);Y=v=>pt+(1-(v-ymin)/(ymax-ymin))*(H-pt-pb);
+    const cy=v=>Math.min(H-pb,Math.max(pt,Y(v)));
+    let s="";
+    (opt.bands||[]).forEach(b=>{const y1=cy(b.to==null?ymax:b.to),y2=cy(b.from==null?ymin:b.from);if(y2-y1>0)s+=`<rect x="${pl}" y="${y1}" width="${W-pl-pr}" height="${y2-y1}" fill="${b.fill}"/>`});
+    const stp=ticks[1]-ticks[0],dec=opt.fixedY||stp>=1?0:Math.max(2,-Math.floor(Math.log10(stp+1e-12)));
+    ticks.forEach(v=>{s+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="${opt.strong===v?1.6:1}"/><text x="${pl-fs*.45}" y="${Y(v)+fs*.36}" text-anchor="end">${opt.fixedY?v:v.toFixed(dec)}</text>`});
+    (opt.lines||[]).forEach(l=>{if(l.v<ymin||l.v>ymax)return;s+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(l.v)}" y2="${Y(l.v)}" stroke="${l.c}" stroke-dasharray="${l.dash||""}" stroke-width="${l.w||1.2}"/>`;
+      if(l.label)s+=`<text x="${W-pr-2}" y="${Y(l.v)-3}" text-anchor="end" style="fill:${l.c}">${l.label}</text>`});
+    // 横轴：跨度 ≤ 15 个月按月标注，否则按年
+    const span=(new Date(cur[n-1][0])-new Date(cur[0][0]))/864e5,monthly=span<460;let last="",lastX=-1e9;
+    cur.forEach(([dt],i)=>{const k=monthly?dt.slice(0,7):dt.slice(0,4);if(k!==last){const first=last==="";last=k;
+      if(first)return;const mm=+dt.slice(5,7);if(monthly&&mm%2===0)return;
+      const lab=monthly?(mm===1?dt.slice(0,4):mm+"月"):k;
+      if(X(i)-lastX<fs*3.2)return;lastX=X(i);
+      s+=`<text x="${X(i)}" y="${H-fs*.45}" text-anchor="middle">${lab}</text><line x1="${X(i)}" x2="${X(i)}" y1="${H-pb}" y2="${H-pb+4}" stroke="var(--muted)"/>`}});
+    const step=Math.max(1,Math.floor(n/700));let d="";
+    for(let i=0;i<n;i+=step)d+=(d?"L":"M")+X(i).toFixed(1)+" "+Y(cur[i][1]).toFixed(1);
+    d+="L"+X(n-1).toFixed(1)+" "+Y(cur[n-1][1]).toFixed(1);
+    ovs.forEach(o=>{let od="";for(let i=0;i<n;i+=step){const v=o.v[i];if(v==null){continue}od+=(od?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1)}
+      if(od)s+=`<path d="${od}" fill="none" stroke="${o.c}" stroke-width="${o.w||1.3}" stroke-dasharray="${o.dash||""}" stroke-linejoin="round"/>`});
+    s+=`<path d="${d}" fill="none" stroke="var(--ink)" stroke-width="${range==="all"?1.4:1.8}" stroke-linejoin="round"/>`;
+    s+=`<circle cx="${X(n-1)}" cy="${Y(cur[n-1][1])}" r="4.5" fill="var(--mark)" stroke="var(--panel)" stroke-width="2"/>`;
+    s+=`<g class="cursor" style="display:none"><line y1="${pt}" y2="${H-pb}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3"/><circle r="5" fill="var(--panel)" stroke="var(--ink)" stroke-width="2"/></g>`;
+    svg.innerHTML=s;hide()}
+  function show(e){
+    if(!cur.length)return;const r=svg.getBoundingClientRect(),vx=(e.clientX-r.left)/r.width*W;
+    const n=cur.length,i=Math.max(0,Math.min(n-1,Math.round((vx-pl)/(W-pl-pr)*(n-1))));
+    const [dt,v]=cur[i],g=svg.querySelector(".cursor");if(!g)return;
+    g.style.display="";g.querySelector("line").setAttribute("x1",X(i));g.querySelector("line").setAttribute("x2",X(i));
+    const c=g.querySelector("circle");c.setAttribute("cx",X(i));c.setAttribute("cy",Y(v));
+    tip.innerHTML=opt.tip(dt,v,i);tip.hidden=false;
+    const px=X(i)/W*r.width,py=Y(v)/H*r.height,tw=tip.offsetWidth,th=tip.offsetHeight;
+    let left=px+12;if(left+tw>r.width)left=px-tw-12;
+    let top=py-th-10;if(top<0)top=py+12;
+    tip.style.left=Math.max(0,left)+"px";tip.style.top=top+"px"}
+  function hide(){tip.hidden=true;const g=svg.querySelector(".cursor");if(g)g.style.display="none"}
+  let rt;window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{if(full.length)draw()},150)});
+  svg.addEventListener("pointerdown",e=>{show(e)});
+  svg.addEventListener("pointermove",e=>{if(e.pointerType==="mouse"||e.buttons||e.pressure>0)show(e)});
+  svg.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse")hide()});
+  document.addEventListener("pointerdown",e=>{if(!svg.contains(e.target))hide()});
+  return {set(series,o){full=series;Object.assign(opt,o||{});draw()}};
+}
 // 双纵轴折线图：左轴若干条（同一刻度），右轴一条；按住看当天数值
 function DualChart(svg, o) {
   if (!o.big) svg.__opt = o;          // 留给“横屏看大图”用

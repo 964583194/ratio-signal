@@ -384,6 +384,114 @@ def ak_ag0(since):
     return {k: v for k, v in out.items() if not since or k >= since} or out
 
 
+# ================================================================ 备用数据源（主源失败时才用）
+def calibrated(key, fn):
+    """口径不同但比例稳定的备用源：按和缓存重叠的日期算出比例，折算成主源口径（没有重叠就不用）"""
+    def f(since):
+        new, old = fn(since), load_cache(key)
+        common = [d for d in sorted(set(new) & set(old))[-60:] if new[d]]
+        if len(common) < 3:
+            raise RuntimeError("和缓存重叠太少，没法折算口径")
+        ks = sorted(old[d] / new[d] for d in common)
+        k = ks[len(ks) // 2]
+        return {d: v * k for d, v in new.items()}
+    return f
+
+
+def csi_value(code, col="市盈率1"):
+    """中证指数官网日度指标文件（近 20 个交易日），经 AKShare"""
+    def f(since):
+        import akshare as ak  # noqa: PLC0415
+        df = ak.stock_zh_index_value_csindex(symbol=code)
+        return {str(r["日期"])[:10]: float(r[col]) for _, r in df.iterrows() if str(r[col]) not in ("", "nan")}
+    return f
+
+
+def chinabond_10y(since):
+    """中债国债收益率曲线 10 年（中国债券信息网，经 AKShare），一次最多取一年"""
+    import akshare as ak  # noqa: PLC0415
+    y1 = dt.date.today().year
+    y0 = int(since[:4]) if since else 2010
+    out = {}
+    for y in range(y0, y1 + 1):
+        end = f"{y}1231" if y < y1 else dt.date.today().strftime("%Y%m%d")
+        df = ak.bond_china_yield(start_date=f"{y}0101", end_date=end)
+        df = df[df["曲线名称"].astype(str).str.contains("国债")]
+        out.update({str(r["日期"])[:10]: float(r["10年"]) for _, r in df.iterrows() if str(r["10年"]) not in ("", "nan")})
+    return out
+
+
+def ak_cn10y(since):
+    """AKShare 中美国债收益率：中国 10 年"""
+    import akshare as ak  # noqa: PLC0415
+    df = ak.bond_zh_us_rate(start_date=(since or "2010-01-01").replace("-", ""))
+    return {str(r["日期"])[:10]: float(r["中国国债收益率10年"]) for _, r in df.iterrows() if str(r["中国国债收益率10年"]) not in ("", "nan")}
+
+
+def em_pb_snapshot(since):
+    """用东方财富全市场行情（市净率 f23）自己算当天的破净率：0 < 市净率 < 1 的股票占比"""
+    n = below = 0
+    for pn in range(1, 80):
+        q = urllib.parse.urlencode({"pn": pn, "pz": 200, "po": 1, "np": 1, "fltt": 2, "invt": 2, "fid": "f12",
+                                    "fs": "m:0 t:6,m:0 t:80,m:1 t:2,m:1 t:23", "fields": "f12,f23", "ut": "fa5fd1943c7b386f172d6893dbfba10b"})
+        rows = ((jget("https://push2.eastmoney.com/api/qt/clist/get?" + q, "https://quote.eastmoney.com/") or {}).get("data") or {}).get("diff") or []
+        if not rows:
+            break
+        for r in rows:
+            p = r.get("f23")
+            if isinstance(p, (int, float)):
+                n += 1
+                below += 0 < p < 1
+    if n < 3000:
+        raise RuntimeError(f"只有 {n} 只股票有市净率")
+    d = dt.date.today()
+    while d.weekday() >= 5:
+        d -= dt.timedelta(days=1)
+    return {d.isoformat(): below / n}
+
+
+def ex_margin(since):
+    """上交所 + 深交所 融资余额（亿元），经 AKShare；只取最近 40 天"""
+    import akshare as ak  # noqa: PLC0415
+    beg = dt.date.today() - dt.timedelta(days=40)
+    a = ak.stock_margin_sse(start_date=beg.strftime("%Y%m%d"), end_date=dt.date.today().strftime("%Y%m%d"))
+    out = {}
+    for _, r in a.iterrows():
+        d = str(r["信用交易日期"])
+        d = f"{d[:4]}-{d[4:6]}-{d[6:8]}"
+        try:
+            b = ak.stock_margin_szse(date=d.replace("-", ""))
+            out[d] = (float(r["融资余额"]) + float(b["融资余额"].iloc[0]) * 1e8) / 1e8
+        except Exception:  # noqa: BLE001
+            continue
+    if not out:
+        raise RuntimeError("没有取到")
+    return out
+
+
+def ak_m1_b(since):
+    """M1 同比（AKShare 另一个货币供应接口）"""
+    import akshare as ak  # noqa: PLC0415
+    df = ak.macro_china_supply_of_money()
+    c = "货币(狭义货币M1)同比增长"
+    return {_month(r["统计时间"]): float(r[c]) for _, r in df.iterrows() if str(r[c]) not in ("", "nan", "None")}
+
+
+def ak_loan_b(since):
+    """新增人民币贷款（AKShare 另一个接口，亿元）"""
+    import akshare as ak  # noqa: PLC0415
+    df = ak.macro_rmb_loan()
+    c = "新增人民币贷款-总额"
+    return {_month(r["月份"]): float(r[c]) for _, r in df.iterrows() if str(r[c]) not in ("", "nan", "None")}
+
+
+def sge_ag(since):
+    """上海黄金交易所 Ag(T+D) 收盘（元/千克），经 AKShare"""
+    import akshare as ak  # noqa: PLC0415
+    df = ak.spot_hist_sge(symbol="Ag(T+D)")
+    return {str(r["date"])[:10]: float(r["close"]) for _, r in df.iterrows() if not since or str(r["date"])[:10] >= since}
+
+
 def em_cap300(since):
     """沪深300 流通市值（元，东方财富，只有当天）"""
     out = {}
@@ -505,6 +613,7 @@ CATALOG = {
     ]),
     "hl100_pe": ("红利低波100 市盈率", 2000, [
         ("中证指数官网", lambda s: cs_perf("930955", "peg", _ymd(s, "20100101"))),
+        ("中证日度指标", csi_value("930955")),
     ]),
     "hl100_tr": ("红利低波100 全收益", 2500, [
         ("中证指数官网", lambda s: cs_perf("H20955", "close", _ymd(s, "20100101"))),
@@ -530,12 +639,16 @@ CATALOG = {
     ]),
     "pe300": ("沪深300 市盈率", 2500, [
         ("中证指数官网", lambda s: cs_perf("000300", "peg", _ymd(s, "20100101"))),
+        ("中证日度指标（折算）", calibrated("pe300", csi_value("000300"))),
     ]),
     "pe_a500": ("中证A500 市盈率", 100, [
         ("中证指数官网", lambda s: cs_perf("000510", "peg", _ymd(s, "20100101"))),
+        ("中证日度指标（折算）", calibrated("pe_a500", csi_value("000510"))),
     ]),
     "cn10y": ("中国十年国债", 2500, [
         ("东方财富", lambda s: em_treasury("EMM00166466", s)),
+        ("中债", chinabond_10y),
+        ("AKShare 中美国债", ak_cn10y),
     ]),
     "us10y": ("美国十年国债", 400, [
         ("东方财富", lambda s: em_treasury("EMG00001310", s)),
@@ -555,8 +668,8 @@ CATALOG = {
         ("新浪(近1000天)", lambda s: sina_kline("sh518880", 120 if s else 1000)),
     ]),
     # ---- 以下为参考指标（见底评分），失败不影响主流程
-    "pb_below": ("全A破净率", 2000, [("乐咕乐股(AKShare)", ak_pb_below)]),
-    "margin": ("两市融资余额", 2000, [("东方财富", lambda s: em_margin("RZYE", s))]),
+    "pb_below": ("全A破净率", 2000, [("乐咕乐股(AKShare)", ak_pb_below), ("东方财富快照自算", em_pb_snapshot)]),
+    "margin": ("两市融资余额", 2000, [("东方财富", lambda s: em_margin("RZYE", s)), ("上交所+深交所", ex_margin)]),
     "margin_ratio": ("融资余额占流通市值", 2000, [("东方财富", lambda s: em_margin("ratio", s))]),
     "mkt_amt": ("两市成交额", 2000, [("东方财富", mkt_amount)]),
     "pe_cyb": ("创业板指市盈率(周)", 400, [("蛋卷基金", lambda s: dj_pe("SZ399006"))]),
@@ -572,12 +685,12 @@ CATALOG = {
     "cap300": ("沪深300 流通市值", 1, [("东方财富", em_cap300)]),
     "buffett": ("巴菲特指标（总市值÷GDP）", 200, [("乐咕乐股", ak_buffett)]),
     # ---- 宏观（月度，市场温度的“方向”用；每月中旬公布上个月）
-    "m1": ("M1 同比", 100, [("东方财富", ak_money("货币(M1)-同比增长"))]),
-    "loan": ("新增人民币贷款", 100, [("东方财富", ak_loan)]),
+    "m1": ("M1 同比", 100, [("东方财富", ak_money("货币(M1)-同比增长")), ("AKShare 货币供应", ak_m1_b)]),
+    "loan": ("新增人民币贷款", 100, [("东方财富", ak_loan), ("AKShare 金十", ak_loan_b)]),
     # ---- 黄金分析页
     "real10": ("美国 10 年期实际利率", 1000, [("美国财政部", ust_real10)]),
     "spdr": ("SPDR 黄金 ETF 持仓", 1000, [("AKShare", ak_spdr)]),
-    "ag0": ("白银期货主力", 1000, [("新浪", ak_ag0)]),
+    "ag0": ("白银期货主力", 1000, [("新浪", ak_ag0), ("上金所 Ag(T+D)", sge_ag)]),
     "etf513100": ("纳指ETF 513100 收盘", 100, [
         ("东方财富", lambda s: em_kline("1.513100", _ymd(s, "20240101"))),
         ("腾讯", lambda s: tx_kline2("sh513100", 60 if s else 640)),
@@ -611,7 +724,7 @@ ETF300_KEYS = {"buffett", "sh510300", "sh510310", "sh510330", "sz159919", "unav5
 MONTHLY_KEYS = {"m1", "loan"}     # 月度数据：最新一条本来就是一个多月前的
 GOLD_KEYS = {"real10", "spdr", "ag0"}
 REF_KEYS = {"pb_below", "margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc"} | OVERSEAS_KEYS | ETF300_KEYS | MONTHLY_KEYS | GOLD_KEYS
-TOL = {"cn10y": ("abs", 0.15), "us10y": ("abs", 0.15), "m1": ("abs", 0.5), "loan": ("rel", 0.05), "real10": ("abs", 0.15)}
+TOL = {"cn10y": ("abs", 0.15), "us10y": ("abs", 0.15), "m1": ("abs", 0.5), "loan": ("rel", 0.05), "real10": ("abs", 0.15), "pb_below": ("abs", 0.01), "ag0": ("rel", 0.02)}
 INCR_DAYS = 60          # 增量更新时回看的天数（同时用于和缓存比对）
 
 

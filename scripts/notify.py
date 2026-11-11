@@ -73,7 +73,7 @@ def overseas(d):
     pr = d.get("premium")
     if pr and pr["value"] > 0.05:
         act += f"；亚太精选场内 ETF 溢价 {pc(pr['value'])}，买场外联接"
-    return state, now, act, "overseas"
+    return state, now, act, "funds.html#os"
 
 
 def topsig(d):
@@ -213,7 +213,7 @@ def post(title, body, prefix):
 def table(cur):
     rows = ["| 页签 | 比例 | 现状 | 操作 |", "|---|---|---|---|"]
     for name, v in cur.items():
-        link = f"[{name}]({PAGE}#{v['tab']})" if v["tab"] else name
+        link = (f"[{name}]({PAGE}{v['tab']})" if ".html" in v["tab"] else f"[{name}]({PAGE}#{v['tab']})") if v["tab"] else name
         w = f"{WEIGHTS[name]}%" if name in WEIGHTS else ""
         rows.append(f"| {link} | {w} | {v['now']} | {v['act']} |")
     return "\n".join(rows)
