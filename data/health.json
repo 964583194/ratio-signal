@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-11 10:36",
+ "updated": "2026-11-11 12:03",
  "ok": true,
  "items": {
   "cyb50": {
@@ -116,10 +116,10 @@
    "name": "纳指100 收盘",
    "source": "腾讯",
    "mode": "增量",
-   "last": "2026-11-09",
-   "days": 3223,
+   "last": "2026-11-10",
+   "days": 3224,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": false
   },
   "gold": {
