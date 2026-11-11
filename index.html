@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="几个指数的定投信号，每个交易日自动更新">
 <style>
-/* 布局：顶部页签（总览在前），每个页签是一列仪表面板：信号 → 区间尺 → 明细 → 走势 → 回测 → 规则 */
+/* 布局：顶部页签（总览 → 市场温度 → 各板块），每个页签是一列面板：结论 → 体检 → 走势 → 规则速查，回测和历史检验收在最后的“历史与回测”里 */
 :root{
   --bg:#eef1f3; --panel:#ffffff; --ink:#1b2430; --muted:#5d6876; --line:#d5dbe1;
   --grow:#2f8f5b; --grow-soft:#dcefe3; --div:#c98a12; --div-soft:#fbeec8; --mid:#e6e9ec; --mark:#c8372d; --mark-soft:#f7dcd8; --y1:#fdf3d6; --y2:#f8e39a; --y3:#efc95a;
@@ -561,9 +561,6 @@ details.sub{margin-top:10px}details.sub>summary{cursor:pointer;font-size:13px;co
 const $=id=>document.getElementById(id);
 const f4=x=>x.toFixed(4);
 const pc=(x,d=1)=>(x*100).toFixed(d)+"%";
-const ZN={l:"低区",m:"中间区",h:"高区"};
-const ACT={l:"买创业板50 · 回补现金池",m:"空仓 · 进现金池",h:"买红利低波100 · 回补现金池"};
-const ACT_SHORT={l:"买创业板50",m:"进现金池",h:"买红利低波100"};
 
 
 // ---------------- 通用交互折线图：时间范围切换 + 按住/悬停看数值
@@ -1052,7 +1049,7 @@ function openBig(id, title) {
     ov.querySelectorAll(".bigr button").forEach(x => x.setAttribute("aria-pressed", x === b)); draw(+b.dataset.y) }));
   requestAnimationFrame(() => draw(0));
 }
-// ---------------- 托底资金（国家队）：放在沪深300 页面最下面，只作观察
+// ---------------- 托底资金（国家队）：市场温度页签，只作观察
 // 暂定判断：国家队状态 × 沪深300 便宜指数（只作参考，不改规则、不改倍数）
 function etfJudge(zone,cheap,pbHot){
   const lv=cheap==null?"mid":cheap>=60?"cheap":cheap>=40?"mid":"dear";
@@ -1122,7 +1119,7 @@ function loadEtf300(root,HL){
   }).catch(e=>{sec.innerHTML=`<h2>托底资金（国家队）</h2><p class="note">${e.message}</p>`});
 }
 
-// ---------------- 见顶信号灯（总览）：7 个信号各自独立亮灯，≥3 个接近顶部，只作提醒
+// ---------------- 见顶信号灯（市场温度页签）：7 个信号各自独立亮灯，≥3 个接近顶部，只作提醒
 function loadTop(){
   const sec=$("tl");
   fetch("data/topsig.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error(r.status===404?"还没有生成数据，下次自动更新后会出现":"HTTP "+r.status);return r.json()}).then(d=>{
