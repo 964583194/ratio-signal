@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="交易系统">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="几个指数的定投信号，每个交易日自动更新">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <div class="wrap">
@@ -49,11 +49,11 @@
   <div class="todo" id="o_rows"><div class="note">加载中</div></div>
   <p class="note" id="o_note"></p>
 </section>
-<section class="panel" id="planSec"><h2>本周下单清单</h2>
+<details class="panel fold" id="planSec"><summary>本周下单清单<small id="planSum">加载中</small></summary><div class="pbody">
   <div class="budget">每周预算 <input type="number" id="budget" inputmode="numeric" min="0" step="100" aria-label="每周预算（元）"> 元<span class="note" style="margin:0 0 0 6px">只存在这台手机上</span></div>
   <div class="todo" id="planRows"><div class="note">加载中</div></div>
   <p class="note" id="planNote"></p>
-</section>
+</div></details>
 <section class="panel"><h2>市场温度<a class="hmore" href="#temp">看详情 ›</a></h2><div id="o_temp"><div class="note">加载中</div></div></section>
 <a class="panel oneline" href="funds.html"><b>我的基金</b><span class="note" id="o_my">每只能不能加，含海外小仓位</span><span class="chev">›</span></a>
 </div>
@@ -752,6 +752,7 @@ function loadPlan(){
       $("planRows").innerHTML=P.rows.map(r=>{const a=Math.round(r.amt*k);tot+=a;fx+=r.fixed;
         return `<div class="prow"><div class="n">${r.name}<small>${r.what}</small></div><div class="a">${r.note}</div><div class="amt num">${a.toLocaleString()} 元${r.daily?`<small>每天约 ${Math.round(a/5)}</small>`:""}${r.fixed?`<small>另加 ${r.fixed} 元</small>`:""}</div></div>`}).join("");
       const over=tot-b;
+      $("planSum").textContent=`每周 ${b.toLocaleString()} 元：合计 ${tot.toLocaleString()} 元${over>0?`，多 ${over.toLocaleString()} 元从备用金出`:""}`;
       $("planNote").innerHTML=`合计 <b class="num">${tot.toLocaleString()} 元</b>${over>0?`，比预算多 ${over.toLocaleString()} 元，从备用金出`:over<0?`，预算里 ${(-over).toLocaleString()} 元没花，存着`:""}${fx?`；另外加码 ${fx} 元（固定金额，破净率见底时）`:""}。按交易系统的比例和本周信号算，${P.date} 更新，和周五周报一致。`};
     draw();inp.addEventListener("input",()=>{try{localStorage.setItem("weeklyBudget",inp.value)}catch(e){}draw()});
   });

@@ -220,3 +220,4 @@ details.sub{margin-top:10px}details.sub>summary{cursor:pointer;font-size:13px;co
 .ladder>div{display:grid;grid-template-columns:7.4em 1fr auto;gap:8px;align-items:center;padding:7px 8px;border-radius:8px;border:1px solid transparent}
 .ladder>div.on{border-color:var(--ink);background:var(--mid)}.ladder .lv{text-align:center}
 .ladder .c{font-size:13px;line-height:1.4}.ladder .c small{display:block;color:var(--muted);font-size:11px}.ladder .r{font-size:12px;text-align:right;white-space:nowrap}.ladder .r small{color:var(--muted)}
+.pbody{padding:0 18px 16px}
