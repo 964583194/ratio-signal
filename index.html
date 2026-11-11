@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>指数定投信号看板</title>
+<title>交易系统</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <meta name="theme-color" content="#16294a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="定投信号">
+<meta name="apple-mobile-web-app-title" content="交易系统">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="几个指数的定投信号，每个交易日自动更新">
 <style>
@@ -165,16 +165,41 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 .alert{border:1px solid var(--mark);background:var(--mark-soft);border-radius:8px;padding:10px 12px;font-size:14px;margin-top:12px}
 .alert b{color:var(--mark)}
 @media (prefers-reduced-motion:no-preference){.bar i{transition:width .5s ease}}
+div[id^="view"]{display:flex;flex-direction:column;gap:16px}
+.grp{margin:0}
+.todo>a{display:grid;grid-template-columns:7.2em 1fr 12px;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}
+.todo>a:last-child{border-bottom:0}
+.todo .n{font-weight:700;font-size:14px;line-height:1.35}.todo .n small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.todo .a{font-size:14px;line-height:1.5;min-width:0}.todo .a .lv{margin-right:6px}.todo .a small{display:block;color:var(--muted);font-size:12px;line-height:1.45;margin-top:2px}
+.chev{color:var(--muted);text-align:right}
+.verdict{font-size:16px;font-weight:700;line-height:1.55}
+.temp3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.temp3>a{border:1px solid var(--line);border-radius:10px;padding:10px;color:var(--ink);text-decoration:none;min-width:0;display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.temp3 .t{font-size:12px;color:var(--muted)}.temp3 .v{font-family:var(--f-num);font-size:22px;font-weight:700;line-height:1.2}.temp3 .s{font-size:11px;color:var(--muted);line-height:1.35}
+.hmore{float:right;font-family:var(--f-body);font-size:13px;font-weight:400;color:var(--muted);text-decoration:none}
+.oneline{display:flex;gap:10px;align-items:center;padding:12px 18px;color:var(--ink);text-decoration:none}.oneline .note{margin:0;flex:1;min-width:0}
+.concl{margin:10px 0 0;padding:9px 12px;border-left:3px solid var(--ink);background:var(--mid);border-radius:0 8px 8px 0;font-size:13px;line-height:1.65}
+.h3{font-size:14px;margin:16px 0 4px}
+details.fold{padding:0;overflow:hidden}
+details.fold>summary{padding:14px 18px;cursor:pointer;font-family:var(--f-display);font-size:16px;font-weight:700;list-style:none}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::after{content:"  展开 ▾";font-family:var(--f-body);font-size:12px;font-weight:400;color:var(--muted)}
+details.fold[open]>summary::after{content:"  收起 ▴"}
+details.fold>summary small{display:block;font-family:var(--f-body);font-weight:400;color:var(--muted);font-size:12px}
+details.fold>section{border:0;border-top:1px solid var(--line);border-radius:0}
+details.sub{margin-top:10px}details.sub>summary{cursor:pointer;font-size:13px;color:var(--muted);padding:4px 0}
+@media (max-width:420px){.temp3 .v{font-size:19px}}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <div class="eyebrow">指数定投 · 个人信号看板</div>
+  <div class="eyebrow">交易系统 · 指数定投</div>
   <h1 id="h1">创业板50 ÷ 红利低波100 轮动信号</h1>
   <p id="subRot" hidden>数据每个交易日更新，按周操作（每周五按周四收盘的信号下单）· 更新于 <span class="num" id="updated">—</span></p>
   <p id="subKc" hidden>数据每个交易日更新，按周操作（每周五按周四收盘的信号下单）· 更新于 <span class="num" id="k_updated">—</span></p>
-  <p id="subO">所有页签的现状和本周操作 · <span id="o_next"></span></p>
+  <p id="subO">本周要做什么 · <span id="o_next"></span></p>
+  <p id="subT" hidden>见底评分 · 见顶信号灯 · 托底资金，三个都只作提醒，不改定投规则 · 数据 <span class="num" id="t_date">—</span></p>
   <p id="subH" hidden>沪深300（000300）· 2005 年以来真实行情 · 估值：市盈率与十年国债 · 数据更新于 <span class="num" id="h_updated">—</span></p>
   <p id="subA" hidden>价格：中证A500（000510）· 估值：沪深300 市盈率与十年国债 · 数据更新于 <span class="num" id="a_updated">—</span></p>
   <p id="subOS" hidden>4 只 QDII 基金 + 纳指100 · 合计一万多的小仓位，只作提醒，不进定投组合 · 数据更新于 <span class="num" id="os_updated">—</span></p>
@@ -186,30 +211,38 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 
 <div class="tabwrap"><nav class="tabs" role="tablist" aria-label="切换策略">
   <button type="button" role="tab" id="tabO" data-view="overview" aria-selected="true">总览</button>
-  <button type="button" role="tab" id="tabRot" data-view="rotation" aria-selected="false">创业板轮动</button>
-  <button type="button" role="tab" id="tabKc" data-view="kc" aria-selected="false">科创板轮动</button>
-  <button type="button" role="tab" id="tabDiv" data-view="dividend" aria-selected="false">红利打分</button>
-  <button type="button" role="tab" id="tabBroad" data-view="broad" aria-selected="false">A500 / 沪深300</button>
-  <button type="button" role="tab" id="tabN" data-view="ndx" aria-selected="false">纳指100</button>
-  <button type="button" role="tab" id="tabOS" data-view="overseas" aria-selected="false">海外</button>
+  <button type="button" role="tab" id="tabT" data-view="temp" aria-selected="false">市场温度</button>
+  <button type="button" role="tab" id="tabRot" data-view="rotation" aria-selected="false">轮动</button>
+  <button type="button" role="tab" id="tabDiv" data-view="dividend" aria-selected="false">红利</button>
+  <button type="button" role="tab" id="tabBroad" data-view="broad" aria-selected="false">宽基</button>
   <button type="button" role="tab" id="tabG" data-view="gold" aria-selected="false">黄金</button>
   <button type="button" role="tab" id="tabB" data-view="bond" aria-selected="false">债基</button>
+  <button type="button" role="tab" id="tabOS" data-view="ndx" aria-selected="false">海外</button>
 </nav></div>
+<div class="ranges grp" role="group" aria-label="切换" id="grpSw" hidden></div>
 
 <div id="viewO">
-<section class="panel"><h2>本周操作</h2>
-  <div class="scroll"><table class="otbl"><thead><tr><th>页签</th><th class="r">比例</th><th>现状与操作</th></tr></thead><tbody id="o_rows"><tr><td colspan="3" class="note">加载中</td></tr></tbody></table></div>
+<section class="panel"><h2>本周这么做</h2>
+  <div class="todo" id="o_rows"><div class="note">加载中</div></div>
   <p class="note" id="o_note"></p>
-  <h2 style="margin-top:20px">见底评分 <span class="note" id="m_date" style="font-weight:400"></span></h2>
-  <div class="panel" id="m_panel"><div class="note">加载中</div></div>
+</section>
+<section class="panel"><h2>市场温度<a class="hmore" href="#temp">看详情 ›</a></h2><div id="o_temp"><div class="note">加载中</div></div></section>
+<a class="panel oneline" href="#overseas"><b>海外小仓位</b><span class="note" id="o_os">加载中</span><span class="chev">›</span></a>
+</div>
+
+<div id="viewT" hidden>
+<section class="panel"><h2>现在的结论</h2><div id="t_temp"><div class="note">加载中</div></div></section>
+<section class="panel" id="t_m"><h2>见底评分 <span class="note" id="m_date" style="font-weight:400"></span></h2>
+  <p class="note" style="margin:-6px 0 10px">看市场便宜到什么程度。0~100 分，越高越接近底部：75 以上接近底部，60~75 偏冷，30 以下偏热。</p>
+  <div id="m_panel"><div class="note">加载中</div></div>
+  <h3 class="h3">见底评分走势（绿色区 ≥75 接近底部）</h3>
   <div class="ranges" role="group" aria-label="时间范围" data-for="m_chart"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y" aria-pressed="true">近3年</button><button type="button" data-r="all" hidden>全部</button></div>
   <div class="chartwrap"><svg class="chart" id="m_chart" viewBox="0 0 720 200" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
-  <p class="note">0~100 分，越高越接近底部（看顶部请看下面的“见顶信号灯”）：75 以上接近底部，60~75 偏冷，30 以下偏热。五项各换算成历史百分位后取平均：破净率高、股债利差高、融资占比低、成交额地量、创业板指市盈率低（表里的“分位”是指标本身的历史分位）。只作参考；规则里只用破净率判断“见底才加码”。</p>
+  <p class="concl" id="m_concl"></p>
+  <p class="note">五项各换算成历史百分位后取平均：破净率高、股债利差高、融资占比低、成交额地量、创业板指市盈率低（表里的“分位”是指标本身的历史分位）。规则里只用破净率判断“见底才加码”。</p>
 </section>
 <section class="panel" id="tl"><h2>见顶信号灯</h2><p class="note">加载中</p></section>
-<section class="panel"><h2>怎么看</h2>
-  <p class="note" style="margin:0">创业板轮动、科创板轮动按周操作，每周五按周四收盘的信号下单，卖出信号出现时当天会发邮件；红利打分按交易日操作；A500 / 沪深300（二选一）、黄金每周定投，按页签里的倍数调整金额；纳指100 每周照常定投。各板块没买完的钱都放红利低波100。“海外”页签是几只 QDII 小仓位，只作提醒，不算在比例里。点表格里的名称可以看详情。</p>
-</section>
+<section class="panel" id="etfh"><h2>托底资金（国家队）</h2><p class="note">加载中</p></section>
 </div>
 
 <div id="viewRot" hidden>
@@ -516,6 +549,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8}
 </div>
 
 <footer>
+  <p style="text-align:left;margin:0 0 10px">怎么用：轮动（创业板、科创板）按周操作，每周五按周四收盘的信号下单，卖出信号出现当天会发邮件；红利按交易日操作；宽基（A500 / 沪深300 二选一）、黄金每周定投，按页签里的倍数调整金额；纳指100 每周照常定投。各板块没买完的钱都放红利低波100。海外里的 QDII 是小仓位，只作提醒，不算在比例里。市场温度三个指标只作提醒，不改规则。</p>
   数据来源：东方财富、中证指数官网、国证指数官网、腾讯、新浪、纳斯达克官网等，每项数据有多个备用接口，自动选择可用的<br>
   <span id="health">数据源状态读取中</span><br>
   回测用价格指数加回股息率假设，未计跟踪误差与管理费。个人研究记录，不构成投资建议。
@@ -754,7 +788,7 @@ function Val(view,file,kind){
     q("err").hidden=true;
     fetch(file+"?t="+Date.now(),{cache:"no-store"})
       .then(r=>{if(!r.ok)throw new Error(r.status===404?"NOFILE":"HTTP "+r.status);return r.json()})
-      .then(d=>{if(!d||!d.latest)throw new Error("数据格式不对");render(d);if(kind==="hs300")loadEtf300(root,d.latest)})
+      .then(d=>{if(!d||!d.latest)throw new Error("数据格式不对");render(d)})
       .catch(e=>{q("err").hidden=false;q("errMsg").textContent=e.message==="NOFILE"?"还没有生成数据。请到仓库的 Actions 页面手动运行一次“更新比值数据”。":"网络不稳定或数据文件损坏，请稍后点“重新读取”。（"+e.message+"）"});
   }
   q("retry").addEventListener("click",load);
@@ -873,18 +907,42 @@ function nextUpdate(){
     return `下次更新：${same?"今天":tom?"明天":"周"+wd} ${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}（北京时间，可能晚几分钟）`}}
   return "";
 }
+// 统一配色：绿=可以买 / 多买，灰=照常或暂停等待，橙=过热或偏贵（不加钱），红=卖出 / 减仓 / 异常
+const OCLS=s=>/卖出预警|过热|偏贵|利率偏低/.test(s)?"h1":/卖出|很贵|减仓|异常/.test(s)?"r1":/买入区|低区|便宜|加码|多买|深度|大幅|回撤 ≥/.test(s)?"g1":"c0";
 function loadOverview(){
   $("o_next").textContent=nextUpdate();
   fetch("data/state.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(st=>{
-    const W={"创业板轮动":25,"科创板轮动":15,"纳指100":20,"红利打分":15,"黄金":15,"A500 / 沪深300":10};
-    // 统一配色：绿=可以买 / 多买，灰=照常或暂停等待，橙=过热或偏贵（不加钱），红=卖出 / 减仓 / 异常
-    const cls=s=>/卖出预警|过热|偏贵|利率偏低/.test(s)?"h1":/卖出|很贵|减仓|异常/.test(s)?"r1":/买入区|低区|便宜|加码|多买|深度|大幅|回撤 ≥/.test(s)?"g1":"c0";
-    $("o_rows").innerHTML=Object.entries(st).map(([n,v])=>{
-      const name=v.tab?`<a href="#${v.tab}">${n}</a>`:n;
-      return `<tr><td>${name}<div class="note" style="margin:2px 0 0">${v.date||""}</div></td><td class="r num">${W[n]?W[n]+"%":""}</td><td><span class="lv ${cls(v.state)}">${v.state.split("|")[0]}</span><div style="margin-top:4px">${v.now}</div><div style="margin-top:4px;padding-top:4px;border-top:1px dashed var(--line)"><b>操作：</b>${v.act}</div></td></tr>`}).join("");
-    loadMarket();loadTop();
-    $("o_note").textContent="比例是每周定投款在各板块的建议分配。和每周五早上的周报邮件内容一致；日期是各指数最近一个交易日。";
-  }).catch(e=>{$("o_rows").innerHTML=`<tr><td colspan="3" class="note">读取失败，请稍后刷新（${e.message}）</td></tr>`});
+    const W={"创业板轮动":25,"科创板轮动":15,"红利打分":15,"A500 / 沪深300":10,"黄金":15,"纳指100":20,"债基":0};
+    const dates=new Set();
+    $("o_rows").innerHTML=Object.keys(W).filter(n=>st[n]).map(n=>{const v=st[n];dates.add(v.date);
+      const parts=v.act.split("；"),main=parts[0].replace(/^本周定投款/,""),rest=/轮动/.test(n)?"":parts.slice(1).join("；");
+      return `<a href="#${v.tab}"><div class="n">${n}<small>${W[n]?W[n]+"%":"另配，不占比例"}</small></div><div class="a"><span class="lv ${OCLS(v.state)}">${v.state.split("|")[0]}</span>${main}${rest?`<small>${rest}</small>`:""}</div><span class="chev">›</span></a>`}).join("");
+    const os=st["海外小仓位"];$("o_os").textContent=os?os.act:"";
+    $("o_note").textContent=`比例是每周定投款在各板块的分配，和每周五早上的周报邮件一致。点一行看原因和阈值。数据日期 ${[...dates].sort().pop()||"—"}。`;
+  }).catch(e=>{$("o_rows").innerHTML=`<div class="note">读取失败，请稍后刷新（${e.message}）</div>`});
+  renderTemp($("o_temp"),true);
+}
+// ---------------- 市场温度：见底评分 + 见顶信号灯 + 托底资金，合成一句结论
+const getJ=f=>fetch("data/"+f+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null);
+function renderTemp(el,compact){
+  Promise.all([getJ("market.json"),getJ("topsig.json"),getJ("etf300.json")]).then(([m,t,e])=>{
+    const sg=x=>x==null?"—":(x>0?"+":"")+pc(x);
+    const sc=m?m.score:null,c=t?t.latest.count:null,ez=e?e.latest.zone:null;
+    const w1=sc==null?"":sc>=75?"市场接近底部":sc>=60?"市场偏冷":sc>=30?"市场冷热正常":"市场偏热";
+    const w2=c==null?"":c>=3?`见顶灯亮了 ${c} 个`:c===2?"见顶灯亮了 2 个":c===1?"见顶灯只亮 1 个":"见顶灯一个没亮";
+    const w3=!ez?"":{"大幅流入·托底":"国家队在大举托底","撤出中":"国家队在撤","重仓持有":"国家队重仓在场","低仓观望":"国家队基本不在场","回补中":"国家队在回补","减仓中":"国家队在慢慢减仓"}[ez]||"国家队持仓变化不大";
+    const verdict=c>=3?"接近顶部：分批止盈要果断，宽基少买，别追加":c===2?"偏热：不额外加钱":sc>=75?"便宜区：按规则加码可以放心执行":"按规则正常执行";
+    const tile=(sec,t,v,lv,cl,sub)=>`<a href="#temp" data-sec="${sec}"><span class="t">${t}</span><span class="v">${v}</span><span class="lv ${cl}">${lv}</span><span class="s">${sub}</span></a>`;
+    el.innerHTML=`<div class="verdict">${[w1,w2,w3].filter(Boolean).join("，")} → ${verdict}</div>
+      <div class="temp3">${m?tile("t_m","见底评分",m.score,m.zone,sc>=60?"g1":sc<30?"h1":"c0",m.pb_hot?"破净率已见底":"破净率未见底"):""}${t?tile("tl","见顶信号灯",c+" / 7",t.latest.zone,t.latest.cls,"亮 ≥3 个才算顶"):""}${e?tile("etfh","托底资金",sg(e.latest.chg20),ez.replace("·托底",""),e.latest.cls,"近 20 日份额"):""}</div>
+      ${compact?"":`<p class="note">见底评分看“便宜到什么程度”，见顶信号灯看“有没有过热”，托底资金看“国家队在买还是在卖”。三个都只作提醒，不改定投规则和倍数；见顶灯亮灯个数、托底资金状态变化时会发邮件。</p>`}`;
+    if(!compact){$("t_date").textContent=(m&&m.date)||"—";
+      el.querySelectorAll("a[data-sec]").forEach(a=>a.addEventListener("click",ev=>{ev.preventDefault();$(a.dataset.sec).scrollIntoView({behavior:"smooth",block:"start"})}))}
+  });
+}
+function loadTemp(){
+  renderTemp($("t_temp"),false);loadMarket();loadTop();
+  getJ("hs300.json").then(d=>loadEtf300($("viewT"),d&&d.latest));
 }
 // ---------------- 海外小仓位（只作提醒）
 function loadOS(){
@@ -1015,13 +1073,15 @@ function loadEtf300(root,HL){
     const cheap=HL&&HL.cheap!=null?HL.cheap:null,judge=etfJudge(d.latest.zone,cheap,mk&&mk.pb_hot);
     const L=d.latest,S=d.series,sg=x=>x==null?"—":(x>0?"+":"")+pc(x);
     const ev=d.events||[],st=d.stats||{};
+    const sx=(k,h)=>st[k]&&st[k][h]?st[k][h]:null,i60=sx("大幅流入·托底","60"),o60=sx("撤出中","60"),a60=sx("全部交易日","60");
+    const evc=i60&&o60&&a60?`<b>结论：</b>大幅流入之后 60 个交易日沪深300 平均 ${sg(i60.avg)}（上涨 ${pc(i60.up,0)}），撤出之后平均 ${sg(o60.avg)}（上涨 ${pc(o60.up,0)}），平时是 ${sg(a60.avg)}。<b>→ ${o60.avg<a60.avg?"“撤出”更有用：看到撤出、尤其指数在高位时要谨慎":"撤出之后没有明显更差"}；${i60.avg<=a60.avg+.01?"“大幅流入”不代表马上见底，常出现在下跌途中":"大幅流入之后表现更好"}。</b>次数只有个位数，只作旁证。`:"";
     const fr=x=>x==null?"—":`<span style="color:${x>0?"var(--grow)":"var(--mark)"}">${sg(x)}</span>`;
     const statRow=(k,S2=st,tag="")=>{const v=S2[k];if(!v)return"";const c=h=>v[h]?`${sg(v[h].avg)}<br><small>上涨 ${pc(v[h].up,0)}</small>`:"—";
       return `<tr><td>${k==="全部交易日"?"对照":k==="大幅流入·托底"?"大幅流入":"撤出"}${tag}</td><td class="r num">${k==="全部交易日"?"—":v.n}</td><td class="r num">${c("20")}</td><td class="r num">${c("60")}</td><td class="r num">${c("120")}</td></tr>`};
     sec.innerHTML=`<h2>托底资金（国家队）</h2>
       <p class="note" style="margin:-6px 0 10px">华泰柏瑞 510300、易方达 510310、华夏 510330、嘉实 159919 合计规模（份额 × 单位净值）占沪深300 流通市值。汇金托底主要买这几只，可以近似看作国家队在沪深300 上的仓位。<b>先观察，不改定投规则；状态变化会发邮件。</b></p>
       <div><span class="lv ${L.cls}">${L.zone}</span> <span style="margin-left:6px">${L.action}</span></div>
-      <div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--mid)"><b>暂定判断</b>（结合沪深300 便宜指数 ${cheap==null?"—":cheap.toFixed(1)}，只作参考，不改规则和倍数）：${judge}</div>
+      <p class="concl"><b>现在怎么办：</b>${judge}。<span class="note">（结合沪深300 便宜指数 ${cheap==null?"—":cheap.toFixed(1)}，只作参考，不改规则和倍数）</span></p>
       <div class="kv"><div><div class="label">合计规模</div><div class="v">${L.size.toLocaleString()} 亿</div><div class="s">${L.date} · ${L.shares.toFixed(0)} 亿份</div></div>
         <div><div class="label">占流通市值</div><div class="v">${L.ratio.toFixed(2)}%</div><div class="s">图中区间 ${L.lo.toFixed(2)}%~${L.hi.toFixed(2)}%</div></div>
         <div><div class="label">近 252 日分位</div><div class="v">${L.pct==null?"—":pc(L.pct,0)}</div><div class="s">≥80% 重仓 · ≤20% 撤空</div></div>
@@ -1029,10 +1089,14 @@ function loadEtf300(root,HL){
       <h3 style="font-size:14px;margin:16px 0 4px">占沪深300 流通市值与沪深300<button type="button" class="bigbtn" data-big="etf_c1" data-title="占沪深300 流通市值（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
       <p class="note" style="margin:0 0 6px"><span style="color:var(--grow);font-weight:700">——</span> 占比（%，左轴）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">大幅流入</span> / <span style="color:var(--div)">撤出</span></p>
       <div class="chartwrap"><svg class="chart" id="etf_c1" viewBox="0 0 720 260" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+      <p class="concl"><b>结论：</b>现在占 ${L.ratio.toFixed(2)}%，${L.ratio>=L.hi*.8?"接近图中最高":L.ratio<=L.lo*2?"接近图中最低":"在图中中间位置"}（${L.lo.toFixed(2)}%~${L.hi.toFixed(2)}%）；近 20 日份额 ${sg(L.chg20)}。<b>→ ${L.chg20==null?"":L.chg20>=.15?"国家队最近一个月在大举加仓":L.chg20<=-.15?"国家队最近一个月在大幅撤出":L.chg20>.03?"国家队最近在回补":L.chg20<-.03?"国家队最近在慢慢减":"最近变化不大"}${L.ratio>=L.hi*.8?"，仓位已经很重":""}。</b></p>
       <h3 style="font-size:14px;margin:14px 0 4px">占比在近 252 个交易日的分位<button type="button" class="bigbtn" data-big="etf_c2" data-title="占比的 252 日分位（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
       <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 分位（%，左轴；绿色 ≥80% 重仓，红色 ≤20% 撤空）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）</p>
       <div class="chartwrap"><svg class="chart" id="etf_c2" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
-      <h3 style="font-size:14px;margin:16px 0 6px">历次事件之后沪深300 怎么走</h3>
+      <p class="concl"><b>结论：</b>${L.pct==null?"分位还算不出来":`分位 ${pc(L.pct,0)}，${L.pct>=.8?"在绿色重仓区：托底资金在场，下跌有人接":L.pct<=.2?"在红色撤空区：下跌时没人接":"在中间：和过去一年比，不算重仓也不算撤空"}`}。分位只和自己过去一年比，看“现在比一年里多数时候多还是少”。</p>
+      <h3 class="h3">准不准（${(d.recent_from||"2023").slice(0,4)} 年起）</h3>
+      <p class="concl">${evc}</p>
+      <details class="sub"><summary>看历次事件和长期数据 ▾</summary>
       <div class="scroll"><table><thead><tr><th></th><th class="r">次</th><th class="r">20日后</th><th class="r">60日后</th><th class="r">120日后</th></tr></thead><tbody><tr><td colspan="5" class="note" style="padding-top:8px">${(d.recent_from||"2023").slice(0,4)} 年起（汇金大规模用这几只 ETF 托底以来）</td></tr>${statRow("大幅流入·托底")}${statRow("撤出中")}${statRow("全部交易日")}
         ${d.stats_all?`<tr><td colspan="5" class="note" style="padding-top:10px">2015 年起全部（2023 年前占比只有 0.2%~0.3%，事件多是普通资金进出，参考价值低）</td></tr>${statRow("大幅流入·托底",d.stats_all)}${statRow("撤出中",d.stats_all)}${statRow("全部交易日",d.stats_all)}`:""}</tbody></table></div>
       <div class="scroll" style="margin-top:8px"><table><thead><tr><th>日期</th><th>事件</th><th class="r">20 日后</th><th class="r">60 日后</th></tr></thead><tbody>
@@ -1040,6 +1104,7 @@ function loadEtf300(root,HL){
       ${(d.quarterly||[]).length?`<h3 style="font-size:14px;margin:16px 0 4px">长期（基金季报，2013 年起）</h3>
       <div class="ranges" role="group" data-for="etf_c3"><button type="button" data-r="all" aria-pressed="true">全部</button></div>
       <div class="chartwrap"><svg class="chart" id="etf_c3" viewBox="0 0 720 200" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>`:""}
+      </details>
       <p class="note" style="margin-top:10px">怎么看：<b>大幅流入</b>大多发生在下跌途中，之后 1~3 个月往往还在磨底，说明有人托底、但不等于马上见底；<b>重仓之后会拿很久</b>，分位高不代表现在便宜；<b>撤出</b>（尤其在高位）之后沪深300 偏弱，这个信号目前更有参考价值。事件只有几次，只作旁证。<br>
       数据：份额来自上交所、深交所，单位净值来自天天基金；流通市值${d.first_real_cap?`从 ${d.first_real_cap} 起是东方财富每天的真实值，之前`:""}按沪深300 点位倒推，越早越不准（只影响高低，不影响方向）。份额里也有非国家队的资金。</p>`;
     const dates=S.map(r=>r[0]),marks=ev.map(e=>({d:e.date,c:e.kind==="撤出中"?"var(--div)":"var(--grow)",t:""}));
@@ -1051,6 +1116,7 @@ function loadEtf300(root,HL){
       bands:[{from:80,to:100,fill:"var(--grow-soft)"},{from:0,to:20,fill:"var(--mark-soft)"}],
       left:[{v:S.map(r=>r[2]),c:"var(--ink)",w:1.8}],right:{v:S.map(r=>r[4]),c:"var(--mark)"},tip});
     sec.querySelectorAll(".bigbtn").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
+    sec.querySelectorAll("details").forEach(x=>x.addEventListener("toggle",()=>dispatchEvent(new Event("resize"))));
     if((d.quarterly||[]).length){const Q=d.quarterly,qm=new Map(Q.map(r=>[r[0],r]));
       LineChart($("etf_c3"),{W:720,H:200,fixedY:[0,Math.ceil(Math.max(...Q.map(r=>r[1])))],ticks:Array.from({length:Math.ceil(Math.max(...Q.map(r=>r[1])))+1},(_,i)=>i)}).set(Q.map(r=>[r[0],r[1]]),{tip:(dt,v)=>`${dt}<br>占流通市值 <b>${v.toFixed(2)}%</b><br>规模 ${qm.get(dt)[2].toLocaleString()} 亿<br>沪深300 ${qm.get(dt)[3].toFixed(0)}`})}
   }).catch(e=>{sec.innerHTML=`<h2>托底资金（国家队）</h2><p class="note">${e.message}</p>`});
@@ -1064,7 +1130,12 @@ function loadTop(){
     const V=L.values,val={"挤":V["挤"]==null?"":"现在 "+pc(V["挤"]),"贵":V["贵"]==null?"":"现在 "+pc(V["贵"],0)+" 分位","疯":V["疯"]==null?"":"现在 "+pc(V["疯"],0)+" 分位",
       "热":V["热"]==null?"":"现在 "+pc(V["热"],0)+" 分位","走":V["走"]==null?"":"近 40 日份额 "+sg(V["走"]),"分歧":V["分歧"]==null?"":"站上年线 "+pc(V["分歧"],0),"高估":V["高估"]==null?"":"现在 "+pc(V["高估"],0)+" 分位"};
     const row=(t,v)=>v?`<tr><td>${t}（${v.days} 天）</td>${["60","120","250"].map(h=>`<td class="r num">${v[h]?sg(v[h].avg)+`<br><small>上涨 ${pc(v[h].up,0)}</small>`:"—"}</td>`).join("")}</tr>`:"";
-    const lit=new Set(L.lit);
+    const lit=new Set(L.lit),g3=st.ge3||{},al=st.all||{},h6=v=>v&&v["120"]?v["120"]:null;
+    const k1=`<b>结论：</b>现在亮 ${c} 个，${c>=3?"在红色区，接近顶部":"不在红色区（≥3 个）"}。`+(h6(g3)&&h6(al)?`历史上进红色区之后半年（120 个交易日），沪深300 平均 ${sg(h6(g3).avg)}、上涨概率只有 ${pc(h6(g3).up,0)}；平时任意一天之后半年平均 ${sg(h6(al).avg)}。`:"")+`<b>→ ${c>=3?"见顶风险高，按规则分批止盈":c===2?"偏热，不额外加钱":"现在没有见顶迹象"}。</b>`;
+    const MO=d.monthly.filter(r=>r[1]!=null),cx=MO.length?MO[MO.length-1][1]*100:null,hot=[];
+    MO.forEach(r=>{if(r[1]<.45)return;const l=hot[hot.length-1],pm=l&&l[1];const nx=pm&&(()=>{let [y,mm]=pm.split("-").map(Number);mm++;if(mm>12){y++;mm=1}return y+"-"+String(mm).padStart(2,"0")})();if(l&&nx===r[0])l[1]=r[0];else hot.push([r[0],r[0]])});
+    const k2=cx==null?"":`<b>结论：</b>本月至今 ${cx.toFixed(1)}%，${cx>=45?"已超过 45% 警戒线，资金在抱团":`离 45% 警戒线还差 ${(45-cx).toFixed(1)} 个百分点`}。历史上超过 45% 的月份：${hot.map(h=>h[0]===h[1]?h[0]:h[0]+"~"+h[1]).join("、")}，大多在阶段顶部附近。<b>→ ${cx>=45?"主线过热，别追高":cx>=42?"接近警戒，留意":"还没到抱团见顶"}。</b>`;
+    const k3=h6(g3)&&h6(al)?`<b>结论：</b>这个组合信号有用：亮 ≥3 个之后半年沪深300 平均 ${sg(h6(g3).avg)}，平时是 ${sg(h6(al).avg)}。但 16 年里只有 ${(d.segments||[]).length} 段，而且漏过 2018 年 1 月和 2024 年 10 月，只作提醒，不单独用来卖。`:"";
     sec.innerHTML=`<h2>见顶信号灯 <span class="note" style="font-weight:400">${L.date}</span></h2>
       <p class="note" style="margin:-6px 0 10px">7 个信号各自独立亮灯，<b>同时亮 3 个及以上</b>才算接近顶部，2 个算偏热。只作提醒，不改规则；亮灯个数变化会发邮件。</p>
       <div style="display:flex;gap:14px;align-items:center"><div class="big num">${c}<small style="font-size:20px"> / 7</small></div><div><span class="lv ${L.cls}">${L.zone}</span><div class="note" style="margin:4px 0 0">${L.action}</div></div></div>
@@ -1075,12 +1146,17 @@ function loadTop(){
       <h3 style="font-size:14px;margin:16px 0 4px">同时亮几个灯与沪深300<button type="button" class="bigbtn" data-big="tl_c1" data-title="同时亮灯个数（左轴）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
       <p class="note" style="margin:0 0 6px"><span style="color:var(--mark);font-weight:700">——</span> 亮灯个数（左轴，红色区 ≥3）　<span style="color:var(--ink);font-weight:700">——</span> 沪深300（右轴）</p>
       <div class="chartwrap"><svg class="chart" id="tl_c1" viewBox="0 0 720 260" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+      <p class="concl">${k1}</p>
       <h3 style="font-size:14px;margin:14px 0 4px">成交额集中度（每月前 5% 个股占比）<button type="button" class="bigbtn" data-big="tl_c2" data-title="成交额集中度（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
+      <p class="note" style="margin:0 0 6px"><span style="color:var(--div);font-weight:700">——</span> 集中度（左轴，红色区 ≥45% 警戒）　<span style="color:var(--ink);font-weight:700">——</span> 沪深300（右轴）</p>
       <div class="chartwrap"><svg class="chart" id="tl_c2" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
-      <h3 style="font-size:14px;margin:14px 0 6px">历史检验（2010 年起，沪深300 之后涨跌）</h3>
+      <p class="concl">${k2}</p>
+      <h3 class="h3">准不准（2010 年起）</h3>
+      <p class="concl">${k3}</p>
+      <details class="sub"><summary>看历史检验表 ▾</summary>
       <div class="scroll"><table><thead><tr><th></th><th class="r">60日后</th><th class="r">120日后</th><th class="r">250日后</th></tr></thead><tbody>${row("亮 ≥3 个",st.ge3)}${row("亮 ≥2 个",st.ge2)}${row("对照：任意一天",st.all)}</tbody></table></div>
-      <p class="note">亮 ≥3 个的时段：${(d.segments||[]).map(s=>s[0].slice(0,7)+(s[1].slice(0,7)!==s[0].slice(0,7)?"~"+s[1].slice(0,7):"")).join("、")||"无"}。漏掉过 2018 年 1 月（最多 2 个）和 2024 年 10 月（政策急涨，0 个）；高危时段只有几段，只作旁证。<br>
-      数据：集中度、宽度由全部沪深 A 股月线和每日行情计算（东方财富）；巴菲特指标来自乐咕乐股；其余见各页签。</p>`;
+      <p class="note">表里是沪深300 之后的平均涨跌和上涨概率。亮 ≥3 个的时段：${(d.segments||[]).map(s=>s[0].slice(0,7)+(s[1].slice(0,7)!==s[0].slice(0,7)?"~"+s[1].slice(0,7):"")).join("、")||"无"}。漏掉过 2018 年 1 月（最多 2 个）和 2024 年 10 月（政策急涨，0 个）；高危时段只有几段，只作旁证。<br>
+      数据：集中度、宽度由全部沪深 A 股月线和每日行情计算（东方财富）；巴菲特指标来自乐咕乐股；其余见各页签。</p></details>`;
     const dates=Sr.map(r=>r[0]),cnt=Sr.map(r=>r[1]),cl=Sr.map(r=>r[2]);
     DualChart($("tl_c1"),{W:720,H:260,dates,leftRange:[0,7],leftTicks:[0,1,2,3,4,5,6,7],leftFmt:v=>v,bands:[{from:3,to:7,fill:"var(--mark-soft)"}],
       left:[{v:cnt,c:"var(--mark)",w:1.6}],right:{v:cl,c:"var(--ink)"},
@@ -1093,15 +1169,19 @@ function loadTop(){
   }).catch(e=>{sec.innerHTML=`<h2>见顶信号灯</h2><p class="note">${e.message}</p>`});
 }
 // ---------------- 页签
-const VIEWS={overview:["viewO","tabO","subO","指数定投信号看板"],
+const VIEWS={overview:["viewO","tabO","subO","交易系统"],
+             temp:["viewT","tabT","subT","市场温度 · 现在冷还是热"],
              rotation:["viewRot","tabRot","subRot","创业板 · 轮动信号"],
-             kc:["viewKc","tabKc","subKc","科创板 · 轮动信号"],
+             kc:["viewKc","tabRot","subKc","科创板 · 轮动信号"],
              dividend:["viewDiv","tabDiv","subDiv","红利低波100 · 每日定投打分"],
              broad:["viewBroad","tabBroad","subA","A500 / 沪深300 · 便宜还是贵"],
-             ndx:["viewN","tabN","subN","纳指100 · 什么时候能买"],
-             overseas:["viewOS","tabOS","subOS","海外小仓位 · 提醒"],
              gold:["viewG","tabG","subG","黄金 · 压舱石"],
-             bond:["viewB","tabB","subB","债基 · 要不要加仓"]};
+             bond:["viewB","tabB","subB","债基 · 要不要加仓"],
+             ndx:["viewN","tabOS","subN","纳指100 · 什么时候能买"],
+             overseas:["viewOS","tabOS","subOS","海外 · QDII 小仓位"]};
+// 一个页签里有两个子页：轮动（创业板 / 科创板）、海外（纳指100 / QDII）
+const GROUPS={rotation:[["rotation","创业板50"],["kc","科创50"]],ndx:[["ndx","纳指100（定投 20%）"],["overseas","QDII 小仓位"]]};
+GROUPS.kc=GROUPS.rotation;GROUPS.overseas=GROUPS.ndx;
 let mChart=null;
 async function loadMarket(){
   try{
@@ -1115,13 +1195,14 @@ async function loadMarket(){
       `<div class="scroll"><table class="otbl" style="margin-top:8px"><thead><tr><th>指标</th><th>现在</th><th class="r">分位</th></tr></thead><tbody>`+
       rows.map(([k,v])=>`<tr><td>${I[k].name}</td><td class="num">${v}</td><td class="r num">${p(I[k].pct)}</td></tr>`).join("")+
       `<tr><td>科创50市盈率</td><td class="num">${E.pe_kc!=null?E.pe_kc.toFixed(1)+" 倍":"—"}</td><td class="r num">${p(E.pe_kc_pct)}</td></tr>`+
-      `<tr><td><a href="#hs300">国家队（托底资金）</a></td><td class="num">${E.etf300?E.etf300.zone+"<br><small>占比 "+E.etf300.ratio.toFixed(2)+"% · 20日 "+(E.etf300.chg20>0?"+":"")+(E.etf300.chg20*100).toFixed(1)+"%</small>":"—"}</td><td class="r num">${E.etf300&&E.etf300.pct!=null?p(E.etf300.pct):"—"}</td></tr>`+
       `</tbody></table></div>`;
     if(m.hist&&m.hist.length){if(!mChart)mChart=LineChart($("m_chart"),{W:720,H:200,fixedY:[0,100],ticks:[0,25,50,75,100],bands:[{from:75,fill:"var(--grow-soft)"}]});
-      mChart.set(m.hist,{tip:(dt,v)=>`${dt}<br>见底评分 <b>${v.toFixed(0)}</b>`});}
+      mChart.set(m.hist,{tip:(dt,v)=>`${dt}<br>见底评分 <b>${v.toFixed(0)}</b>`});
+      const s0=m.score,hv=m.hist.map(r=>r[1]),colder=hv.filter(v=>v>s0).length/hv.length;
+      $("m_concl").innerHTML=`<b>结论：</b>现在 ${s0} 分，${m.zone}。${s0>=75?"已经进入绿色的底部区，是加码的好位置。":`还没进绿色的底部区（≥75），差 ${(75-s0).toFixed(1)} 分。`}近 3 年里只有 ${pc(colder,0)} 的时间比现在更冷。${m.pb_hot?"<b>破净率已到见底标准 → 轮动的“见底才加码”可以执行。</b>":"破净率还没到见底标准 → 不提前加码。"}`;}
   }catch(e){$("m_panel").innerHTML='<div class="note">见底评分读取失败</div>';}
 }
-const LOADERS={overview:loadOverview,rotation:rotView.load,kc:kcView.load,dividend:loadDiv,ndx:nView.load,overseas:loadOS,gold:gView.load,bond:bView.load},LOADED={};
+const LOADERS={overview:loadOverview,temp:loadTemp,rotation:rotView.load,kc:kcView.load,dividend:loadDiv,ndx:nView.load,overseas:loadOS,gold:gView.load,bond:bView.load},LOADED={};
 // A500 / 沪深300 合并成一个页签；旧链接 #a500、#hs300 仍然能打开对应的那一个
 let BROAD="a500";const BLOADED={};
 function setBroad(b){
@@ -1137,7 +1218,10 @@ function showView(){
   if(hk==="a500"||hk==="hs300"){BROAD=hk;hk="broad"}
   const k=VIEWS[hk]?hk:"overview";
   $("subH").hidden=true;
-  Object.entries(VIEWS).forEach(([key,[v,t,s]])=>{const on=key===k;$(v).hidden=!on;$(s).hidden=!on;$(t).setAttribute("aria-selected",on)});
+  Object.entries(VIEWS).forEach(([key,[v,t,s]])=>{const on=key===k;$(v).hidden=!on;$(s).hidden=!on});
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.id===VIEWS[k][1]));
+  const g=GROUPS[k],sw=$("grpSw");sw.hidden=!g;
+  if(g)sw.innerHTML=g.map(([key,lab])=>`<button type="button" data-k="${key}" aria-pressed="${key===k}">${lab}</button>`).join("");
   $("h1").textContent=VIEWS[k][3];
   try{$(VIEWS[k][1]).scrollIntoView({inline:"nearest",block:"nearest"})}catch(e){}
   if(k==="broad")setBroad(BROAD);
@@ -1145,6 +1229,19 @@ function showView(){
 }
 document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{location.hash=b.dataset.view;showView()}));
 window.addEventListener("hashchange",showView);
+$("grpSw").addEventListener("click",e=>{const b=e.target.closest("button");if(b)location.hash=b.dataset.k});
+// 回测、历史检验这些复盘内容收进页签最下面的“历史与回测”，默认收起
+const FOLD=/^(回测|历史检验|近几次有效跌破|近一年信号|性格对比)/;
+function foldHist(id){
+  const v=$(id);if(!v)return;
+  const secs=[...v.children].filter(x=>x.tagName==="SECTION"&&FOLD.test(((x.querySelector("h2")||{}).textContent||"").trim()));
+  if(!secs.length)return;
+  const d=document.createElement("details");d.className="panel fold";
+  d.innerHTML=`<summary>历史与回测<small>${secs.map(x=>x.querySelector("h2").textContent.split(/[：（]/)[0]).join(" · ")}</small></summary>`;
+  secs.forEach(x=>d.appendChild(x));v.appendChild(d);
+  d.addEventListener("toggle",()=>dispatchEvent(new Event("resize")));
+}
+["viewRot","viewKc","viewDiv","viewA","viewH","viewN","viewG","viewB"].forEach(foldHist);
 showView();
 
 // ---------------- 红利打分

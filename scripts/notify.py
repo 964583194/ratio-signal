@@ -81,7 +81,7 @@ def topsig(d):
     L = d["latest"]
     lit = "、".join(L["lit"]) or "无"
     now = f"{L['count']} / 7 个信号亮着（{lit}）"
-    return f"亮{L['count']}个", now, L["action"] + "（只作提醒，不改规则）", "overview"
+    return f"亮{L['count']}个", now, L["action"] + "（只作提醒，不改规则）", "temp"
 
 
 def etf300(d):
@@ -92,7 +92,7 @@ def etf300(d):
            f"近 20 日份额 {'+' if (L['chg20'] or 0) > 0 else ''}{pc(L['chg20'])}")
     hs, mk = load("hs300.json") or {}, load("market.json") or {}
     cheap = (hs.get("latest") or {}).get("cheap")
-    return L["zone"], now, f"{L['action']}。暂定判断：{judge(L['zone'], cheap, mk.get('pb_hot'))}（只作参考，不改规则和倍数）", "hs300"
+    return L["zone"], now, f"{L['action']}。暂定判断：{judge(L['zone'], cheap, mk.get('pb_hot'))}（只作参考，不改规则和倍数）", "temp"
 
 
 def judge(zone, cheap, pb_hot):
@@ -160,7 +160,7 @@ def collect(prev):
     if m:
         E = m["extra"]
         out["见底评分"] = {"state": f"{m['zone']}|{'破净率已见底' if m['pb_hot'] else '破净率未见底'}",
-                       "now": f"{m['score']} 分（{m['zone']}）", "tab": "overview", "date": m["date"],
+                       "now": f"{m['score']} 分（{m['zone']}）", "tab": "temp", "date": m["date"],
                        "act": f"破净率 {E['pb_val'] * 100:.1f}%（{'已到' if m['pb_hot'] else '未到'}见底标准，轮动{'可以' if m['pb_hot'] else '暂不'}加码）"
                               + (f"；融资余额近 20 日 {E['margin_chg20'] * 100:+.1f}%" if E.get("margin_chg20") is not None else "")}
     h = load("health.json") or {}
