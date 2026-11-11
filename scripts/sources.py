@@ -318,6 +318,35 @@ def ak_buffett(since):
     return out
 
 
+def _month(s):
+    """'2026年09月份' / '2026.9' / '202609' → '2026-09-01'（月度数据用当月 1 号表示）"""
+    import re  # noqa: PLC0415
+    m = re.match(r"(\d{4})\D*?(\d{1,2})\D*$", str(s).replace("月份", "").replace("月", "")) or re.match(r"(\d{4})(\d{2})", str(s))
+    return f"{m.group(1)}-{int(m.group(2)):02d}-01"
+
+
+def ak_money(col):
+    """M1 同比（%），月度（东方财富，经 AKShare）"""
+    def f(since):
+        import akshare as ak  # noqa: PLC0415
+        df = ak.macro_china_money_supply()
+        out = {_month(r["月份"]): float(r[col]) for _, r in df.iterrows() if str(r[col]) not in ("", "nan", "None")}
+        if not out:
+            raise RuntimeError("没有取到")
+        return out
+    return f
+
+
+def ak_loan(since):
+    """新增人民币贷款（亿元，当月），月度（东方财富，经 AKShare）"""
+    import akshare as ak  # noqa: PLC0415
+    df = ak.macro_china_new_financial_credit()
+    out = {_month(r["月份"]): float(r["当月"]) for _, r in df.iterrows() if str(r["当月"]) not in ("", "nan", "None")}
+    if not out:
+        raise RuntimeError("没有取到")
+    return out
+
+
 def em_cap300(since):
     """沪深300 流通市值（元，东方财富，只有当天）"""
     out = {}
@@ -505,6 +534,9 @@ CATALOG = {
     "unav159919": ("159919 单位净值", 200, [("天天基金", lambda s: em_pzd("159919")), ("东方财富", lambda s: em_lsjz("159919", 3 if s else 60)), ("新浪", lambda s: sina_nav("159919", 60 if s else 1000))]),
     "cap300": ("沪深300 流通市值", 1, [("东方财富", em_cap300)]),
     "buffett": ("巴菲特指标（总市值÷GDP）", 200, [("乐咕乐股", ak_buffett)]),
+    # ---- 宏观（月度，市场温度的“方向”用；每月中旬公布上个月）
+    "m1": ("M1 同比", 100, [("东方财富", ak_money("货币(M1)-同比增长"))]),
+    "loan": ("新增人民币贷款", 100, [("东方财富", ak_loan)]),
     "etf513100": ("纳指ETF 513100 收盘", 100, [
         ("东方财富", lambda s: em_kline("1.513100", _ymd(s, "20240101"))),
         ("腾讯", lambda s: tx_kline2("sh513100", 60 if s else 640)),
@@ -535,8 +567,9 @@ CATALOG = {
 # 和缓存比对时允许的差异：价格类相对 1%，收益率类绝对 0.15 个百分点
 OVERSEAS_KEYS = {"nav006555", "nav539002", "nav007280", "nav021189", "etf159687", "nav159687"}
 ETF300_KEYS = {"buffett", "sh510300", "sh510310", "sh510330", "sz159919", "unav510300", "unav510310", "unav510330", "unav159919", "cap300"}
-REF_KEYS = {"pb_below", "margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc"} | OVERSEAS_KEYS | ETF300_KEYS
-TOL = {"cn10y": ("abs", 0.15), "us10y": ("abs", 0.15)}
+MONTHLY_KEYS = {"m1", "loan"}     # 月度数据：最新一条本来就是一个多月前的
+REF_KEYS = {"pb_below", "margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc"} | OVERSEAS_KEYS | ETF300_KEYS | MONTHLY_KEYS
+TOL = {"cn10y": ("abs", 0.15), "us10y": ("abs", 0.15), "m1": ("abs", 0.5), "loan": ("rel", 0.05)}
 INCR_DAYS = 60          # 增量更新时回看的天数（同时用于和缓存比对）
 
 
@@ -575,7 +608,7 @@ def _check(key, new, cache, incremental):
     if not new:
         return "没有数据"
     last = max(new)
-    if (dt.date.today() - dt.date.fromisoformat(last)).days > HEALTH_DAYS:
+    if (dt.date.today() - dt.date.fromisoformat(last)).days > (80 if key in MONTHLY_KEYS else HEALTH_DAYS):
         return f"数据太旧（最新 {last}）"
     common = sorted(set(new) & set(cache))[-INCR_DAYS:]
     if common:

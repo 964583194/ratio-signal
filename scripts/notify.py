@@ -156,13 +156,15 @@ def collect(prev):
         out[name] = {"state": state, "now": now, "act": act, "tab": tab, "date": d["latest"]["date"]}
         if name == "纳指100":
             out[name]["prem"] = state.split("溢价")[-1]
-    m = load("market.json")
-    if m:
-        E = m["extra"]
-        out["见底评分"] = {"state": f"{m['zone']}|{'破净率已见底' if m['pb_hot'] else '破净率未见底'}",
-                       "now": f"{m['score']} 分（{m['zone']}）", "tab": "temp", "date": m["date"],
-                       "act": f"破净率 {E['pb_val'] * 100:.1f}%（{'已到' if m['pb_hot'] else '未到'}见底标准，轮动{'可以' if m['pb_hot'] else '暂不'}加码）"
-                              + (f"；融资余额近 20 日 {E['margin_chg20'] * 100:+.1f}%" if E.get("margin_chg20") is not None else "")}
+    m, t = load("market.json"), load("temp.json")
+    if t:
+        L = t["latest"]
+        pb = ""
+        if m:
+            pb = f"；破净率 {m['extra']['pb_val'] * 100:.1f}%（{'已到' if m['pb_hot'] else '未到'}见底标准，轮动{'可以' if m['pb_hot'] else '暂不'}加码）"
+        out["市场温度"] = {"state": L["zone"], "tab": "temp", "date": L["date"],
+                       "now": f"{L['zone']}区：见底灯 {L['bottom']['count']}/6，见顶灯 {L['top']['count']}/7，方向{L['dir']['label']}（{L['dir']['text']}）",
+                       "act": L["action"] + "（只作提醒，不改规则）" + pb}
     h = load("health.json") or {}
     stale = [v["name"] for v in (h.get("items") or {}).values()
              if not v.get("ref") and (v.get("stale_days") is None or v["stale_days"] > 12)]

@@ -180,6 +180,20 @@ div[id^="view"]{display:flex;flex-direction:column;gap:16px}
 .oneline{display:flex;gap:10px;align-items:center;padding:12px 18px;color:var(--ink);text-decoration:none}.oneline .note{margin:0;flex:1;min-width:0}
 .concl{margin:10px 0 0;padding:9px 12px;border-left:3px solid var(--ink);background:var(--mid);border-radius:0 8px 8px 0;font-size:13px;line-height:1.65}
 .h3{font-size:14px;margin:16px 0 4px}
+.zbar{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:24px 0 4px}
+.zbar>div{position:relative;text-align:center;font-size:13px;font-weight:700;padding:8px 2px;border-radius:7px;opacity:.4}
+.zbar>div.on{opacity:1;box-shadow:0 0 0 2px var(--ink)}
+.zbar>div.on::before{content:"现在";position:absolute;top:-21px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink);font-weight:700}
+.zc0{background:var(--grow);color:#fff}.zc1{background:var(--grow-soft);color:var(--grow)}.zc2{background:var(--mid);color:var(--muted)}.zc3{background:var(--div-soft);color:var(--div)}.zc4{background:var(--mark-soft);color:var(--mark)}
+.dirs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.dirs>div{border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.dirs .t{font-size:12px;color:var(--muted)}.dirs .v{font-family:var(--f-num);font-weight:700;font-size:18px;line-height:1.3}.dirs .s{font-size:11px;color:var(--muted);line-height:1.4}
+.up{color:var(--grow)}.dn{color:var(--mark)}
+.lights{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.lights>div{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.lights .hd{display:flex;align-items:center;gap:6px}.lights .dot{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.lights .note{margin:4px 0 0;font-size:12px}
+.zleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);margin:0 0 6px}.zleg i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}
 details.fold{padding:0;overflow:hidden}
 details.fold>summary{padding:14px 18px;cursor:pointer;font-family:var(--f-display);font-size:16px;font-weight:700;list-style:none}
 details.fold>summary::-webkit-details-marker{display:none}
@@ -199,7 +213,7 @@ details.sub{margin-top:10px}details.sub>summary{cursor:pointer;font-size:13px;co
   <p id="subRot" hidden>数据每个交易日更新，按周操作（每周五按周四收盘的信号下单）· 更新于 <span class="num" id="updated">—</span></p>
   <p id="subKc" hidden>数据每个交易日更新，按周操作（每周五按周四收盘的信号下单）· 更新于 <span class="num" id="k_updated">—</span></p>
   <p id="subO">本周要做什么 · <span id="o_next"></span></p>
-  <p id="subT" hidden>见底评分 · 见顶信号灯 · 托底资金，三个都只作提醒，不改定投规则 · 数据 <span class="num" id="t_date">—</span></p>
+  <p id="subT" hidden>现在在哪个区间、往哪个方向走 · 只作提醒，不改定投规则 · 数据 <span class="num" id="t_date">—</span></p>
   <p id="subH" hidden>沪深300（000300）· 2005 年以来真实行情 · 估值：市盈率与十年国债 · 数据更新于 <span class="num" id="h_updated">—</span></p>
   <p id="subA" hidden>价格：中证A500（000510）· 估值：沪深300 市盈率与十年国债 · 数据更新于 <span class="num" id="a_updated">—</span></p>
   <p id="subOS" hidden>4 只 QDII 基金 + 纳指100 · 合计一万多的小仓位，只作提醒，不进定投组合 · 数据更新于 <span class="num" id="os_updated">—</span></p>
@@ -231,16 +245,10 @@ details.sub{margin-top:10px}details.sub>summary{cursor:pointer;font-size:13px;co
 </div>
 
 <div id="viewT" hidden>
-<section class="panel"><h2>现在的结论</h2><div id="t_temp"><div class="note">加载中</div></div></section>
-<section class="panel" id="t_m"><h2>见底评分 <span class="note" id="m_date" style="font-weight:400"></span></h2>
-  <p class="note" style="margin:-6px 0 10px">看市场便宜到什么程度。0~100 分，越高越接近底部：75 以上接近底部，60~75 偏冷，30 以下偏热。</p>
-  <div id="m_panel"><div class="note">加载中</div></div>
-  <h3 class="h3">见底评分走势（绿色区 ≥75 接近底部）</h3>
-  <div class="ranges" role="group" aria-label="时间范围" data-for="m_chart"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y" aria-pressed="true">近3年</button><button type="button" data-r="all" hidden>全部</button></div>
-  <div class="chartwrap"><svg class="chart" id="m_chart" viewBox="0 0 720 200" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
-  <p class="concl" id="m_concl"></p>
-  <p class="note">五项各换算成历史百分位后取平均：破净率高、股债利差高、融资占比低、成交额地量、创业板指市盈率低（表里的“分位”是指标本身的历史分位）。规则里只用破净率判断“见底才加码”。</p>
-</section>
+<section class="panel"><h2>现在在哪个区间</h2><div id="t_temp"><div class="note">加载中</div></div></section>
+<section class="panel" id="t_zone"><h2>区间走势</h2><div id="t_zoneBody"><div class="note">加载中</div></div></section>
+<section class="panel" id="t_dir"><h2>方向：底部在不在确认</h2><div id="t_dirBody"><div class="note">加载中</div></div></section>
+<section class="panel" id="t_m"><h2>见底信号灯</h2><div id="t_bot"><div class="note">加载中</div></div></section>
 <section class="panel" id="tl"><h2>见顶信号灯</h2><p class="note">加载中</p></section>
 <section class="panel" id="etfh"><h2>托底资金（国家队）</h2><p class="note">加载中</p></section>
 </div>
@@ -919,27 +927,100 @@ function loadOverview(){
   }).catch(e=>{$("o_rows").innerHTML=`<div class="note">读取失败，请稍后刷新（${e.message}）</div>`});
   renderTemp($("o_temp"),true);
 }
-// ---------------- 市场温度：见底评分 + 见顶信号灯 + 托底资金，合成一句结论
+// ---------------- 市场温度：五档区间 + 方向（data/temp.json，scripts/temp.py 计算）
 const getJ=f=>fetch("data/"+f+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null);
+const ZN=["底部","偏冷","正常","偏热","顶部"],ZFILL=["rgba(47,143,91,.34)","rgba(47,143,91,.13)",null,"rgba(201,138,18,.22)","rgba(200,55,45,.24)"];
+const zbar=z=>`<div class="zbar">${ZN.map((n,i)=>`<div class="zc${i}${i===z?" on":""}">${n}</div>`).join("")}</div>`;
+const sgn=x=>x==null?"—":(x>0?"+":"")+pc(x);
+const arrow=u=>u==null?`<span class="note" style="margin:0">—</span>`:u?`<b class="up">↑ 回升</b>`:`<b class="dn">↓ 走弱</b>`;
+const dirV=(x,v)=>v==null?"—":x.name==="宽度"?pc(v,0):x.name==="M1"?v.toFixed(1)+"%":sgn(v);
+const mlab=m=>m?+m.slice(5,7)+" 月":"";
 function renderTemp(el,compact){
-  Promise.all([getJ("market.json"),getJ("topsig.json"),getJ("etf300.json")]).then(([m,t,e])=>{
-    const sg=x=>x==null?"—":(x>0?"+":"")+pc(x);
-    const sc=m?m.score:null,c=t?t.latest.count:null,ez=e?e.latest.zone:null;
-    const w1=sc==null?"":sc>=75?"市场接近底部":sc>=60?"市场偏冷":sc>=30?"市场冷热正常":"市场偏热";
-    const w2=c==null?"":c>=3?`见顶灯亮了 ${c} 个`:c===2?"见顶灯亮了 2 个":c===1?"见顶灯只亮 1 个":"见顶灯一个没亮";
-    const w3=!ez?"":{"大幅流入·托底":"国家队在大举托底","撤出中":"国家队在撤","重仓持有":"国家队重仓在场","低仓观望":"国家队基本不在场","回补中":"国家队在回补","减仓中":"国家队在慢慢减仓"}[ez]||"国家队持仓变化不大";
-    const verdict=c>=3?"接近顶部：分批止盈要果断，宽基少买，别追加":c===2?"偏热：不额外加钱":sc>=75?"便宜区：按规则加码可以放心执行":"按规则正常执行";
-    const tile=(sec,t,v,lv,cl,sub)=>`<a href="#temp" data-sec="${sec}"><span class="t">${t}</span><span class="v">${v}</span><span class="lv ${cl}">${lv}</span><span class="s">${sub}</span></a>`;
-    el.innerHTML=`<div class="verdict">${[w1,w2,w3].filter(Boolean).join("，")} → ${verdict}</div>
-      <div class="temp3">${m?tile("t_m","见底评分",m.score,m.zone,sc>=60?"g1":sc<30?"h1":"c0",m.pb_hot?"破净率已见底":"破净率未见底"):""}${t?tile("tl","见顶信号灯",c+" / 7",t.latest.zone,t.latest.cls,"亮 ≥3 个才算顶"):""}${e?tile("etfh","托底资金",sg(e.latest.chg20),ez.replace("·托底",""),e.latest.cls,"近 20 日份额"):""}</div>
-      ${compact?"":`<p class="note">见底评分看“便宜到什么程度”，见顶信号灯看“有没有过热”，托底资金看“国家队在买还是在卖”。三个都只作提醒，不改定投规则和倍数；见顶灯亮灯个数、托底资金状态变化时会发邮件。</p>`}`;
-    if(!compact){$("t_date").textContent=(m&&m.date)||"—";
+  Promise.all([getJ("temp.json"),getJ("etf300.json")]).then(([T,e])=>{
+    if(!T){el.innerHTML=`<div class="note">还没有生成数据，下次自动更新后会出现</div>`;return}
+    const L=T.latest,D=L.dir,b=L.bottom.count,t=L.top.count;
+    const tile=(sec,tt,v,lv,cl,sub)=>`<a href="#temp" data-sec="${sec}"><span class="t">${tt}</span><span class="v">${v}</span><span class="lv ${cl}">${lv}</span><span class="s">${sub}</span></a>`;
+    const dirs=`<div class="dirs">${D.items.map(x=>`<div><span class="t">${x.name}</span><div class="v">${dirV(x,x.now)}</div>${arrow(x.up)}<div class="s">${mlab(x.prev_m)}是 ${dirV(x,x.prev)}${x.partial?"；本月至今":""}</div></div>`).join("")}</div>`;
+    el.innerHTML=`${zbar(L.z)}<div class="verdict" style="margin-top:12px">${L.verdict}</div>
+      ${compact?"":`<h3 class="h3">方向（只在偏冷、底部区看，3 个都回升 = 转暖）</h3>${dirs}`}
+      <div class="temp3">${tile("t_m","见底信号灯",b+" / 6",b>=4?"底部":b>=2?"偏冷":"未到",b>=2?"g1":"c0",L.bottom.lit.join("、")||"一个没亮")}${tile("tl","见顶信号灯",t+" / 7",t>=3?"顶部":t===2?"偏热":"正常",t>=2?"h1":"c0",L.top.lit.join("、")||"一个没亮")}${e?tile("etfh","托底资金",sgn(e.latest.chg20),e.latest.zone.replace("·托底",""),e.latest.cls,"近 20 日份额"):""}</div>
+      ${compact?"":`<p class="note">区间看“现在便宜还是贵、在哪个范围”，方向看“底部在不在确认”，不去猜具体哪天是底。全部只作提醒，不改定投规则和倍数；区间变化、见顶灯个数、托底资金状态变化时会发邮件。</p>`}`;
+    if(!compact){$("t_date").textContent=L.date;
       el.querySelectorAll("a[data-sec]").forEach(a=>a.addEventListener("click",ev=>{ev.preventDefault();$(a.dataset.sec).scrollIntoView({behavior:"smooth",block:"start"})}))}
   });
 }
 function loadTemp(){
-  renderTemp($("t_temp"),false);loadMarket();loadTop();
+  renderTemp($("t_temp"),false);loadTop();
   getJ("hs300.json").then(d=>loadEtf300($("viewT"),d&&d.latest));
+  Promise.all([getJ("temp.json"),getJ("market.json")]).then(([T,m])=>{
+    if(!T){["t_zoneBody","t_dirBody","t_bot"].forEach(id=>$(id).innerHTML=`<div class="note">还没有生成数据</div>`);return}
+    renderZone(T);renderDir(T);renderBot(T,m);
+    document.querySelectorAll("#t_zone .bigbtn,#t_dir .bigbtn,#t_m .bigbtn").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
+  });
+}
+const big=(id,t)=>`<button type="button" class="bigbtn" data-big="${id}" data-title="${t}">⤢ 横屏看大图</button>`;
+const st6=v=>v&&v["120"]?`${sgn(v["120"].avg)}<br><small>上涨 ${pc(v["120"].up,0)}</small>`:"—";
+function renderZone(T){
+  const S=T.series,L=T.latest,Z=T.zone_stats,dates=S.map(r=>r[0]),z=S.map(r=>r[1]),cl=S.map(r=>r[2]);
+  // 近一年按月走过哪些区间（每月最后一个交易日），连续相同的合并
+  const lastOf={};S.forEach(r=>lastOf[r[0].slice(0,7)]=r[1]);
+  const ms=Object.keys(lastOf).sort().slice(-12),path=[];
+  ms.forEach(m=>{const p=path[path.length-1];if(p&&p.z===lastOf[m])p.b=m;else path.push({a:m,b:m,z:lastOf[m]})});
+  const ml=(m,first)=>first||m.slice(5,7)==="01"?`${m.slice(0,4)} 年 ${+m.slice(5,7)} 月`:`${+m.slice(5,7)} 月`;
+  const ptxt=path.map((p,k)=>`${ml(p.a,k===0)}${p.b!==p.a?"~"+(p.b.slice(0,4)!==p.a.slice(0,4)?ml(p.b,true):ml(p.b)):""} <b>${ZN[p.z]}</b>`).join(" → ");
+  let k=S.length-1;while(k>0&&S[k-1][1]===L.z)k--;const dur=S.length-k,zs=Z[L.zone]||{};
+  const zrow=i=>{const n=ZN[i],v=Z[n];if(!v)return"";const y=v["250"];return `<tr class="${i===L.z?"hl":""}"><td><span class="lv ${["g2","g1","c0","h1","r1"][i]}">${n}</span>${i===L.z?" 现在":""}</td><td class="r num">${v.avg_len} 天</td><td class="r num">${st6(v)}</td><td class="r num">${y?pc(y.up,0):"—"}</td></tr>`};
+  $("t_zoneBody").innerHTML=`<p class="note" style="margin:-6px 0 8px">背景颜色是每天所在的区间，黑线是沪深300。按近 20 个交易日里最多亮几个灯来定，所以一段区间会持续一到几个月，不会一天一变。</p>
+    <h3 class="h3" style="margin-top:0">区间与沪深300（2013 年起）${big("t_c1","市场温度区间（背景色）与沪深300")}</h3>
+    <div class="zleg">${ZN.map((n,i)=>`<span><i style="background:${ZFILL[i]||"var(--panel)"};border:1px solid var(--line)"></i>${n}</span>`).join("")}</div>
+    <div class="chartwrap"><svg class="chart" id="t_c1" viewBox="0 0 720 240" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+    <p class="concl"><b>结论：</b>近一年 ${ptxt}。现在在${L.zone}区已经 ${dur} 个交易日（这个区间历史上平均持续 ${zs.avg_len||"—"} 天）。${zs["120"]?`历史上在${L.zone}区，之后半年沪深300 平均 ${sgn(zs["120"].avg)}，期间平均最多再跌 ${pc(zs.dd)}。`:""}<b>→ ${L.action}。</b></p>
+    <h3 class="h3">每个区间之后沪深300 怎么走</h3>
+    <div class="scroll"><table><thead><tr><th>区间</th><th class="r">平均持续</th><th class="r">之后半年</th><th class="r">一年后上涨</th></tr></thead><tbody>${[4,3,2,1,0].map(zrow).join("")}</tbody></table></div>
+    <p class="note">底部、顶部各只有 6 段行情，同一段里的天数互相重叠；门槛和检验用的是同一段历史，结果会偏乐观。只用来判断范围，不用来抓哪一天。</p>`;
+  DualChart($("t_c1"),{W:720,H:240,dates,leftRange:[0,1],leftTicks:[],leftFmt:v=>v,left:[],right:{v:cl,c:"var(--ink)"},bg:z.map(i=>ZFILL[i]),
+    tip:i=>`${dates[i]}<br><b>${ZN[z[i]]}区</b><br>见底灯 ${S[i][3]} 个 · 见顶灯 ${S[i][4]} 个<br>沪深300 ${cl[i].toFixed(0)}`});
+}
+function renderDir(T){
+  const L=T.latest,D=L.dir,DS=T.dir_stats,M=T.macro,S=T.series;
+  const lastC={};S.forEach(r=>lastC[r[0].slice(0,7)]=r[2]);
+  const R=M.filter(r=>lastC[r[0]]!=null),dates=R.map(r=>r[0]+"-15"),m1=R.map(r=>r[1]),im=R.map(r=>r[2]==null?null:r[2]*100),c=R.map(r=>lastC[r[0]]);
+  const all=m1.concat(im).filter(v=>v!=null),lo=Math.floor(Math.min(...all)/10)*10,hi=Math.ceil(Math.max(...all)/10)*10,stp=(hi-lo)>60?20:10,lt=[];for(let v=lo;v<=hi;v+=stp)lt.push(v);
+  const dd=(k,w)=>DS[k]&&DS[k][w]&&DS[k][w].dd!=null?pc(DS[k][w].dd):"—";
+  const drow=k=>{const v=DS[k];if(!v)return"";return `<tr><td>${k} 回升</td><td class="r num">${v.up.days}</td><td class="r num">${st6(v.up)}</td><td class="r num">${pc(v.up.dd)}</td></tr><tr><td>${k} 走弱</td><td class="r num">${v.down.days}</td><td class="r num">${st6(v.down)}</td><td class="r num">${pc(v.down.dd)}</td></tr>`};
+  const cold=L.z<=1;
+  $("t_dirBody").innerHTML=`<p class="note" style="margin:-6px 0 8px">便宜了不等于马上涨。在偏冷、底部区，再看这 3 样有没有回升：宽度（场内企稳）、M1（钱开始活起来）、信贷脉冲（实体经济借钱的势头）。偏热、顶部区里它们没用，那时不管宏观好坏之后都偏弱。</p>
+    <div class="dirs">${D.items.map(x=>`<div><span class="t">${x.name}</span><div class="v">${dirV(x,x.now)}</div>${arrow(x.up)}<div class="s">${mlab(x.now_m)}，${mlab(x.prev_m)}是 ${dirV(x,x.prev)}${x.partial?"；本月至今，月底定稿":""}</div></div>`).join("")}</div>
+    <p class="concl"><b>结论：</b>现在方向${D.label}：${D.text||"—"}。历史上在偏冷、底部区，信贷脉冲回升时之后半年平均最多再跌 ${dd("信贷脉冲","up")}，还在走弱时 ${dd("信贷脉冲","down")}；M1 是 ${dd("M1","up")} 对 ${dd("M1","down")}；宽度是 ${dd("宽度","up")} 对 ${dd("宽度","down")}。<b>→ ${!cold?`现在在${L.zone}区，方向只作参考`:D.label==="转暖"?"三个都回升，底部在确认，分批买可以按节奏走":D.label==="走平"?"有回升也有走弱，底部还在磨，分批买节奏别快":"三个都还在走弱，底部可能还要磨一段，慢一点、留足子弹"}。</b></p>
+    <h3 class="h3">M1 同比、信贷脉冲与沪深300（月度）${big("t_c2","M1 同比、信贷脉冲（左轴 %）与沪深300（右轴）")}</h3>
+    <p class="note" style="margin:0 0 6px"><span style="color:var(--div);font-weight:700">——</span> M1 同比（%）　<span style="color:var(--grow);font-weight:700">——</span> 信贷脉冲（%）　<span style="color:var(--ink);font-weight:700">——</span> 沪深300（右轴）</p>
+    <div class="chartwrap"><svg class="chart" id="t_c2" viewBox="0 0 720 230" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+    <details class="sub"><summary>看历史检验表 ▾</summary>
+    <div class="scroll"><table><thead><tr><th>在偏冷、底部区时</th><th class="r">天数</th><th class="r">之后半年</th><th class="r">半年内最多再跌</th></tr></thead><tbody>${drow("宽度")}${drow("M1")}${drow("信贷脉冲")}</tbody></table></div></details>
+    <p class="note">宏观数据每月中旬公布上个月，看到时已经晚一个半月左右，所以只用来确认方向，不抓拐点；历史检验已经按这个延迟处理。M1 从 2025 年 1 月起统计口径有调整。数据：东方财富（M1、新增人民币贷款）。</p>`;
+  DualChart($("t_c2"),{W:720,H:230,dates,leftRange:[lo,hi],leftTicks:lt,leftFmt:v=>v+"%",left:[{v:m1,c:"var(--div)",w:1.8},{v:im,c:"var(--grow)",w:1.8}],right:{v:c,c:"var(--ink)"},
+    bands:lo<0&&hi>0?[{from:lo,to:0,fill:"var(--mid)"}]:[],
+    tip:i=>`${R[i][0]}<br>M1 同比 <b>${m1[i]==null?"—":m1[i].toFixed(1)+"%"}</b><br>信贷脉冲 <b>${im[i]==null?"—":sgn(im[i]/100)}</b><br>沪深300 ${c[i].toFixed(0)}`});
+}
+function renderBot(T,m){
+  const L=T.latest,B=L.bottom,N=T.bot_names,lit=new Set(B.lit),V=B.values,S=T.series,c=B.count,Z=T.zone_stats;
+  const pv=v=>v==null?"—":pc(v,0);
+  const val={"破净率":`现在 ${pv(V["破净率"])} 分位`+(m&&m.extra&&m.extra.pb_val!=null?`（破净率 ${(m.extra.pb_val*100).toFixed(1)}%）`:""),"股债利差":`现在 ${pv(V["股债利差"])} 分位`,
+    "地量":`成交额在近 3 年 ${pv(V["地量"])} 分位`,"创业板便宜":`市盈率在近 10 年 ${pv(V["创业板便宜"])} 分位`,"宽度低":`站上年线 ${pv(V["宽度低"])}`,"总市值低":`现在 ${pv(V["总市值低"])} 分位`};
+  const dates=S.map(r=>r[0]),cnt=S.map(r=>r[3]),cl=S.map(r=>r[2]),z0=Z["底部"]||{},z1=Z["偏冷"]||{};
+  $("t_bot").innerHTML=`<p class="note" style="margin:-6px 0 10px">6 个信号各自独立亮灯，和见顶信号灯同一个思路：<b>亮 2~3 个算偏冷，4 个以上算底部区</b>（按近 20 个交易日最多亮几个）。原来的“见底评分”是 5 项取平均，好指标会被差指标冲淡，已经换成这个。轮动“见底才加码”仍然只看破净率，规则不变。</p>
+    <div style="display:flex;gap:14px;align-items:center"><div class="big num">${c}<small style="font-size:20px"> / 6</small></div><div><span class="lv ${c>=2?"g1":"c0"}">${c>=4?"底部":c>=2?"偏冷":"未到"}</span><div class="note" style="margin:4px 0 0">${L.date}</div></div></div>
+    <div class="lights">${N.map(n=>`<div style="background:${lit.has(n)?"var(--grow-soft)":"var(--panel)"}"><div class="hd"><span class="dot" style="${lit.has(n)?"background:var(--grow)":""}"></span><b style="font-size:14px">${n}</b><span class="note" style="margin:0">${lit.has(n)?"亮":"未亮"}</span></div>
+      <div class="note">${T.bot_desc[n]}</div><div class="note" style="margin-top:2px">${val[n]}</div></div>`).join("")}</div>
+    ${L.month_partial?`<p class="note" style="margin-top:6px">“宽度低”是月度数据，本月按至今计算，月底才定稿。</p>`:""}
+    <h3 class="h3">同时亮几个灯与沪深300${big("t_c3","见底信号灯亮灯个数（左轴）与沪深300（右轴）")}</h3>
+    <p class="note" style="margin:0 0 6px"><span style="color:var(--grow);font-weight:700">——</span> 亮灯个数（左轴；浅绿 2~3 个偏冷，深绿 ≥4 个底部）　<span style="color:var(--ink);font-weight:700">——</span> 沪深300（右轴）</p>
+    <div class="chartwrap"><svg class="chart" id="t_c3" viewBox="0 0 720 230" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+    <p class="concl"><b>结论：</b>现在亮 ${c} 个（${B.lit.join("、")||"无"}），${c>=4?"在底部区":c>=2?"在偏冷区，还没到底部区（≥4 个）":"还没到偏冷"}。${z0["250"]&&z1["250"]?`历史上底部区之后一年沪深300 上涨的比例 ${pc(z0["250"].up,0)}、平均 ${sgn(z0["250"].avg)}；偏冷区是 ${pc(z1["250"].up,0)}、平均 ${sgn(z1["250"].avg)}。`:""}<b>→ ${c>=4?"便宜区，按规则分批买，方向转暖时可以加快":c>=2?"已经便宜，按规则分批买，看方向决定快慢":"还不算便宜，按规则正常执行"}。</b>两套灯都抓不住 2016 年 1 月、2020 年 3 月那种急跌急涨的底。</p>
+    <p class="note">数据：破净率、股债利差、成交额、创业板市盈率见各页签；宽度由全部沪深 A 股月线和每日行情计算（东方财富）；总市值 ÷ GDP 来自乐咕乐股。</p>`;
+  DualChart($("t_c3"),{W:720,H:230,dates,leftRange:[0,6],leftTicks:[0,1,2,3,4,5,6],leftFmt:v=>v,bands:[{from:2,to:4,fill:"rgba(47,143,91,.12)"},{from:4,to:6,fill:"rgba(47,143,91,.3)"}],
+    left:[{v:cnt,c:"var(--grow)",w:1.6}],right:{v:cl,c:"var(--ink)"},
+    tip:i=>`${dates[i]}<br>亮 <b>${cnt[i]}</b> 个：${N.filter((n,k)=>S[i][5][k]==="1").join("、")||"无"}<br>沪深300 ${cl[i].toFixed(0)}`});
 }
 // ---------------- 海外小仓位（只作提醒）
 function loadOS(){
@@ -994,10 +1075,11 @@ function DualChart(svg, o) {
   const rpad = (Math.max(...ry) - Math.min(...ry)) * .06, r0 = Math.min(...ry) - rpad, r1 = Math.max(...ry) + rpad;
   const cw = svg.clientWidth || W, fs = Math.min(o.big ? 34 : 22, Math.max(11, (o.big ? 11.5 : 10.5) * W / cw));
   svg.style.setProperty("--fs", fs + "px");
-  const pb = Math.round(fs * 1.9), pl = Math.round(Math.max(...o.leftTicks.map(v => String(o.leftFmt(v)).length)) * fs * .62 + fs * .9), pr = Math.round(fs * 2.9);
+  const pb = Math.round(fs * 1.9), pl = o.leftTicks.length ? Math.round(Math.max(...o.leftTicks.map(v => String(o.leftFmt(v)).length)) * fs * .62 + fs * .9) : Math.round(fs * .6), pr = Math.round(fs * 2.9);
   const X = i => pl + i / (n - 1) * (W - pl - pr);
   const YL = v => pt + (1 - (v - l0) / (l1 - l0)) * (H - pt - pb), YR = v => pt + (1 - (v - r0) / (r1 - r0)) * (H - pt - pb);
   let s = "";
+  if (o.bg) { let j0 = 0; for (let i = 1; i <= n; i++) if (i === n || o.bg[i] !== o.bg[j0]) { if (o.bg[j0]) s += `<rect x="${X(Math.max(0, j0 - .5))}" y="${pt}" width="${Math.max(1, X(Math.min(n - 1, i - .5)) - X(Math.max(0, j0 - .5)))}" height="${H - pt - pb}" fill="${o.bg[j0]}"/>`; j0 = i } }
   (o.bands || []).forEach(b => { const y1 = YL(b.to), y2 = YL(b.from); s += `<rect x="${pl}" y="${y1}" width="${W - pl - pr}" height="${y2 - y1}" fill="${b.fill}"/>` });
   (o.leftTicks).forEach(v => { s += `<line x1="${pl}" x2="${W - pr}" y1="${YL(v)}" y2="${YL(v)}" stroke="var(--line)"/><text x="${pl - 6}" y="${YL(v) + fs * .36}" text-anchor="end" style="fill:${o.leftColor || "var(--muted)"}">${o.leftFmt(v)}</text>` });
   const rt = []; const st = niceStep((r1 - r0) * 0.8); for (let v = Math.ceil(r0 / st) * st; v <= r1; v += st) rt.push(v);
@@ -1006,7 +1088,7 @@ function DualChart(svg, o) {
   const ms = []; let last = "";
   D.forEach((d, i) => { const k = d.slice(0, 7); if (k !== last) { if (last) ms.push(i); last = k } });
   // 地方够就每月标“3月”这种短标签（1 月标年份），不够就每 3/6/12 个月标“2026/3”
-  const perM = (W - pl - pr) / Math.max(1, (n - 1) / 21), shortW = fs * 2.6, longW = fs * 4.8;
+  const perM = (W - pl - pr) / Math.max(1, ms.length + 1), shortW = fs * 2.6, longW = fs * 4.8;
   const yrW = fs * 3.2, stepM = perM >= shortW ? 1 : 2 * perM >= shortW ? 2 : ([3, 6].find(k => k * perM >= longW) || [12, 24, 36, 60].find(k => k * perM >= yrW) || 120);
   ms.forEach(i => { const d = D[i], m = +d.slice(5, 7);
     s += `<line x1="${X(i)}" x2="${X(i)}" y1="${H - pb}" y2="${H - pb + (m === 1 ? 6 : 3)}" stroke="var(--muted)"/>`;
@@ -1043,7 +1125,7 @@ function openBig(id, title) {
     if (y) { const last = new Date(o.dates[o.dates.length - 1] + "T00:00:00Z"); last.setUTCFullYear(last.getUTCFullYear() - y);
       const f = last.toISOString().slice(0, 10); i0 = Math.max(0, o.dates.findIndex(d => d >= f)) }
     DualChart(sv, { ...o, W, H, big: true, rot: port, dates: o.dates.slice(i0),
-      left: o.left.map(l => ({ ...l, v: l.v.slice(i0) })), right: { ...o.right, v: o.right.v.slice(i0) }, tip: i => o.tip(i + i0) });
+      left: o.left.map(l => ({ ...l, v: l.v.slice(i0) })), right: { ...o.right, v: o.right.v.slice(i0) }, bg: o.bg && o.bg.slice(i0), tip: i => o.tip(i + i0) });
   };
   ov.querySelectorAll(".bigr button").forEach(b => b.addEventListener("click", () => {
     ov.querySelectorAll(".bigr button").forEach(x => x.setAttribute("aria-pressed", x === b)); draw(+b.dataset.y) }));
@@ -1179,26 +1261,6 @@ const VIEWS={overview:["viewO","tabO","subO","交易系统"],
 // 一个页签里有两个子页：轮动（创业板 / 科创板）、海外（纳指100 / QDII）
 const GROUPS={rotation:[["rotation","创业板50"],["kc","科创50"]],ndx:[["ndx","纳指100（定投 20%）"],["overseas","QDII 小仓位"]]};
 GROUPS.kc=GROUPS.rotation;GROUPS.overseas=GROUPS.ndx;
-let mChart=null;
-async function loadMarket(){
-  try{
-    const m=await (await fetch("data/market.json?t="+Date.now())).json(),E=m.extra,I=m.items;
-    $("m_date").textContent="· "+m.date;
-    const p=x=>x==null?"—":Math.round(x*100)+"%";
-    const rows=[["pb",`${E.pb_val!=null?(E.pb_val*100).toFixed(1)+"%":"—"}`],["erp",E.erp_val!=null?E.erp_val+"%":"—"],
-      ["margin",E.margin_val!=null?(E.margin_val/1e4).toFixed(2)+"万亿<br><small>20日 "+(E.margin_chg20>0?"+":"")+(E.margin_chg20*100).toFixed(1)+"%</small>":"—"],
-      ["amt",E.amt20!=null?E.amt20.toLocaleString()+"亿/天":"—"],["pe_cyb",E.pe_cyb!=null?E.pe_cyb.toFixed(1)+" 倍":"—"]];
-    $("m_panel").innerHTML=`<div style="display:flex;gap:16px;align-items:baseline;flex-wrap:wrap"><div class="big num">${m.score??"—"}</div><div><b>${m.zone}</b><div class="note" style="margin:0">破净率${m.pb_hot?"已到":"未到"}见底标准（85% 分位）</div></div></div>`+
-      `<div class="scroll"><table class="otbl" style="margin-top:8px"><thead><tr><th>指标</th><th>现在</th><th class="r">分位</th></tr></thead><tbody>`+
-      rows.map(([k,v])=>`<tr><td>${I[k].name}</td><td class="num">${v}</td><td class="r num">${p(I[k].pct)}</td></tr>`).join("")+
-      `<tr><td>科创50市盈率</td><td class="num">${E.pe_kc!=null?E.pe_kc.toFixed(1)+" 倍":"—"}</td><td class="r num">${p(E.pe_kc_pct)}</td></tr>`+
-      `</tbody></table></div>`;
-    if(m.hist&&m.hist.length){if(!mChart)mChart=LineChart($("m_chart"),{W:720,H:200,fixedY:[0,100],ticks:[0,25,50,75,100],bands:[{from:75,fill:"var(--grow-soft)"}]});
-      mChart.set(m.hist,{tip:(dt,v)=>`${dt}<br>见底评分 <b>${v.toFixed(0)}</b>`});
-      const s0=m.score,hv=m.hist.map(r=>r[1]),colder=hv.filter(v=>v>s0).length/hv.length;
-      $("m_concl").innerHTML=`<b>结论：</b>现在 ${s0} 分，${m.zone}。${s0>=75?"已经进入绿色的底部区，是加码的好位置。":`还没进绿色的底部区（≥75），差 ${(75-s0).toFixed(1)} 分。`}近 3 年里只有 ${pc(colder,0)} 的时间比现在更冷。${m.pb_hot?"<b>破净率已到见底标准 → 轮动的“见底才加码”可以执行。</b>":"破净率还没到见底标准 → 不提前加码。"}`;}
-  }catch(e){$("m_panel").innerHTML='<div class="note">见底评分读取失败</div>';}
-}
 const LOADERS={overview:loadOverview,temp:loadTemp,rotation:rotView.load,kc:kcView.load,dividend:loadDiv,ndx:nView.load,overseas:loadOS,gold:gView.load,bond:bView.load},LOADED={};
 // A500 / 沪深300 合并成一个页签；旧链接 #a500、#hs300 仍然能打开对应的那一个
 let BROAD="a500";const BLOADED={};
