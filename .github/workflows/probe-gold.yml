@@ -1,0 +1,15 @@
+name: probe-gold
+on:
+  push:
+    branches: [probe-gold]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -q akshare
+      - run: python probe/gold.py
