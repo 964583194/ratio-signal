@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-12 01:30",
+ "updated": "2026-11-12 04:16",
  "ok": true,
  "items": {
   "cyb50": {
@@ -17,7 +17,7 @@
    "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-11",
-   "days": 4094,
+   "days": 4095,
    "failed": [],
    "stale_days": 1,
    "ref": false
@@ -27,7 +27,7 @@
    "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-11",
-   "days": 2313,
+   "days": 2314,
    "failed": [],
    "stale_days": 1,
    "ref": false
@@ -37,20 +37,18 @@
    "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-11",
-   "days": 4094,
+   "days": 4095,
    "failed": [],
    "stale_days": 1,
    "ref": false
   },
   "kc50": {
    "name": "科创50 收盘",
-   "source": "中证指数官网",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-11",
    "days": 1663,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": false
   },
@@ -83,7 +81,7 @@
    "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-11",
-   "days": 3668,
+   "days": 3669,
    "failed": [],
    "stale_days": 1,
    "ref": false
@@ -93,7 +91,7 @@
    "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-11",
-   "days": 527,
+   "days": 528,
    "failed": [],
    "stale_days": 1,
    "ref": false
