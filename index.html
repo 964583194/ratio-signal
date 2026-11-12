@@ -950,31 +950,29 @@ function loadEtf300(root,HL){
   }).catch(e=>{sec.innerHTML=`<h2>托底资金（国家队）</h2><p class="note">${e.message}</p>`});
 }
 
-// ---------------- 综合判断（实验）：区间 + 方向 + 托底 + 国家队加速 + 放量，打分对比，不进规则
+// ---------------- 综合判断（实验）：各指标独立表态（偏多 / 偏空 / 不表态），再按票数综合，不进规则
 function loadCombo(){
   const sec=$("combo");if(!sec)return;
   fetch("data/combo.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("还没有生成数据");return r.json()}).then(d=>{
-    const L=d.latest,P=L.parts,sg=x=>x==null?"—":(x>0?"+":"")+pc(x),sn=x=>(x>0?"+":"")+x,V=d.variants,full=V[V.length-1];
-    const chip=(t,v,why)=>`<div><div class="label">${t}</div><div class="v" style="color:${v>0?"var(--grow)":v<0?"var(--mark)":"inherit"}">${sn(v)}</div><div class="s">${why}</div></div>`;
-    const t13=d.test["2013"],t23=d.test["2023"];
+    const L=d.latest,sg=x=>x==null?"—":(x>0?"+":"")+pc(x),C=d.cls,IS=d.ind_stats;
     const cell=v=>v?`${sg(v.avg)}<br><small>上涨 ${pc(v.up,0)}</small>`:"—";
-    const cmp=(T,names)=>`<div class="scroll"><table><thead><tr><th>组合</th><th class="r">定投收益</th><th class="r">“积极”之后<br>120 日</th><th class="r">“谨慎”之后<br>120 日</th></tr></thead><tbody>
-      ${names.map(k=>`<tr><td>${k}</td><td class="r num">${sg(T[k].dca)}</td><td class="r num">${cell(T[k].levels["积极"]["120"])}</td><td class="r num">${cell(T[k].levels["谨慎"]["120"])}</td></tr>`).join("")}
-      <tr><td class="note">对照：每周固定买</td><td class="r num">${sg(T[names[0]].flat)}</td><td></td><td></td></tr></tbody></table></div>`;
-    const lvTab=(T,k)=>`<p class="note" style="margin:10px 0 2px"><b>${k}</b></p><div class="scroll"><table><thead><tr><th>档</th><th class="r">天数</th><th class="r">60 日后</th><th class="r">120 日后</th></tr></thead><tbody>
-      ${d.levels.map(l=>`<tr><td>${l}（${d.mult[l]} 倍）</td><td class="r num">${T[k].levels[l].days}</td><td class="r num">${cell(T[k].levels[l]["60"])}</td><td class="r num">${cell(T[k].levels[l]["120"])}</td></tr>`).join("")}</tbody></table></div>`;
-    const b13=V.slice(0,3).reduce((a,k)=>t13[k].dca>t13[a].dca?k:a,V[0]),b23=V.reduce((a,k)=>t23[k].dca>t23[a].dca?k:a,V[0]);
+    const lamp=x=>{const v=L.ind[x.name],t=IS[x.name],h=x.name==="国家队加速"?"60":"120",o=t.on[h],bs=t.base[h];return `<tr><td><span class="lv ${v>0?"g1":v<0?"h1":"c0"}">${v>0?"偏多":v<0?"偏空":"不表态"}</span></td><td style="white-space:normal"><b>${x.name}</b><br><small class="note">${x.rule}</small></td><td class="r num">${o?`<span style="color:${o.avg>bs.avg?"var(--grow)":"var(--mark)"}">${sg(o.avg)}</span><br><small>上涨 ${pc(o.up,0)}</small><br><small class="note">平时 ${sg(bs.avg)}</small>`:"—"}</td></tr>`};
+    const cmp=(T)=>{const ks=Object.keys(T);return `<div class="scroll"><table><thead><tr><th>档（倍数）</th>${ks.map(k=>`<th class="r">${k}</th>`).join("")}</tr></thead><tbody>
+      ${d.levels.map(l=>`<tr><td>${l}（${d.mult[l]}）</td>${ks.map(k=>{const v=T[k].levels[l];return `<td class="r num">${v["120"]?sg(v["120"].avg)+`<br><small>${v.days} 天 · 上涨 ${pc(v["120"].up,0)}</small>`:`<small>${v.days} 天</small>`}</td>`}).join("")}</tr>`).join("")}
+      <tr><td><b>按档定投</b></td>${ks.map(k=>`<td class="r num"><b>${sg(T[k].dca)}</b></td>`).join("")}</tr>
+      <tr><td class="note">每周固定买</td>${ks.map(k=>`<td class="r num note">${sg(T[k].flat)}</td>`).join("")}</tr></tbody></table></div>`};
+    const t13=d.test["2013"],a=t13["只看区间"].levels,b=t13["独立投票（4 个）"].levels;
     sec.innerHTML=`<h2>综合判断（实验）</h2>
-      <p class="note" style="margin:-6px 0 10px">把这一页的指标加成一个分数，看合在一起是不是比只看区间更准。<b>只作实验对比，不改定投规则和倍数。</b></p>
-      <div><span class="lv ${L.cls}">${L.level}</span> <span style="margin-left:6px">全部指标合计 ${sn(L.now[full].score)} 分（≥2 积极 · 1 偏积极 · 0 照常 · −1 偏谨慎 · ≤−2 谨慎）</span></div>
-      <div class="kv">${chip("区间",P.zone,"底部 +2 · 偏冷 +1 · 偏热 −1 · 顶部 −2")}${chip("方向",P.dir,"偏冷 / 底部区：全回升 +1 · 全走弱 −1")}${chip("托底撤出",P.etf,"近 20 日份额 ≤ −15% 时 −1")}${chip("国家队加速",P.ntf,"加速流入 +1 · 加速流出 −1")}${chip("放量托底",P.vol,"近 20 日出现过 +1")}</div>
-      <div class="scroll"><table><thead><tr><th>组合</th><th class="r">现在</th></tr></thead><tbody>${V.map(k=>`<tr><td>${k}</td><td class="r"><span class="lv ${({"积极":"g2","偏积极":"g1","照常":"c0","偏谨慎":"h1","谨慎":"r1"})[L.now[k].level]}">${L.now[k].level}</span> ${sn(L.now[k].score)}</td></tr>`).join("")}</tbody></table></div>
-      <h3 class="h3">对比：哪种组合更准（按档调倍数每周定投沪深300）</h3>
-      <p class="note" style="margin:0 0 4px">2013 年起（国家队加速、放量 2023 年才有数据，不在这里）</p>${cmp(t13,V.slice(0,3))}
-      <p class="note" style="margin:10px 0 4px">2023 年起（全部组合）</p>${cmp(t23,V)}
-      <p class="concl"><b>结论：</b>2013 年起定投收益最好的是“${b13}”（${sg(t13[b13].dca)}，固定买 ${sg(t13[b13].flat)}）；2023 年起是“${b23}”（${sg(t23[b23].dca)}）。
-        <b>→ 区间本身已经吃到了大部分好处；加上方向，“积极”那一档更准（之后半年 ${sg(t13[V[1]].levels["积极"]["120"].avg)}，只看区间是 ${sg(t13[V[0]].levels["积极"]["120"].avg)}）；托底、加速、放量对定投收益几乎没再提高，主要让“谨慎”那一档更准一点。</b>2023 年起只有不到 4 年，结论要再看。</p>
-      <details class="sub"><summary>看每一档的明细 ▾</summary>${V.slice(0,3).map(k=>lvTab(t13,k)).join("")}<p class="note" style="margin-top:12px">2023 年起：</p>${lvTab(t23,full)}</details>`;
+      <p class="note" style="margin:-6px 0 10px">每个指标<b>各自独立</b>表态：偏多、偏空或不表态（只在回测过有用的那一边表态），再数票：偏多 − 偏空 ≥2 积极 · 1 偏积极 · 0 照常 · −1 偏谨慎 · ≤−2 谨慎。<b>只作实验对比，不改定投规则和倍数。</b></p>
+      <div><span class="lv ${L.cls}">${L.level}</span> <span style="margin-left:6px">偏多 ${L.bull} 票、偏空 ${L.bear} 票（只看区间是“${L.zone_level}”）</span></div>
+      <h3 class="h3">六个指标各自怎么说</h3>
+      <div class="scroll"><table><thead><tr><th>现在</th><th>指标</th><th class="r">表态后半年<br><small>加速看 60 日</small></th></tr></thead><tbody>${d.ind.map(lamp).join("")}</tbody></table></div>
+      <p class="concl"><b>结论：</b>每个指标单独看都有用：偏多的之后半年都比平时好，偏空的之后半年大多下跌。国家队加速主要管 60 天（之后 60 日 ${sg(IS["国家队加速"].on["60"].avg)}），半年就看不出了。</p>
+      <h3 class="h3">综合之后 vs 只看区间（各档之后沪深300 120 日）</h3>
+      <p class="note" style="margin:0 0 4px">2013 年起（后两个指标 2023 年才有数据，不在这里）</p>${cmp(t13)}
+      <p class="note" style="margin:10px 0 4px">2023 年起</p>${cmp(d.test["2023"])}
+      <p class="concl"><b>结论：</b>独立投票把档分得更开：“积极”之后半年 ${sg(b["积极"]["120"].avg)}（上涨 ${pc(b["积极"]["120"].up,0)}，只看区间是 ${sg(a["积极"]["120"].avg)}），“谨慎”之后 ${sg(b["谨慎"]["120"].avg)}（只看区间 ${sg(a["谨慎"]["120"].avg)}），从积极到谨慎一档比一档差。
+        <b>→ 用来判断“现在偏好还是偏坏”更清楚；但“积极”很少出现，按档定投的总收益和只看区间差不多（${sg(t13["独立投票（4 个）"].dca)} 对 ${sg(t13["只看区间"].dca)}）。</b>2023 年起只有不到 4 年，再观察。</p>`;
   }).catch(e=>{sec.innerHTML=`<h2>综合判断（实验）</h2><p class="note">${e.message}</p>`});
 }
 
