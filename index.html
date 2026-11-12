@@ -994,6 +994,7 @@ function loadNtf(){
       <div class="kv"><div><div class="label">加速度</div><div class="v">${L.acc>0?"+":""}${L.acc} 亿/天</div><div class="s">近 20 日日均 − 近 60 日日均</div></div>
         <div><div class="label">近一年分位</div><div class="v">${pc(L.pct,0)}</div><div class="s">≥90% 加速流入 · ≤10% 加速流出</div></div>
         <div><div class="label">近 20 日净申购</div><div class="v">${L.f4_20>0?"+":""}${L.f4_20.toLocaleString()} 亿</div><div class="s">4 只沪深300 ETF</div></div>
+        <div><div class="label">上一段加速流入</div><div class="v" style="font-size:17px">${L.episode?L.episode.date:"—"}</div><div class="s">${L.episode&&L.episode.fwd["60"]!=null?"之后 60 日 "+sg(L.episode.fwd["60"]):""}</div></div>
 </div>
       <h3 style="font-size:14px;margin:14px 0 4px">加速度分位与沪深300<button type="button" class="bigbtn" data-big="ntf_c1" data-title="流入加速度的近一年分位（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
       <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 分位（%，左轴；绿色 ≥90% 加速流入，红色 ≤10% 加速流出）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">加速流入第一天</span></p>
