@@ -212,7 +212,8 @@ def run():
                    "dir": {"label": dlab, "n_up": nup, "n": len(known), "items": dnow, "text": dtext},
                    "month_partial": bool((B.get(mo_now) or {}).get("partial"))},
         "zones": ZONES, "bot_names": BOT, "bot_desc": BOT_DESC, "dir_desc": DIR_DESC,
-        "series": [[r["d"], r["z"], cl[i], sum(r["lit"]), r["top"], "".join("1" if x else "0" for x in r["lit"])] for i, r in enumerate(rows)],
+        "series": [[r["d"], r["z"], cl[i], sum(r["lit"]), r["top"], "".join("1" if x else "0" for x in r["lit"]),
+                    "".join("x" if x is None else "1" if x else "0" for x in r["dir"])] for i, r in enumerate(rows)],   # 最后一项：方向（宽度、M1、信贷脉冲）
         "macro": [[mo, m1.get(mo), None if imp.get(mo) is None else round(imp[mo], 4)] for mo in sorted(set(m1) | set(imp)) if mo >= "2012-01"],
         "zone_stats": zstats, "dir_stats": dstats,
     }

@@ -60,6 +60,7 @@
 
 <div id="viewT" hidden>
 <section class="panel"><h2>现在在哪个区间</h2><div id="t_temp"><div class="note">加载中</div></div></section>
+<section class="panel" id="combo"><h2>综合判断（实验）</h2><p class="note">加载中</p></section>
 <section class="panel" id="t_zone"><h2>区间走势</h2><div id="t_zoneBody"><div class="note">加载中</div></div></section>
 <section class="panel" id="t_dir"><h2>方向：底部在不在确认</h2><div id="t_dirBody"><div class="note">加载中</div></div></section>
 <section class="panel" id="t_m"><h2>见底信号灯</h2><div id="t_bot"><div class="note">加载中</div></div></section>
@@ -806,6 +807,7 @@ function renderTemp(el,compact){
 function loadTemp(){
   renderTemp($("t_temp"),false);loadTop();
   getJ("hs300.json").then(d=>loadEtf300($("viewT"),d&&d.latest));
+  loadCombo();
   Promise.all([getJ("temp.json"),getJ("market.json")]).then(([T,m])=>{
     if(!T){["t_zoneBody","t_dirBody","t_bot"].forEach(id=>$(id).innerHTML=`<div class="note">还没有生成数据</div>`);return}
     renderZone(T);renderDir(T);renderBot(T,m);
@@ -946,6 +948,34 @@ function loadEtf300(root,HL){
     if((d.quarterly||[]).length){const Q=d.quarterly,qm=new Map(Q.map(r=>[r[0],r]));
       LineChart($("etf_c3"),{W:720,H:200,fixedY:[0,Math.ceil(Math.max(...Q.map(r=>r[1])))],ticks:Array.from({length:Math.ceil(Math.max(...Q.map(r=>r[1])))+1},(_,i)=>i)}).set(Q.map(r=>[r[0],r[1]]),{tip:(dt,v)=>`${dt}<br>占流通市值 <b>${v.toFixed(2)}%</b><br>规模 ${qm.get(dt)[2].toLocaleString()} 亿<br>沪深300 ${qm.get(dt)[3].toFixed(0)}`})}
   }).catch(e=>{sec.innerHTML=`<h2>托底资金（国家队）</h2><p class="note">${e.message}</p>`});
+}
+
+// ---------------- 综合判断（实验）：区间 + 方向 + 托底 + 国家队加速 + 放量，打分对比，不进规则
+function loadCombo(){
+  const sec=$("combo");if(!sec)return;
+  fetch("data/combo.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("还没有生成数据");return r.json()}).then(d=>{
+    const L=d.latest,P=L.parts,sg=x=>x==null?"—":(x>0?"+":"")+pc(x),sn=x=>(x>0?"+":"")+x,V=d.variants,full=V[V.length-1];
+    const chip=(t,v,why)=>`<div><div class="label">${t}</div><div class="v" style="color:${v>0?"var(--grow)":v<0?"var(--mark)":"inherit"}">${sn(v)}</div><div class="s">${why}</div></div>`;
+    const t13=d.test["2013"],t23=d.test["2023"];
+    const cell=v=>v?`${sg(v.avg)}<br><small>上涨 ${pc(v.up,0)}</small>`:"—";
+    const cmp=(T,names)=>`<div class="scroll"><table><thead><tr><th>组合</th><th class="r">定投收益</th><th class="r">“积极”之后<br>120 日</th><th class="r">“谨慎”之后<br>120 日</th></tr></thead><tbody>
+      ${names.map(k=>`<tr><td>${k}</td><td class="r num">${sg(T[k].dca)}</td><td class="r num">${cell(T[k].levels["积极"]["120"])}</td><td class="r num">${cell(T[k].levels["谨慎"]["120"])}</td></tr>`).join("")}
+      <tr><td class="note">对照：每周固定买</td><td class="r num">${sg(T[names[0]].flat)}</td><td></td><td></td></tr></tbody></table></div>`;
+    const lvTab=(T,k)=>`<p class="note" style="margin:10px 0 2px"><b>${k}</b></p><div class="scroll"><table><thead><tr><th>档</th><th class="r">天数</th><th class="r">60 日后</th><th class="r">120 日后</th></tr></thead><tbody>
+      ${d.levels.map(l=>`<tr><td>${l}（${d.mult[l]} 倍）</td><td class="r num">${T[k].levels[l].days}</td><td class="r num">${cell(T[k].levels[l]["60"])}</td><td class="r num">${cell(T[k].levels[l]["120"])}</td></tr>`).join("")}</tbody></table></div>`;
+    const b13=V.slice(0,3).reduce((a,k)=>t13[k].dca>t13[a].dca?k:a,V[0]),b23=V.reduce((a,k)=>t23[k].dca>t23[a].dca?k:a,V[0]);
+    sec.innerHTML=`<h2>综合判断（实验）</h2>
+      <p class="note" style="margin:-6px 0 10px">把这一页的指标加成一个分数，看合在一起是不是比只看区间更准。<b>只作实验对比，不改定投规则和倍数。</b></p>
+      <div><span class="lv ${L.cls}">${L.level}</span> <span style="margin-left:6px">全部指标合计 ${sn(L.now[full].score)} 分（≥2 积极 · 1 偏积极 · 0 照常 · −1 偏谨慎 · ≤−2 谨慎）</span></div>
+      <div class="kv">${chip("区间",P.zone,"底部 +2 · 偏冷 +1 · 偏热 −1 · 顶部 −2")}${chip("方向",P.dir,"偏冷 / 底部区：全回升 +1 · 全走弱 −1")}${chip("托底撤出",P.etf,"近 20 日份额 ≤ −15% 时 −1")}${chip("国家队加速",P.ntf,"加速流入 +1 · 加速流出 −1")}${chip("放量托底",P.vol,"近 20 日出现过 +1")}</div>
+      <div class="scroll"><table><thead><tr><th>组合</th><th class="r">现在</th></tr></thead><tbody>${V.map(k=>`<tr><td>${k}</td><td class="r"><span class="lv ${({"积极":"g2","偏积极":"g1","照常":"c0","偏谨慎":"h1","谨慎":"r1"})[L.now[k].level]}">${L.now[k].level}</span> ${sn(L.now[k].score)}</td></tr>`).join("")}</tbody></table></div>
+      <h3 class="h3">对比：哪种组合更准（按档调倍数每周定投沪深300）</h3>
+      <p class="note" style="margin:0 0 4px">2013 年起（国家队加速、放量 2023 年才有数据，不在这里）</p>${cmp(t13,V.slice(0,3))}
+      <p class="note" style="margin:10px 0 4px">2023 年起（全部组合）</p>${cmp(t23,V)}
+      <p class="concl"><b>结论：</b>2013 年起定投收益最好的是“${b13}”（${sg(t13[b13].dca)}，固定买 ${sg(t13[b13].flat)}）；2023 年起是“${b23}”（${sg(t23[b23].dca)}）。
+        <b>→ 区间本身已经吃到了大部分好处；加上方向，“积极”那一档更准（之后半年 ${sg(t13[V[1]].levels["积极"]["120"].avg)}，只看区间是 ${sg(t13[V[0]].levels["积极"]["120"].avg)}）；托底、加速、放量对定投收益几乎没再提高，主要让“谨慎”那一档更准一点。</b>2023 年起只有不到 4 年，结论要再看。</p>
+      <details class="sub"><summary>看每一档的明细 ▾</summary>${V.slice(0,3).map(k=>lvTab(t13,k)).join("")}<p class="note" style="margin-top:12px">2023 年起：</p>${lvTab(t23,full)}</details>`;
+  }).catch(e=>{sec.innerHTML=`<h2>综合判断（实验）</h2><p class="note">${e.message}</p>`});
 }
 
 // ---------------- 国家队流向加速度 + 放量托底日 + 分指数（托底资金区块里）：只作提醒
