@@ -97,9 +97,7 @@ def backtest(dates, px, div, mult=None, exit_flags=None):
         if exit_flags is not None and exit_flags[i] and hold > 0:
             pool += hold * (1 - FEE)
             hold = 0.0
-        wk = d.isocalendar()[:2]
-        if wk != last_wk:
-            last_wk = wk
+        if (dates[i + 1].isocalendar()[:2] != d.isocalendar()[:2]) if i + 1 < len(dates) else d.weekday() >= 4:   # 每周最后一个交易日（周五）买
             pool += WEEKLY
             inv += WEEKLY
             cfs.append((d, -WEEKLY))
@@ -108,7 +106,7 @@ def backtest(dates, px, div, mult=None, exit_flags=None):
                     hold += pool * (1 - FEE)
                     pool = 0.0
             else:
-                m = 1 if mult is None else mult[i]
+                m = 1 if mult is None else mult[max(0, i - 1)]   # 用前一交易日（周四）收盘的信号
                 amt = pool if mult is None else min(pool, WEEKLY * m)
                 hold += amt * (1 - FEE)
                 pool -= amt
@@ -139,12 +137,10 @@ def backtest2(dates, px, div, mult, tp=True):
             nav *= cur / prev
             peak = max(peak, nav)
             mdd = min(mdd, nav / peak - 1)
-        wk = d.isocalendar()[:2]
-        if wk != last_wk:
-            last_wk = wk
+        if (dates[i + 1].isocalendar()[:2] != d.isocalendar()[:2]) if i + 1 < len(dates) else d.weekday() >= 4:   # 每周最后一个交易日（周五）买
             pool += WEEKLY
             cfs.append((d, -WEEKLY))
-            m = mult[i]
+            m = mult[max(0, i - 1)]   # 用前一交易日（周四）收盘的信号
             amt = min(pool, WEEKLY * m)
             hold += amt * (1 - FEE)
             pool -= amt

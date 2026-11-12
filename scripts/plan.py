@@ -3,7 +3,7 @@
 
 阈值：每年 1 月、7 月用过去 10 年（不足 10 年用全部历史）信号值的分位重算一次。
   中位数(50%) 以下每周买；25% 以下加大买；13% 以下翻倍买；89% / 94% / 98% 为三档卖出线。
-买入：每周集中一次。进入某个区间要连续 3 个交易日在线下才算。
+买入：每周集中一次，在每周最后一个交易日（一般是周五）收盘前，按前一交易日（周四）收盘的信号。进入某个区间要连续 3 个交易日在线下才算。
   暂停区（中位数以上）：每周定投款买红利低波100（闲钱放红利）。
   每周买入区：每周定投款买成长端。
   加大买入区 / 翻倍买入区：见底时（全A破净率 ≥ 近 10 年 85% 分位）另外掏钱加码 2000 / 4000 元（无限子弹）。
@@ -144,11 +144,11 @@ def simulate(dates, g, hl, r, th, ma20, score, i0, div_g, g_name, hot, gm):
 
         if x < T["mid"]:
             ep -= {"s1", "s2", "s3", "as1", "as2", "as3", "tp1", "tp2", "dv"}
-        new_week = d.isocalendar()[:2] != wk
+        # 每周最后一个交易日（一般是周五）买：场外基金周五 15:00 前下单，按周五净值成交
+        new_week = (dates[i + 1].isocalendar()[:2] != d.isocalendar()[:2]) if i + 1 < len(dates) else d.weekday() >= 4
         h_ = hot(dates[i - 1].isoformat())
         bear = gm[i - 1] is not None and g[i - 1] < gm[i - 1] and not h_
         if new_week:
-            wk = d.isocalendar()[:2]
             cfs.append((d, -WEEKLY))
             pool += WEEKLY * (1 - FEE)       # 定投款先进红利，买入区再转成长端
             if z == "pause":

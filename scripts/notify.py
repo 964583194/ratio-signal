@@ -5,7 +5,9 @@
 - 信号变化：和上次保存的状态（data/state.json）比较，分“要操作的”（定投板块）和“提醒”（市场温度、见顶灯、
   托底资金、黄金资金、我的基金、海外小仓位）两组。
 - 到期复盘（data/reminders.json）：日期到了就并进同一封。
-- 周报：环境变量 REPORT=1 时发（周五早上），开头是一句话总结和“每 1000 元本周下单清单”，当次变化和到期复盘也并进周报，不再另发。
+- 周报：环境变量 REPORT=1 时发（周五早上 8 点多），按周四收盘的信号，提醒周五 15:00 前下单（场外基金按周五净值）；
+  开头是下单提示、一句话总结和“每 1000 元本周下单清单”，当次变化和到期复盘也并进周报，不再另发。
+- 平时的提醒分组：今天就做（卖出、红利打分）/ 周五再定（其他定投板块，周中变化不用动，以周报为准）/ 提醒 / 数据源；不再附全部状态表。
 - 第一次运行（还没有 state.json）发一封“提醒已开启”。
 同时写 data/plan.json（每周下单清单，每 1000 元），给总览页按自己的预算换算。
 只在 GitHub Actions 里真正发送；本地运行只打印。
@@ -227,12 +229,20 @@ def post(title, body, prefix):
     print(f"已发送：{title} → {it.get('html_url')}")
 
 
+def brief(act):
+    """操作说明只留第一句（去掉“距买入线还需…”“阈值…”这类细节，网页上有）"""
+    act = re.split(r"；距|（阈值", act)[0]
+    return re.sub(r"（只作(提醒|参考)[^）]*）", "", act)
+
+
 def table(cur):
-    rows = ["| 页签 | 比例 | 现状 | 操作 |", "|---|---|---|---|"]
+    rows = ["| 板块 | 现在 | 怎么做 |", "|---|---|---|"]
     for name, v in cur.items():
+        if name == "数据源" and "无需处理" in v["act"]:
+            continue
         link = (f"[{name}]({PAGE}{v['tab']})" if ".html" in v["tab"] else f"[{name}]({PAGE}#{v['tab']})") if v["tab"] else name
-        w = f"{WEIGHTS[name]}%" if name in WEIGHTS else ""
-        rows.append(f"| {link} | {w} | {v['now']} | {v['act']} |")
+        w = f"（{WEIGHTS[name]}%）" if name in WEIGHTS else ""
+        rows.append(f"| {link}{w} | {v['now']} | {brief(v['act'])} |")
     return "\n".join(rows)
 
 
@@ -300,13 +310,28 @@ def plan_md(P):
     return "\n".join(lines)
 
 
-def change_lines(changes, cur, prev):
-    """按“要操作的 / 提醒 / 数据源”分组的变化说明"""
+SELL = re.compile(r"卖|减|止盈|转红利")
+
+
+def group_of(n, b, cur, report):
+    """今天就做：卖出类、红利打分（按日买）；周五再定：其他定投板块（周五按周四收盘下单）"""
+    if n == "数据源":
+        return "数据源"
+    if n in OPS or (n == "国家队流向" and b.startswith("加仓")):
+        if SELL.search(re.split(r"；距|（阈值", cur[n]["act"])[0]) or n == "红利打分":
+            return "今天就做"
+        return "本周下单" if report else "周五再定"
+    return "提醒"
+
+
+def change_lines(changes, cur, prev, report=False):
+    """按“今天就做 / 周五再定（周报里叫本周下单）/ 提醒 / 数据源”分组的变化说明"""
     mf = load("myfunds.json") or {"funds": []}
     names = {f["code"]: short(f["name"]) for f in mf["funds"]}
-    groups = {"要操作的": [], "提醒": [], "数据源": []}
+    groups = {"今天就做": [], "本周下单": [], "周五再定": [], "提醒": [], "数据源": []}
     for n, a, b in changes:
-        g = "要操作的" if n in OPS or (n == "国家队流向" and b.startswith("加仓")) else "数据源" if n == "数据源" else "提醒"
+        g = group_of(n, b, cur, report)
+        link = f"{PAGE}{cur[n]['tab']}" if ".html" in cur[n]["tab"] else f"{PAGE}#{cur[n]['tab']}"
         if n == "我的基金":
             pa, pb = [dict(x.split(":") for x in st.split("|")) for st in (a, b)]
             sa, sb = (set(filter(None, pa["加"].split(","))), set(filter(None, pa["减"].split(",")))), \
@@ -315,9 +340,10 @@ def change_lines(changes, cur, prev):
             for lab, x, y in (("新变成可以加", sb[0], sa[0]), ("不再是可以加", sa[0], sb[0]), ("新出现可以减", sb[1], sa[1]), ("不再是可以减", sa[1], sb[1])):
                 if x - y:
                     parts.append(f"{lab}：{'、'.join(names.get(c, c) for c in sorted(x - y))}")
-            groups[g].append(f"- **我的基金**：{'；'.join(parts)}\n  - 现在：{cur[n]['now']}")
+            groups[g].append(f"- **[我的基金]({link})**：{'；'.join(parts)}")
             continue
-        groups[g].append(f"- **{n}**：{a.replace('|', '，')} → **{b.replace('|', '，')}**\n  - 现在：{cur[n]['now']}\n  - 操作：{cur[n]['act']}")
+        tail = "（周五早上按周四收盘再确认，到时以周报为准，现在不用动）" if g == "周五再定" else ""
+        groups[g].append(f"- **[{n}]({link})**：{a.replace('|', '，')} → **{b.replace('|', '，')}**\n  - {cur[n]['now']}\n  - **{brief(cur[n]['act'])}**{tail}")
     return groups
 
 
@@ -347,7 +373,7 @@ def main():
     rem = load("reminders.json") or []
     due = [r for r in rem if not r.get("done") and r["date"] <= TODAY]
     report = os.environ.get("REPORT") == "1" and not first
-    G = change_lines(changes, cur, prev) if changes else {}
+    G = change_lines(changes, cur, prev, report) if changes else {}
     chg = "\n\n".join(f"**{k}**\n\n" + "\n".join(v) for k, v in G.items() if v)
     dues = "\n\n".join(f"### {r['title']}\n\n{r['body']}" for r in due)
 
@@ -355,22 +381,23 @@ def main():
         post(f"【提醒已开启】{TODAY} 信号看板", "以后信号有变化时会发这样的邮件，每周五早上还会发一封周报。下面是当前状态：\n\n"
              + table(cur), "【提醒已开启】")
     elif report:
-        body = (headline() + "\n\n### 本周下单清单（每 1000 元）\n\n" + plan_md(P)
-                + (f"\n\n### 这次有变化\n\n{chg}" if chg else "") + (f"\n\n## 到期复盘\n\n{dues}" if dues else "")
-                + "\n\n### 全部状态\n\n数据截至各指数最近一个交易日（A股为周四收盘）。轮动每周五按周四收盘的信号操作，卖出信号出现时当天另发邮件；"
-                  "红利打分按日操作，A500 / 沪深300（二选一）、黄金按倍数每周定投，纳指照常定投；没买完的钱都放红利低波100。\n\n" + table(cur))
-        post(f"【周报】{TODAY} 本周操作" + ("（含信号变化）" if chg else "") + ("（含到期复盘）" if due else ""), body, "【周报】")
+        body = ("**今天（周五）15:00 前下单**：场外基金 15:00 前买按今天净值成交。按周四收盘的信号，周中的变化以这封为准。\n\n"
+                + headline() + "\n\n### 本周下单清单（每 1000 元）\n\n" + plan_md(P)
+                + (f"\n\n### 这周有变化的\n\n{chg}" if chg else "") + (f"\n\n## 到期复盘\n\n{dues}" if dues else "")
+                + "\n\n### 各板块现在\n\n" + table(cur)
+                + "\n\n轮动、A500 / 沪深300、黄金每周五买一次；红利打分按日买；卖出信号出现时当天另发邮件。没买完的钱都放红利低波100。")
+        post(f"【周报】{TODAY} 今天 15:00 前下单" + ("（含变化）" if chg else "") + ("（含到期复盘）" if due else ""), body, "【周报】")
     elif changes or due:
         tt = []
-        if G.get("要操作的"):
-            tt.append("要操作：" + "、".join(n for n, _, _ in changes if n in OPS))
-        info = [n for n, _, _ in changes if n not in OPS]
-        if info:
-            tt.append("提醒：" + "、".join(info))
+        for k, lab in (("今天就做", "今天就做"), ("周五再定", "周五再定"), ("提醒", "提醒"), ("数据源", "数据源")):
+            ns = [n for n, _, b in changes if group_of(n, b, cur, False) == k]
+            if ns:
+                tt.append(f"{lab}：" + "、".join(ns))
         if due:
             tt.append("到期复盘")
-        body = (chg + (f"\n\n## 到期复盘\n\n{dues}" if dues else "") + "\n\n### 全部状态\n\n" + table(cur)).lstrip()
-        post(f"【信号提醒】{TODAY} " + "；".join(tt), body, "【信号提醒】")
+        body = (chg + (f"\n\n## 到期复盘\n\n{dues}" if dues else "")
+                + ("" if G.get("今天就做") else "\n\n今天没有要马上做的事，定投照常等周五早上的周报。")).lstrip()
+        post(f"【{'要操作' if G.get('今天就做') else '提醒'}】{TODAY} " + "；".join(tt), body, ("【提醒】", "【要操作】", "【信号提醒】"))
     else:
         print("信号没有变化，不发提醒")
 
