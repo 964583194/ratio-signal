@@ -58,8 +58,10 @@ def rotation(d, g, tab):
 
 def dividend(d):
     L = d["latest"]
-    amt = f"{L['amount']:.0f} 元/天" if L["amount"] else ("分批卖出" if L["score"] <= 6 else "暂停定投")
-    return L["tier"], f"评分 {L['score']:.2f} / 20（{L['tier']}）", f"{L['tier']} · {amt}", "dividend"
+    es = L.get("eff", L["score"])
+    amt = f"{L['amount']:.0f} 元/天" if L["amount"] else ("分批卖出" if es <= 6 else "暂停定投")
+    wait = "（新档位还没连续 2 天，先按上一档）" if L.get("pending") else ""
+    return L["tier"], f"评分 {L['score']:.2f} / 20（{L['tier']}）{wait}", f"{L['tier']} · {amt}", "dividend"
 
 
 def a500(d):
@@ -128,7 +130,7 @@ def ndx(d, prev_prem):
     prem = prev_prem or "未知"
     if pr:
         prem = "高" if pr["value"] > 0.05 else "低" if pr["value"] <= 0.03 else (prev_prem or "中")
-    state = f"{L['zone']}|{'跌破年线' if L['below'] else '年线上方'}|溢价{prem}"
+    state = f"{L['action']}|溢价{prem}"   # 只在该做的事变了才提醒（回调 ↔ 接近高点都是照常定投，不提醒）
     act = L["action"]
     if pr and prem == "高":
         act += f"；场内ETF溢价 {pc(pr['value'])}，改买场外联接基金"
@@ -198,6 +200,12 @@ def collect(prev):
     h = load("health.json") or {}
     stale = [v["name"] for v in (h.get("items") or {}).values()
              if not v.get("ref") and (v.get("stale_days") is None or v["stale_days"] > 12)]
+    nt, hs = load("ntf.json"), load("hs300.json")
+    try:
+        if nt and hs and (dt.date.fromisoformat(hs["latest"]["date"]) - dt.date.fromisoformat(nt["latest"]["date"])).days > 7:
+            stale.append("国家队流向（ETF 份额 / 净值）")
+    except Exception:  # noqa: BLE001
+        pass
     out["数据源"] = {"state": "异常:" + "、".join(stale) if stale else "正常",
                     "now": f"{len(h.get('items') or {})} 项", "act": "请查看 Actions 运行记录" if stale else "无需处理",
                     "tab": "", "date": h.get("updated", "")[:10]}
@@ -269,7 +277,7 @@ def build_plan(cur):
         share = base * WEIGHTS["红利打分"] / 100
         L = dv["latest"]
         m = (L["amount"] or 0) / 200
-        if L["score"] <= 6:
+        if L.get("eff", L["score"]) <= 6:
             rows.append({"name": "红利打分", "what": "红利低波100", "amt": 0, "fixed": 0, "note": "评分很低，按页签分批卖出；这部分存着"})
         elif m == 0:
             rows.append({"name": "红利打分", "what": "红利低波100", "amt": 0, "fixed": 0, "note": f"{L['tier']}，暂停，这部分存着（现金池）"})
@@ -289,6 +297,14 @@ def build_plan(cur):
         pr = (nd.get("premium") or {}).get("value")
         rows.append({"name": "纳指100", "what": "纳指100 场外联接" if pr and pr > .05 else "纳指100", "amt": base * WEIGHTS["纳指100"] / 100, "fixed": 0,
                      "note": f"照常定投；场内溢价 {pr * 100:.1f}%，买场外" if pr and pr > .05 else "照常定投"})
+    nt = load("ntf.json")
+    if nt and nt["latest"].get("fresh") and not nt["latest"].get("hot") and nt["latest"].get("episode"):
+        ds = [x[0] for x in nt["series"]]
+        ep = nt["latest"]["episode"]["date"]
+        k = len(ds) - 1 - ds.index(ep) if ep in ds else 99
+        if k < 10:     # 4 周的量分 2 周买完
+            rows.append({"name": "国家队加仓", "what": "A500（或沪深300）", "amt": base * WEIGHTS["A500 / 沪深300"] / 100 * 2, "fixed": 0,
+                         "note": f"国家队加速流入（{ep} 开始）：额外 4 周的量分 2 周买，这是第 {1 if k < 5 else 2} / 2 周"})
     for r in rows:
         r["amt"] = round(r["amt"])
     data = {"date": TODAY, "base": base, "rows": rows,
@@ -355,6 +371,11 @@ def headline():
         out.append(f"- **市场温度**：{t['latest']['verdict']}")
     if g:
         out.append(f"- **黄金**：{g['latest']['verdict']}")
+    cb = load("combo.json")
+    if cb and cb["latest"]["level"] in ("积极", "谨慎"):
+        lv = cb["latest"]["level"]
+        out.append(f"- **综合判断：{lv}**（好几个指标同时{'看好' if lv == '积极' else '看坏'}）→ "
+                   + ("按规则该加的放心加" if lv == "积极" else "别额外加钱，止盈可以果断"))
     if mf:
         c = mf["count"]
         add = [short(f["name"]) for f in mf["funds"] if f["tag"] == "add"]

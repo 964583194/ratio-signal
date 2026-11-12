@@ -97,6 +97,21 @@ def tier(score):
     return 0, "空仓"
 
 
+def confirm(scores, days=2):
+    """换档要连续 2 天落在新档位才算，避免在 8 分、10 分线上下来回跳（回测：年化 8.59% → 8.62%，换档次数 389 → 209）。
+    返回“执行用的分数”：没确认前沿用上一个确认过的分数。"""
+    out, cur, pend = [], None, 0
+    for x in scores:
+        if cur is None or tier(x)[0] == tier(cur)[0]:    # 只看倍数：减仓线照常当天生效
+            cur, pend = x, 0
+        else:
+            pend += 1
+            if pend >= days:
+                cur, pend = x, 0
+        out.append(cur)
+    return out
+
+
 def xirr(cfs):
     d0 = cfs[0][0]
 
@@ -290,11 +305,12 @@ def run(cyb_raw):
     bt_dates = [dobj[r["i"]] for r in rows]
     bt_tr = [tri[r["i"]] for r in rows]
     bt_sc = [r["score"] for r in rows]
-    plain = simulate(bt_dates, bt_tr, bt_sc, "plain")
-    scored = simulate(bt_dates, bt_tr, bt_sc, "score")
+    eff = confirm(bt_sc)
+    plain = simulate(bt_dates, bt_tr, eff, "plain")
+    scored = simulate(bt_dates, bt_tr, eff, "score")
 
     last = rows[-1]
-    mult, name = tier(last["score"])
+    mult, name = tier(eff[-1])
     scores_sorted = sorted(bt_sc)
     hi_r = max(rows, key=lambda r: r["score"])
     lo_r = min(rows, key=lambda r: r["score"])
@@ -309,6 +325,7 @@ def run(cyb_raw):
             "date": last["date"], "close": close[last["i"]], "pe": last["pe"],
             "dy": round(last["dy"], 4), "y10": last["y10"], "spread": round(last["sp"], 2),
             "score": round(last["score"], 2), "tier": name, "amount": BASE * mult,
+            "eff": round(eff[-1], 2), "pending": tier(last["score"])[0] != tier(eff[-1])[0],   # 新档位还没连续 2 天，先按上一档
             "sub": {"val": r1(last["val"]), "tech": r1(last["tech"]),
                     "spread": r1(last["spread"]), "style": r1(last["style"])},
             "rsi": round(last["rsi"], 1), "pb": round(last["pb"], 2),
@@ -326,7 +343,7 @@ def run(cyb_raw):
         },
         "lines": lines,
         "forward": fwd_stats,
-        "series": [[r["date"], round(r["score"], 2), round(close[r["i"]], 2)] for r in rows],   # 日期、评分、红利低波100
+        "series": [[r["date"], round(r["score"], 2), round(close[r["i"]], 2), round(e, 2)] for r, e in zip(rows, eff)],   # 日期、评分、红利低波100、执行用分数
     }
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as fh:

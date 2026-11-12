@@ -336,8 +336,8 @@
 
 <section class="panel">
   <h2>近半个月每天怎么买</h2>
-  <div class="scroll"><table id="dRecent"><thead><tr><th>日期</th><th class="r">评分</th><th>当天怎么买</th><th class="r">红利低波100</th></tr></thead><tbody></tbody></table></div>
-  <p class="note">每天收盘后按当天评分算出第二天买多少（每天 200 元为 1 倍）。评分涨、指数跌，说明越跌越便宜；评分跌、指数涨，说明涨贵了。</p>
+  <div class="scroll"><table id="dRecent"><thead><tr><th>日期</th><th class="r">评分</th><th>当天怎么买</th><th class="r">指数涨跌</th></tr></thead><tbody></tbody></table></div>
+  <p class="note">指数是红利低波100。每天收盘后按当天评分算出第二天买多少（每天 200 元为 1 倍）。换档要连续 2 天落在新档位才算，避免在 8 分线上下来回跳（回测年化 8.59% → 8.62%，换档次数少一半）。评分涨、指数跌，说明越跌越便宜；评分跌、指数涨，说明涨贵了。</p>
 </section>
 
 <section class="panel">
@@ -1179,11 +1179,13 @@ function renderDiv(d){
   $("dSp").textContent=L.spread.toFixed(2)+"pp";
   $("dAsof").textContent=L.date;
   $("dScoreV").textContent=L.score.toFixed(2);
-  const t=tierOf(L.score);
+  const ES=L.eff??L.score,t=tierOf(ES);
   const a=$("dAction");a.className="action tierpill "+t[4];
-  a.textContent=t[2]+" · "+(L.amount>0?L.amount+" 元/天":(L.score<=6?"分批卖出":"暂停定投"));
+  a.textContent=t[2]+" · "+(L.amount>0?L.amount+" 元/天":(ES<=6?"分批卖出":"暂停定投"));
+  if(L.pending)a.title="";
   $("dGap").textContent=L.score<10?`距正常线还差 ${(10-L.score).toFixed(1)} 分（10 分恢复 200 元/天）`
     :`高于正常线 ${(L.score-10).toFixed(1)} 分`;
+  if(L.pending)$("dGap").textContent=`评分 ${L.score.toFixed(2)} 已到“${tierOf(L.score)[2]}”档，但换档要连续 2 天，今天先按“${t[2]}”` ;
   $("dPct").textContent=`评分历史分位 ${pc(L.score_pctile,0)} · 共 ${S.days} 个交易日（${S.start} 起）`;
 
   // 区间尺
@@ -1225,12 +1227,12 @@ function renderDiv(d){
       bar.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));rg=b.dataset.r;drawScore(SS,rg)}));
       addEventListener("resize",()=>drawScore(SS,rg))}
     // 近半个月：最近 10 个交易日
-    const R=SS.slice(-11),amt=v=>{const t=tierOf(v);return t[1]?`${t[2]} · ${P.base*t[1]} 元`:t[2]+(v>6?" · 0 元":"")};
+    const R=SS.slice(-11),amt=v=>{const t=tierOf(v);return t[1]?`${t[2]} · ${P.base*t[1]} 元`:t[2]+(v>6?" · 0 元":"")},ex=x=>x[3]??x[1];
     $("dRecent").tBodies[0].innerHTML=R.slice(1).reverse().map((x,k,a)=>{const prev=R[R.length-1-k-1],c=x[2]/prev[2]-1,ds=x[1]-prev[1];
-      return `<tr${k===0?' class="cur"':''}><td class="num">${x[0].slice(5)}</td><td class="r num">${x[1].toFixed(2)} <small style="color:${ds>0?"var(--grow)":ds<0?"var(--mark)":"inherit"}">${ds>0?"↑":ds<0?"↓":""}</small></td><td><span class="tierpill ${tierOf(x[1])[4]}" style="font-size:12px;padding:1px 6px">${amt(x[1])}</span></td><td class="r num" style="color:${c>0?"var(--mark)":c<0?"var(--grow)":"inherit"}">${c>0?"+":""}${pc(c,1)}</td></tr>`}).join("");
+      return `<tr${k===0?' class="cur"':''}><td class="num">${x[0].slice(5)}</td><td class="r num">${x[1].toFixed(2)} <small style="color:${ds>0?"var(--grow)":ds<0?"var(--mark)":"inherit"}">${ds>0?"↑":ds<0?"↓":""}</small></td><td><span class="tierpill ${tierOf(ex(x))[4]}" style="font-size:12px;padding:1px 6px">${amt(ex(x))}</span>${tierOf(ex(x))[2]!==tierOf(x[1])[2]?'<br><small class="note">新档未满 2 天</small>':""}</td><td class="r num" style="color:${c>0?"var(--mark)":c<0?"var(--grow)":"inherit"}">${c>0?"+":""}${pc(c,1)}</td></tr>`}).join("");
     // 图下结论：近一年评分和指数的关系
     const Y=SS.slice(-250),lo=Y.reduce((a,x)=>x[1]<a[1]?x:a),hi=Y.reduce((a,x)=>x[1]>a[1]?x:a);
-    $("dChartConcl").innerHTML=`<b>结论：</b>评分和指数几乎反着走（每周变化的相关系数约 −0.9）：指数涨上去评分就降（变贵少买），指数跌下来评分就升（变便宜多买），所以是“越跌越买、越涨越少买”。近一年评分最高 ${hi[1].toFixed(1)}（${hi[0]}），最低 ${lo[1].toFixed(1)}（${lo[0]}）；现在 ${L.score.toFixed(1)} 分，<b>${tierOf(L.score)[2]}</b>。`;
+    $("dChartConcl").innerHTML=`<b>结论：</b>评分和指数几乎反着走（每周变化的相关系数约 −0.9）：指数涨上去评分就降（变贵少买），指数跌下来评分就升（变便宜多买），所以是“越跌越买、越涨越少买”。近一年评分最高 ${hi[1].toFixed(1)}（${hi[0]}），最低 ${lo[1].toFixed(1)}（${lo[0]}）；现在 ${L.score.toFixed(1)} 分，<b>${tierOf(L.eff??L.score)[2]}</b>。`;
   }
 
   // 回测
