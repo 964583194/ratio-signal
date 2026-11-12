@@ -956,24 +956,25 @@ function loadCombo(){
   fetch("data/combo.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("还没有生成数据");return r.json()}).then(d=>{
     const L=d.latest,sg=x=>x==null?"—":(x>0?"+":"")+pc(x),C=d.cls,IS=d.ind_stats;
     const cell=v=>v?`${sg(v.avg)}<br><small>上涨 ${pc(v.up,0)}</small>`:"—";
-    const lamp=x=>{const v=L.ind[x.name],t=IS[x.name],h=x.name==="国家队加速"?"60":"120",o=t.on[h],bs=t.base[h];return `<tr><td><span class="lv ${v>0?"g1":v<0?"h1":"c0"}">${v>0?"偏多":v<0?"偏空":"不表态"}</span></td><td style="white-space:normal"><b>${x.name}</b><br><small class="note">${x.rule}</small></td><td class="r num">${o?`<span style="color:${o.avg>bs.avg?"var(--grow)":"var(--mark)"}">${sg(o.avg)}</span><br><small>上涨 ${pc(o.up,0)}</small><br><small class="note">平时 ${sg(bs.avg)}</small>`:"—"}</td></tr>`};
+    const lamp=x=>{const v=L.ind[x.name],t=IS[x.name],h="120",o=t.on[h],bs=t.base[h];return `<tr><td><span class="lv ${v>0?"g1":v<0?"h1":"c0"}">${v>0?"偏多":v<0?"偏空":"不表态"}</span></td><td style="white-space:normal"><b>${x.name}</b><br><small class="note">${x.rule}</small></td><td class="r num">${o?`<span style="color:${o.avg>bs.avg?"var(--grow)":"var(--mark)"}">${sg(o.avg)}</span><br><small>上涨 ${pc(o.up,0)}</small><br><small class="note">平时 ${sg(bs.avg)}</small>`:"—"}</td></tr>`};
     const cmp=(T)=>{const ks=Object.keys(T);return `<div class="scroll"><table><thead><tr><th>档（倍数）</th>${ks.map(k=>`<th class="r">${k}</th>`).join("")}</tr></thead><tbody>
       ${d.levels.map(l=>`<tr><td>${l}（${d.mult[l]}）</td>${ks.map(k=>{const v=T[k].levels[l];return `<td class="r num">${v["120"]?sg(v["120"].avg)+`<br><small>${v.days} 天 · 上涨 ${pc(v["120"].up,0)}</small>`:`<small>${v.days} 天</small>`}</td>`}).join("")}</tr>`).join("")}
       <tr><td><b>按档定投</b></td>${ks.map(k=>`<td class="r num"><b>${sg(T[k].dca)}</b></td>`).join("")}</tr>
       <tr><td class="note">每周固定买</td>${ks.map(k=>`<td class="r num note">${sg(T[k].flat)}</td>`).join("")}</tr></tbody></table></div>`};
-    const t13=d.test["2013"],a=t13["只看区间"].levels,b=t13["独立投票（4 个）"].levels;
+    const t13=d.test["2013"],a=t13["只看区间"].levels,b=t13["独立投票"].levels;
     sec.innerHTML=`<h2>综合判断（实验）</h2>
       <p class="note" style="margin:-6px 0 10px">每个指标<b>各自独立</b>表态：偏多、偏空或不表态（只在回测过有用的那一边表态），再数票：偏多 − 偏空 ≥2 积极 · 1 偏积极 · 0 照常 · −1 偏谨慎 · ≤−2 谨慎。<b>只作实验对比，不改定投规则和倍数。</b></p>
       <p class="concl"><b>怎么用：只看两头。</b>“积极”= 好几个指标同时看好，很少出现，但出现后半年几乎都涨 → 按规则该加的放心加；“谨慎”= 好几个同时看坏 → 别额外加钱，止盈可以果断。中间三档不用管，照规则走。</p>
       <div><span class="lv ${L.cls}">${L.level}</span> <span style="margin-left:6px">偏多 ${L.bull} 票、偏空 ${L.bear} 票（只看区间是“${L.zone_level}”）</span></div>
-      <h3 class="h3">六个指标各自怎么说</h3>
-      <div class="scroll"><table><thead><tr><th>现在</th><th>指标</th><th class="r">表态后半年<br><small>加速看 60 日</small></th></tr></thead><tbody>${d.ind.map(lamp).join("")}</tbody></table></div>
-      <p class="concl"><b>结论：</b>每个指标单独看都有用：偏多的之后半年都比平时好，偏空的之后半年大多下跌。国家队加速主要管 60 天（之后 60 日 ${sg(IS["国家队加速"].on["60"].avg)}），半年就看不出了。</p>
+      <h3 class="h3">四个指标各自怎么说</h3>
+      <div class="scroll"><table><thead><tr><th>现在</th><th>指标</th><th class="r">表态后半年</th></tr></thead><tbody>${d.ind.map(lamp).join("")}</tbody></table></div>
+      <p class="concl"><b>结论：</b>四个指标单独看都有用：偏多的之后半年都比平时好，偏空的之后半年大多下跌。</p>
+      <p class="note">测过但不放进来：国家队加速（只管 60 天，放进来反而把“积极”冲淡，单独在托底资金里做加仓提醒）；放量托底（之后 60 天没有优势）；方向全部走弱（之后并不差）；轮动比值 × 市场温度（“比值低但市场热”只出现过一次，2017—2018 年）。</p>
       <h3 class="h3">综合之后 vs 只看区间（各档之后沪深300 120 日）</h3>
-      <p class="note" style="margin:0 0 4px">2013 年起（后两个指标 2023 年才有数据，不在这里）</p>${cmp(t13)}
+      <p class="note" style="margin:0 0 4px">2013 年起</p>${cmp(t13)}
       <p class="note" style="margin:10px 0 4px">2023 年起</p>${cmp(d.test["2023"])}
       <p class="concl"><b>结论：</b>独立投票把档分得更开：“积极”之后半年 ${sg(b["积极"]["120"].avg)}（上涨 ${pc(b["积极"]["120"].up,0)}，只看区间是 ${sg(a["积极"]["120"].avg)}），“谨慎”之后 ${sg(b["谨慎"]["120"].avg)}（只看区间 ${sg(a["谨慎"]["120"].avg)}），从积极到谨慎一档比一档差。
-        <b>→ 用来判断“现在偏好还是偏坏”更清楚；但“积极”很少出现，按档定投的总收益和只看区间差不多（${sg(t13["独立投票（4 个）"].dca)} 对 ${sg(t13["只看区间"].dca)}）。</b>2023 年起只有不到 4 年，再观察。</p>`;
+        <b>→ 用来判断“现在偏好还是偏坏”更清楚；但“积极”很少出现，按档定投的总收益和只看区间差不多（${sg(t13["独立投票"].dca)} 对 ${sg(t13["只看区间"].dca)}）。</b>2023 年起只有不到 4 年，再观察。</p>`;
   }).catch(e=>{sec.innerHTML=`<h2>综合判断（实验）</h2><p class="note">${e.message}</p>`});
 }
 
@@ -993,11 +994,11 @@ function loadNtf(){
       <div class="kv"><div><div class="label">加速度</div><div class="v">${L.acc>0?"+":""}${L.acc} 亿/天</div><div class="s">近 20 日日均 − 近 60 日日均</div></div>
         <div><div class="label">近一年分位</div><div class="v">${pc(L.pct,0)}</div><div class="s">≥90% 加速流入 · ≤10% 加速流出</div></div>
         <div><div class="label">近 20 日净申购</div><div class="v">${L.f4_20>0?"+":""}${L.f4_20.toLocaleString()} 亿</div><div class="s">4 只沪深300 ETF</div></div>
-        <div><div class="label">放量托底日</div><div class="v" style="font-size:17px">${lv?lv.date:"—"}</div><div class="s">${lv?`成交额是平时的 ${lv.x} 倍`:""}${L.vol_recent?" · 刚出现":""}</div></div></div>
+</div>
       <h3 style="font-size:14px;margin:14px 0 4px">加速度分位与沪深300<button type="button" class="bigbtn" data-big="ntf_c1" data-title="流入加速度的近一年分位（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
-      <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 分位（%，左轴；绿色 ≥90% 加速流入，红色 ≤10% 加速流出）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">加速流入第一天</span> / <span style="color:var(--div)">放量托底日</span></p>
+      <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 分位（%，左轴；绿色 ≥90% 加速流入，红色 ≤10% 加速流出）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">加速流入第一天</span></p>
       <div class="chartwrap"><svg class="chart" id="ntf_c1" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
-      <p class="concl"><b>结论：</b>${a60&&b60?`加速流入出现后 60 个交易日，沪深300 平均 ${sg(a60.avg)}（上涨 ${pc(a60.up,0)}），平时是 ${sg(b60.avg)}。`:""}但出现后 20 天内多半还会再跌一点（国家队是在下跌里托底），<b>→ 出现时宽基额外买 4 周的量，分 2~4 周买完，拿着不用卖；同一段只加一次，市场偏热 / 顶部区不加。</b>加速流出之后偏弱，只作提醒。次数只有 ${d.episodes.length} 段，2023 年 7 月那次没托住（60 天后 −10%），所以加的量有上限。</p>
+      <p class="concl"><b>结论：</b>${a60&&b60?`加速流入出现后 60 个交易日，沪深300 平均 ${sg(a60.avg)}（上涨 ${pc(a60.up,0)}），平时是 ${sg(b60.avg)}。`:""}但出现后 20 天内多半还会再跌一点（国家队是在下跌里托底），<b>→ 出现时宽基额外买 4 周的量，分 2~4 周买完，拿着不用卖；同一段只加一次，市场偏热 / 顶部区不加。</b>加速流出之后只是略弱，不提醒。次数只有 ${d.episodes.length} 段，2023 年 7 月那次没托住（60 天后 −10%），所以加的量有上限。</p>
       <h3 style="font-size:14px;margin:14px 0 4px">国家队在买哪个指数（ETF 净申购，亿元）</h3>
       <div class="scroll"><table><thead><tr><th>指数</th><th class="r">近 5 日</th><th class="r">近 20 日</th><th class="r">今年</th></tr></thead><tbody>
         ${top.map(g=>`<tr><td>${g.name}</td><td class="r num">${yi(g.d5)}</td><td class="r num">${yi(g.d20)}</td><td class="r num">${yi(g.ytd)}</td></tr>`).join("")}
@@ -1005,11 +1006,11 @@ function loadNtf(){
       <p class="concl"><b>结论：</b>近 20 日买得最多的是 <b>${top[0].name}</b>（${yi(top[0].d20)} 亿）${top[1]?`，其次 ${top[1].name}（${yi(top[1].d20)} 亿）`:""}；今年合计 ${yi(tot.ytd)} 亿。份额里也有普通资金，大额变化才看得出国家队。</p>
       <details class="sub"><summary>看回测和历次信号 ▾</summary>
       <div class="scroll"><table><thead><tr><th>之后沪深300</th><th class="r">次/天</th><th class="r">20日后</th><th class="r">60日后</th><th class="r">120日后</th></tr></thead><tbody>
-        ${row("加速流入第一天","加速流入第一天")}${row("流入在加速（每天）","流入在加速的每天")}${row("流出在加速（每天）","流出在加速的每天")}${row("放量托底日","放量托底日")}${row("全部交易日","对照：任意一天")}</tbody></table></div>
+        ${row("加速流入第一天","加速流入第一天")}${row("流入在加速（每天）","流入在加速的每天")}${row("流出在加速（每天）","流出在加速的每天")}${row("放量托底日","放量托底日（测过不用）")}${row("全部交易日","对照：任意一天")}</tbody></table></div>
       <div class="scroll" style="margin-top:8px"><table><thead><tr><th>日期</th><th>信号</th><th class="r">20 日后</th><th class="r">60 日后</th><th class="r">120 日后</th></tr></thead><tbody>
         ${[...d.episodes.map(e=>({...e,k:"加速流入"})),...d.vols.map(e=>({...e,k:`放量 ${e.x} 倍`}))].sort((a,b)=>a.date<b.date?1:-1).map(e=>`<tr><td class="num">${e.date}</td><td>${e.k}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td><td class="r num">${fr(e.fwd["120"])}</td></tr>`).join("")}</tbody></table></div>
-      <p class="note">2023 年起。净申购 = 份额变化 × 单位净值；加速度只看 4 只沪深300 ETF（换成 20 只宽基 ETF 回测更差）；放量 = 3 只上交所沪深300 ETF 成交额 ≥ 前 20 日均值 ${d.rule.vol} 倍且当天下跌。</p></details>`;
-    const dates=S.map(r=>r[0]),marks=[...d.episodes.map(e=>({d:e.date,c:"var(--grow)",t:""})),...d.vols.map(e=>({d:e.date,c:"var(--div)",t:""}))];
+      <p class="note">放量托底日之后 60 天没有优势、半年结果不稳定，暂不使用。2023 年起。净申购 = 份额变化 × 单位净值；加速度只看 4 只沪深300 ETF（换成 20 只宽基 ETF 回测更差）；放量 = 3 只上交所沪深300 ETF 成交额 ≥ 前 20 日均值 ${d.rule.vol} 倍且当天下跌。</p></details>`;
+    const dates=S.map(r=>r[0]),marks=d.episodes.map(e=>({d:e.date,c:"var(--grow)",t:""}));
     DualChart($("ntf_c1"),{W:720,H:220,dates,leftRange:[0,100],leftTicks:[0,10,50,90,100],leftFmt:v=>v,
       bands:[{from:90,to:100,fill:"var(--grow-soft)"},{from:0,to:10,fill:"var(--mark-soft)"}],
       left:[{v:S.map(r=>r[2]),c:"var(--ink)",w:1.6}],right:{v:S.map(r=>r[4]),c:"var(--mark)"},marks,

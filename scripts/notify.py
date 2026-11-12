@@ -101,14 +101,10 @@ def etf300(d):
 
 
 def ntf(d):
-    """国家队流向：加速流入新的一段（加仓提醒）、加速流出、放量托底日"""
+    """国家队流向：只提醒加速流入新的一段（加仓提醒）"""
     L = d["latest"]
-    state = L["key"] + ("|放量" + L["vol_last"]["date"] if L.get("vol_recent") else "")
     now = f"4 只沪深300 ETF 流入加速度 {L['acc']:+.1f} 亿/天（近一年 {pc(L['pct'], 0)} 分位），近 20 日净申购 {L['f4_20']:+,} 亿"
-    act = L["action"]
-    if L.get("vol_recent"):
-        act += f"；{L['vol_last']['date']} 放量托底（成交额是平时 {L['vol_last']['x']} 倍），历史上之后半年多数上涨"
-    return state, now, act + "（只作提醒，不改倍数）", "temp"
+    return L["key"], now, L["action"] + "（只作提醒，不改倍数）", "temp"
 
 
 def judge(zone, cheap, pb_hot):
