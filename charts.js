@@ -85,7 +85,7 @@ function DualChart(svg, o) {
   const rpad = (Math.max(...ry) - Math.min(...ry)) * .06, r0 = Math.min(...ry) - rpad, r1 = Math.max(...ry) + rpad;
   const cw = svg.clientWidth || W, fs = Math.min(o.big ? 34 : 22, Math.max(11, (o.big ? 11.5 : 10.5) * W / cw));
   svg.style.setProperty("--fs", fs + "px");
-  const pb = Math.round(fs * 1.9), pl = o.leftTicks.length ? Math.round(Math.max(...o.leftTicks.map(v => String(o.leftFmt(v)).length)) * fs * .62 + fs * .9) : Math.round(fs * .6), pr = Math.round(fs * 2.9);
+  const pb = Math.round(fs * 1.9), pl = o.leftTicks.length ? Math.round(Math.max(...o.leftTicks.map(v => String(o.leftFmt(v)).length)) * fs * .62 + fs * .9) : Math.round(fs * .6), pr = Math.round(Math.max(2.9, String(Math.round(r1)).length * .62 + .7) * fs);
   const X = i => pl + i / (n - 1) * (W - pl - pr);
   const YL = v => pt + (1 - (v - l0) / (l1 - l0)) * (H - pt - pb), YR = v => pt + (1 - (v - r0) / (r1 - r0)) * (H - pt - pb);
   let s = "";

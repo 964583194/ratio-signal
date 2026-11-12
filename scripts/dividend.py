@@ -326,7 +326,7 @@ def run(cyb_raw):
         },
         "lines": lines,
         "forward": fwd_stats,
-        "series": [[r["date"], round(r["score"], 2)] for r in rows],
+        "series": [[r["date"], round(r["score"], 2), round(close[r["i"]], 2)] for r in rows],   # 日期、评分、红利低波100
     }
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as fh:

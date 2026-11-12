@@ -335,14 +335,23 @@
 </section>
 
 <section class="panel">
+  <h2>近半个月每天怎么买</h2>
+  <div class="scroll"><table id="dRecent"><thead><tr><th>日期</th><th class="r">评分</th><th>当天怎么买</th><th class="r">红利低波100</th></tr></thead><tbody></tbody></table></div>
+  <p class="note">每天收盘后按当天评分算出第二天买多少（每天 200 元为 1 倍）。评分涨、指数跌，说明越跌越便宜；评分跌、指数涨，说明涨贵了。</p>
+</section>
+
+<section class="panel">
   <h2>评分走势</h2>
   <div class="ranges" role="group" aria-label="时间范围" data-for="sChart"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y">近3年</button><button type="button" data-r="all" aria-pressed="true">全部</button></div>
-  <div class="chartwrap"><svg class="chart" id="sChart" viewBox="0 0 720 260" role="img" style="touch-action:pan-y" aria-label="评分历史走势"></svg><div class="tip" hidden></div></div>
+  <div class="chartwrap"><svg class="chart" id="sChart" viewBox="0 0 720 260" role="img" style="touch-action:pan-y" aria-label="评分与红利低波100走势"></svg><div class="tip" hidden></div></div>
   <p class="note hint">手指按住或鼠标移到图上查看每天的数值</p>
   <div class="legend">
+    <span><i style="border-color:var(--ink)"></i>评分（左轴）</span>
+    <span><i style="border-color:var(--mark)"></i>红利低波100（右轴）</span>
     <span><i style="border-color:var(--mark-soft);border-top-width:8px"></i>≥12 多买 / 加码</span>
     <span><i style="border-color:var(--grow-soft);border-top-width:8px"></i>≤6 减仓</span>
   </div>
+  <p class="concl" id="dChartConcl"></p>
 </section>
 
 <section class="panel">
@@ -378,7 +387,7 @@
 </footer>
 </div>
 
-<script src="charts.js?v=3"></script>
+<script src="charts.js?v=4"></script>
 <script>
 (function(){
 const $=id=>document.getElementById(id);
@@ -1134,8 +1143,14 @@ function tierOf(s){
 }
 function lvOf(v){return v>=80?["很便宜","c2"]:v>=60?["偏便宜","c1"]:v>=40?["中性","c0"]:v>=20?["偏贵","d1"]:["很贵","d2"]}
 
-const scoreChart=LineChart($("sChart"),{W:720,H:260,fixedY:[0,20],ticks:[0,4,8,10,12,16,20],strong:10,
-  bands:[{from:12,fill:"var(--mark-soft)"},{to:6,fill:"var(--grow-soft)"}]});
+// 评分（左轴）和红利低波100（右轴）画在一张图上；范围按钮切换近1年 / 近3年 / 全部
+function drawScore(S,r){
+  const n=r==="1y"?250:r==="3y"?750:S.length,X=S.slice(-n),dates=X.map(x=>x[0]);
+  DualChart($("sChart"),{W:720,H:260,dates,leftRange:[0,20],leftTicks:[0,4,8,10,12,16,20],leftFmt:v=>v,
+    bands:[{from:12,to:20,fill:"var(--mark-soft)"},{from:0,to:6,fill:"var(--grow-soft)"}],
+    left:[{v:X.map(x=>x[1]),c:"var(--ink)",w:1.6}],right:{v:X.map(x=>x[2]),c:"var(--mark)"},
+    tip:i=>{const t=tierOf(X[i][1]);return `${dates[i]}<br>评分 <b>${X[i][1].toFixed(2)}</b> · ${t[2]}<br>红利低波100 ${Math.round(X[i][2]).toLocaleString()}`}});
+}
 function loadDiv(){
   $("dErr").hidden=true;
   fetch("data/dividend.json?t="+Date.now(),{cache:"no-store"})
@@ -1201,7 +1216,22 @@ function renderDiv(d){
     return `<tr class="${cur?"cur":""}"><td class="num">${lab}</td><td class="r num">${m?m+" 倍":"—"}</td><td class="r num">${m?P.base*m+" 元":(lo<0?"卖出":"0 元")}</td><td>${txt}${cur?" ← 现在":""}</td></tr>`}).join("");
 
   // 走势
-  scoreChart.set(d.series,{tip:(dt,v)=>{const t=tierOf(v);return `${dt}<br><b>${v.toFixed(2)}</b> 分 · ${t[2]}`}});
+  const SS=d.series.filter(x=>x[2]!=null);
+  if(SS.length){
+    const bar=document.querySelector('.ranges[data-for="sChart"]');
+    let rg=(bar.querySelector('[aria-pressed="true"]')||{}).dataset?.r||"all";
+    drawScore(SS,rg);
+    if(!bar.__on){bar.__on=1;bar.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+      bar.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));rg=b.dataset.r;drawScore(SS,rg)}));
+      addEventListener("resize",()=>drawScore(SS,rg))}
+    // 近半个月：最近 10 个交易日
+    const R=SS.slice(-11),amt=v=>{const t=tierOf(v);return t[1]?`${t[2]} · ${P.base*t[1]} 元`:t[2]+(v>6?" · 0 元":"")};
+    $("dRecent").tBodies[0].innerHTML=R.slice(1).reverse().map((x,k,a)=>{const prev=R[R.length-1-k-1],c=x[2]/prev[2]-1,ds=x[1]-prev[1];
+      return `<tr${k===0?' class="cur"':''}><td class="num">${x[0].slice(5)}</td><td class="r num">${x[1].toFixed(2)} <small style="color:${ds>0?"var(--grow)":ds<0?"var(--mark)":"inherit"}">${ds>0?"↑":ds<0?"↓":""}</small></td><td><span class="tierpill ${tierOf(x[1])[4]}" style="font-size:12px;padding:1px 6px">${amt(x[1])}</span></td><td class="r num" style="color:${c>0?"var(--mark)":c<0?"var(--grow)":"inherit"}">${c>0?"+":""}${pc(c,1)}</td></tr>`}).join("");
+    // 图下结论：近一年评分和指数的关系
+    const Y=SS.slice(-250),lo=Y.reduce((a,x)=>x[1]<a[1]?x:a),hi=Y.reduce((a,x)=>x[1]>a[1]?x:a);
+    $("dChartConcl").innerHTML=`<b>结论：</b>评分和指数几乎反着走（每周变化的相关系数约 −0.9）：指数涨上去评分就降（变贵少买），指数跌下来评分就升（变便宜多买），所以是“越跌越买、越涨越少买”。近一年评分最高 ${hi[1].toFixed(1)}（${hi[0]}），最低 ${lo[1].toFixed(1)}（${lo[0]}）；现在 ${L.score.toFixed(1)} 分，<b>${tierOf(L.score)[2]}</b>。`;
+  }
 
   // 回测
   const nm={plain:"纯定投（每天 200 元）",score:"打分系统"};
