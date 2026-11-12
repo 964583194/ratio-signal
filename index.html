@@ -958,7 +958,7 @@ function loadCombo(){
     const cell=v=>v?`${sg(v.avg)}<br><small>上涨 ${pc(v.up,0)}</small>`:"—";
     const lamp=x=>{const v=L.ind[x.name],t=IS[x.name],h="120",o=t.on[h],bs=t.base[h];return `<tr><td><span class="lv ${v>0?"g1":v<0?"h1":"c0"}">${v>0?"偏多":v<0?"偏空":"不表态"}</span></td><td style="white-space:normal"><b>${x.name}</b><br><small class="note">${x.rule}</small></td><td class="r num">${o?`<span style="color:${o.avg>bs.avg?"var(--grow)":"var(--mark)"}">${sg(o.avg)}</span><br><small>上涨 ${pc(o.up,0)}</small><br><small class="note">平时 ${sg(bs.avg)}</small>`:"—"}</td></tr>`};
     const cmp=(T)=>{const ks=Object.keys(T);return `<div class="scroll"><table><thead><tr><th>档（倍数）</th>${ks.map(k=>`<th class="r">${k}</th>`).join("")}</tr></thead><tbody>
-      ${d.levels.map(l=>`<tr><td>${l}（${d.mult[l]}）</td>${ks.map(k=>{const v=T[k].levels[l];return `<td class="r num">${v["120"]?sg(v["120"].avg)+`<br><small>${v.days} 天 · 上涨 ${pc(v["120"].up,0)}</small>`:`<small>${v.days} 天</small>`}</td>`}).join("")}</tr>`).join("")}
+      ${d.levels.map(l=>`<tr><td>${l}（${d.mult[l]}）</td>${ks.map(k=>{const v=T[k].levels[l];return `<td class="r num">${v["120"]?sg(v["120"].avg)+`<br><small>上涨 ${pc(v["120"].up,0)}<br>${v.days} 天</small>`:`<small>${v.days} 天</small>`}</td>`}).join("")}</tr>`).join("")}
       <tr><td><b>按档定投</b></td>${ks.map(k=>`<td class="r num"><b>${sg(T[k].dca)}</b></td>`).join("")}</tr>
       <tr><td class="note">每周固定买</td>${ks.map(k=>`<td class="r num note">${sg(T[k].flat)}</td>`).join("")}</tr></tbody></table></div>`};
     const t13=d.test["2013"],a=t13["只看区间"].levels,b=t13["独立投票"].levels;
