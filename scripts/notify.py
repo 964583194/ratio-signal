@@ -154,7 +154,8 @@ def short(n):
     return re.sub(r"ETF发起式联接|ETF联接|发起式|\(QDII\)|（QDII）|混合|股票|指数|[AC]$", "", n)
 
 
-WEIGHTS = {"创业板轮动": 25, "科创板轮动": 15, "纳指100": 20, "红利打分": 15, "黄金": 15, "A500 / 沪深300": 10}
+# 组合比例（2026-11-12 纳指移出组合，其余按原比例放大）；纳指100 单独小额定投，不占比例
+WEIGHTS = {"创业板轮动": 31.25, "科创板轮动": 18.75, "红利打分": 18.75, "黄金": 18.75, "A500 / 沪深300": 12.5}
 
 
 def collect(prev):
@@ -249,12 +250,12 @@ def table(cur):
         if name == "数据源" and "无需处理" in v["act"]:
             continue
         link = (f"[{name}]({PAGE}{v['tab']})" if ".html" in v["tab"] else f"[{name}]({PAGE}#{v['tab']})") if v["tab"] else name
-        w = f"（{WEIGHTS[name]}%）" if name in WEIGHTS else ""
+        w = f"（{WEIGHTS[name]:g}%）" if name in WEIGHTS else "（不占比例）" if name == "纳指100" else ""
         rows.append(f"| {link}{w} | {v['now']} | {brief(v['act'])} |")
     return "\n".join(rows)
 
 
-OPS = list(WEIGHTS) + ["债基"]          # 要操作的（定投板块）
+OPS = list(WEIGHTS) + ["纳指100", "债基"]          # 要操作的（定投板块）
 
 
 def build_plan(cur):
@@ -292,11 +293,12 @@ def build_plan(cur):
                      "note": (d["latest"]["zone"] + "：" if name == "黄金" else "") + d["latest"]["action"]})
         if mm < 1:
             rows.append({"name": name, "what": "红利低波100", "amt": share * (1 - mm), "fixed": 0, "note": "没买完的部分买红利"})
+    side = []
     nd = load("ndx.json")
-    if nd:
+    if nd:     # 纳指100 不占组合比例，单独小额定投
         pr = (nd.get("premium") or {}).get("value")
-        rows.append({"name": "纳指100", "what": "纳指100 场外联接" if pr and pr > .05 else "纳指100", "amt": base * WEIGHTS["纳指100"] / 100, "fixed": 0,
-                     "note": f"照常定投；场内溢价 {pr * 100:.1f}%，买场外" if pr and pr > .05 else "照常定投"})
+        side.append({"name": "纳指100", "what": "纳指100 场外联接" if pr and pr > .05 else "纳指100",
+                     "note": "不占比例，单独小额定投（每天约 20~100 元）" + (f"；场内溢价 {pr * 100:.1f}%，买场外" if pr and pr > .05 else "")})
     nt = load("ntf.json")
     if nt and nt["latest"].get("fresh") and not nt["latest"].get("hot") and nt["latest"].get("episode"):
         ds = [x[0] for x in nt["series"]]
@@ -307,7 +309,7 @@ def build_plan(cur):
                          "note": f"国家队加速流入（{ep} 开始）：额外 4 周的量分 2 周买，这是第 {1 if k < 5 else 2} / 2 周"})
     for r in rows:
         r["amt"] = round(r["amt"])
-    data = {"date": TODAY, "base": base, "rows": rows,
+    data = {"date": TODAY, "base": base, "rows": rows, "side": side,
             "buy": sum(r["amt"] for r in rows), "fixed": sum(r["fixed"] for r in rows),
             "note": "金额按每周预算等比例换算；“另外加码”是固定金额（破净率见底时），不随预算变。超出预算的部分从备用金出。"}
     with open(os.path.join(DATA, "plan.json"), "w", encoding="utf-8") as f:
@@ -323,6 +325,8 @@ def plan_md(P):
     over = P["buy"] - P["base"]
     lines.append(f"\n合计 {P['buy']} 元" + (f"（比预算多 {over} 元，从备用金出）" if over > 0 else f"（预算里有 {-over} 元没花，存着）" if over < 0 else "")
                  + (f"，另外加码 {P['fixed']} 元" if P["fixed"] else "") + "。按自己的预算等比例换算，网页总览可以直接填预算。")
+    for r in P.get("side") or []:
+        lines.append(f"\n另外：**{r['name']}**（{r['what']}）{r['note']}。")
     return "\n".join(lines)
 
 

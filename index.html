@@ -760,7 +760,8 @@ function loadPlan(){
     if(!P){$("planRows").innerHTML=`<div class="note">下次自动更新后会出现</div>`;return}
     const draw=()=>{const b=+inp.value||0,k=b/P.base;let tot=0,fx=0;
       $("planRows").innerHTML=P.rows.map(r=>{const a=Math.round(r.amt*k);tot+=a;fx+=r.fixed;
-        return `<div class="prow"><div class="n">${r.name}<small>${r.what}</small></div><div class="a">${r.note}</div><div class="amt num">${a.toLocaleString()} 元${r.daily?`<small>每天约 ${Math.round(a/5)}</small>`:""}${r.fixed?`<small>另加 ${r.fixed} 元</small>`:""}</div></div>`}).join("");
+        return `<div class="prow"><div class="n">${r.name}<small>${r.what}</small></div><div class="a">${r.note}</div><div class="amt num">${a.toLocaleString()} 元${r.daily?`<small>每天约 ${Math.round(a/5)}</small>`:""}${r.fixed?`<small>另加 ${r.fixed} 元</small>`:""}</div></div>`}).join("")
+        +(P.side||[]).map(r=>`<div class="prow"><div class="n">${r.name}<small>${r.what}</small></div><div class="a">${r.note}</div><div class="amt num"><small>单独</small></div></div>`).join("");
       const over=tot-b;
       $("planSum").textContent=`每周 ${b.toLocaleString()} 元：合计 ${tot.toLocaleString()} 元${over>0?`，多 ${over.toLocaleString()} 元从备用金出`:""}`;
       $("planNote").innerHTML=`合计 <b class="num">${tot.toLocaleString()} 元</b>${over>0?`，比预算多 ${over.toLocaleString()} 元，从备用金出`:over<0?`，预算里 ${(-over).toLocaleString()} 元没花，存着`:""}${fx?`；另外加码 ${fx} 元（固定金额，破净率见底时）`:""}。按交易系统的比例和本周信号算，${P.date} 更新，和周五周报一致。`};
@@ -776,7 +777,7 @@ tickClock();setInterval(tickClock,20000);
 function loadOverview(){
   $("o_next").textContent=nextUpdate();
   fetch("data/state.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);if(r.headers.get("X-From-Cache"))offlineNote();return r.json()}).then(st=>{
-    const W={"创业板轮动":25,"科创板轮动":15,"红利打分":15,"A500 / 沪深300":10,"黄金":15,"纳指100":20,"债基":0};
+    const W={"创业板轮动":1,"科创板轮动":1,"红利打分":1,"A500 / 沪深300":1,"黄金":1,"纳指100":0,"债基":0};   // 只用来排顺序；纳指、债基不占比例
     const dates=new Set();
     $("o_rows").innerHTML=Object.keys(W).filter(n=>st[n]).map(n=>{const v=st[n];dates.add(v.date);
       const parts=v.act.split("；"),main=parts[0].replace(/^本周定投款/,"").replace(/^买红利低波100（(.+)）$/,"$1"),rest=/轮动/.test(n)?"":parts.slice(1).join("；");
