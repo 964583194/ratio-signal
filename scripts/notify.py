@@ -100,6 +100,17 @@ def etf300(d):
     return L["zone"], now, f"{L['action']}。暂定判断：{judge(L['zone'], cheap, mk.get('pb_hot'))}（只作参考，不改规则和倍数）", "temp"
 
 
+def ntf(d):
+    """国家队流向：加速流入新的一段（加仓提醒）、加速流出、放量托底日"""
+    L = d["latest"]
+    state = L["key"] + ("|放量" + L["vol_last"]["date"] if L.get("vol_recent") else "")
+    now = f"4 只沪深300 ETF 流入加速度 {L['acc']:+.1f} 亿/天（近一年 {pc(L['pct'], 0)} 分位），近 20 日净申购 {L['f4_20']:+,} 亿"
+    act = L["action"]
+    if L.get("vol_recent"):
+        act += f"；{L['vol_last']['date']} 放量托底（成交额是平时 {L['vol_last']['x']} 倍），历史上之后半年多数上涨"
+    return state, now, act + "（只作提醒，不改倍数）", "temp"
+
+
 def judge(zone, cheap, pb_hot):
     """和页面上的暂定判断同一张表：国家队状态 × 沪深300 便宜指数"""
     lv = "mid" if cheap is None else "cheap" if cheap >= 60 else "mid" if cheap >= 40 else "dear"
@@ -157,6 +168,7 @@ def collect(prev):
              ("债基", "bond.json", bond),
              ("海外小仓位", "overseas.json", overseas),
              ("托底资金（国家队）", "etf300.json", etf300),
+             ("国家队流向", "ntf.json", ntf),
              ("见顶信号灯", "topsig.json", topsig)]
     for name, f, fn in pairs:
         d = load(f)
@@ -298,7 +310,7 @@ def change_lines(changes, cur, prev):
     names = {f["code"]: short(f["name"]) for f in mf["funds"]}
     groups = {"要操作的": [], "提醒": [], "数据源": []}
     for n, a, b in changes:
-        g = "要操作的" if n in OPS else "数据源" if n == "数据源" else "提醒"
+        g = "要操作的" if n in OPS or (n == "国家队流向" and b.startswith("加仓")) else "数据源" if n == "数据源" else "提醒"
         if n == "我的基金":
             pa, pb = [dict(x.split(":") for x in st.split("|")) for st in (a, b)]
             sa, sb = (set(filter(None, pa["加"].split(","))), set(filter(None, pa["减"].split(",")))), \

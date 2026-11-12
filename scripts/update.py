@@ -232,6 +232,7 @@ def main():
         ("见顶信号灯", lambda: __import__("topsig").run()),   # 要读 etf300.json
         ("见底评分", mk),
         ("市场温度", lambda: __import__("temp").run()),        # 要读 topsig.json
+        ("国家队流向", lambda: __import__("ntf").run()),        # 要读 temp.json
         ("红利打分", lambda: __import__("dividend").run(S.get_series("cyb50")[0])),
         ("创业板50 轮动", lambda: build(*S.get_series("cyb50"), *S.get_series("hl100"), OUT, LO, HI, SELLS, DIV_CYB,
                                        f"{START[:4]}-{START[4:6]}-{START[6:]}", "创业板50", tr(), div_score())),

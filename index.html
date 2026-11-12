@@ -910,6 +910,7 @@ function loadEtf300(root,HL){
         <div><div class="label">占流通市值</div><div class="v">${L.ratio.toFixed(2)}%</div><div class="s">图中区间 ${L.lo.toFixed(2)}%~${L.hi.toFixed(2)}%</div></div>
         <div><div class="label">近 252 日分位</div><div class="v">${L.pct==null?"—":pc(L.pct,0)}</div><div class="s">≥80% 重仓 · ≤20% 撤空</div></div>
         <div><div class="label">近 20 日份额</div><div class="v">${sg(L.chg20)}</div><div class="s">≥+15% 大幅流入 · ≤−15% 撤出</div></div></div>
+      <div id="ntfbox"></div>
       <h3 style="font-size:14px;margin:16px 0 4px">占沪深300 流通市值与沪深300<button type="button" class="bigbtn" data-big="etf_c1" data-title="占沪深300 流通市值（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
       <p class="note" style="margin:0 0 6px"><span style="color:var(--grow);font-weight:700">——</span> 占比（%，左轴）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">大幅流入</span> / <span style="color:var(--div)">撤出</span></p>
       <div class="chartwrap"><svg class="chart" id="etf_c1" viewBox="0 0 720 260" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
@@ -939,11 +940,54 @@ function loadEtf300(root,HL){
     DualChart($("etf_c2"),{W:720,H:220,dates,leftRange:[0,100],leftTicks:[0,20,50,80,100],leftFmt:v=>v,
       bands:[{from:80,to:100,fill:"var(--grow-soft)"},{from:0,to:20,fill:"var(--mark-soft)"}],
       left:[{v:S.map(r=>r[2]),c:"var(--ink)",w:1.8}],right:{v:S.map(r=>r[4]),c:"var(--mark)"},tip});
+    loadNtf();
     sec.querySelectorAll(".bigbtn").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
     sec.querySelectorAll("details").forEach(x=>x.addEventListener("toggle",()=>dispatchEvent(new Event("resize"))));
     if((d.quarterly||[]).length){const Q=d.quarterly,qm=new Map(Q.map(r=>[r[0],r]));
       LineChart($("etf_c3"),{W:720,H:200,fixedY:[0,Math.ceil(Math.max(...Q.map(r=>r[1])))],ticks:Array.from({length:Math.ceil(Math.max(...Q.map(r=>r[1])))+1},(_,i)=>i)}).set(Q.map(r=>[r[0],r[1]]),{tip:(dt,v)=>`${dt}<br>占流通市值 <b>${v.toFixed(2)}%</b><br>规模 ${qm.get(dt)[2].toLocaleString()} 亿<br>沪深300 ${qm.get(dt)[3].toFixed(0)}`})}
   }).catch(e=>{sec.innerHTML=`<h2>托底资金（国家队）</h2><p class="note">${e.message}</p>`});
+}
+
+// ---------------- 国家队流向加速度 + 放量托底日 + 分指数（托底资金区块里）：只作提醒
+function loadNtf(){
+  const box=$("ntfbox");if(!box)return;
+  fetch("data/ntf.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+    if(!d)return;
+    const L=d.latest,S=d.series,st=d.stats,sg=x=>x==null?"—":(x>0?"+":"")+pc(x),yi=x=>`<span style="color:${x>0?"var(--grow)":x<0?"var(--mark)":"inherit"}">${x>0?"+":""}${x.toLocaleString()}</span>`;
+    const cell=v=>v?`${sg(v.avg)}<br><small>上涨 ${pc(v.up,0)}</small>`:"—";
+    const row=(k,t)=>st[k]?`<tr><td>${t}</td><td class="r num">${st[k].n}</td><td class="r num">${cell(st[k]["20"])}</td><td class="r num">${cell(st[k]["60"])}</td><td class="r num">${cell(st[k]["120"])}</td></tr>`:"";
+    const lv=L.vol_last,fr=x=>x==null?"—":`<span style="color:${x>0?"var(--grow)":"var(--mark)"}">${sg(x)}</span>`;
+    const top=d.groups.filter(g=>g.name!=="合计").slice().sort((a,b)=>b.d20-a.d20),tot=d.groups.find(g=>g.name==="合计");
+    const a60=st["加速流入第一天"]&&st["加速流入第一天"]["60"],b60=st["全部交易日"]&&st["全部交易日"]["60"];
+    box.innerHTML=`<h3 class="h3" style="margin-top:16px">流入在加速吗（加仓提醒）</h3>
+      <div><span class="lv ${L.cls}">${L.state}</span> <span style="margin-left:6px">${L.action}</span></div>
+      <div class="kv"><div><div class="label">加速度</div><div class="v">${L.acc>0?"+":""}${L.acc} 亿/天</div><div class="s">近 20 日日均 − 近 60 日日均</div></div>
+        <div><div class="label">近一年分位</div><div class="v">${pc(L.pct,0)}</div><div class="s">≥90% 加速流入 · ≤10% 加速流出</div></div>
+        <div><div class="label">近 20 日净申购</div><div class="v">${L.f4_20>0?"+":""}${L.f4_20.toLocaleString()} 亿</div><div class="s">4 只沪深300 ETF</div></div>
+        <div><div class="label">放量托底日</div><div class="v" style="font-size:17px">${lv?lv.date:"—"}</div><div class="s">${lv?`成交额是平时的 ${lv.x} 倍`:""}${L.vol_recent?" · 刚出现":""}</div></div></div>
+      <h3 style="font-size:14px;margin:14px 0 4px">加速度分位与沪深300<button type="button" class="bigbtn" data-big="ntf_c1" data-title="流入加速度的近一年分位（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
+      <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 分位（%，左轴；绿色 ≥90% 加速流入，红色 ≤10% 加速流出）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">加速流入第一天</span> / <span style="color:var(--div)">放量托底日</span></p>
+      <div class="chartwrap"><svg class="chart" id="ntf_c1" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+      <p class="concl"><b>结论：</b>${a60&&b60?`加速流入出现后 60 个交易日，沪深300 平均 ${sg(a60.avg)}（上涨 ${pc(a60.up,0)}），平时是 ${sg(b60.avg)}。`:""}但出现后 20 天内多半还会再跌一点（国家队是在下跌里托底），<b>→ 出现时宽基额外买 4 周的量，分 2~4 周买完，拿着不用卖；同一段只加一次，市场偏热 / 顶部区不加。</b>加速流出之后偏弱，只作提醒。次数只有 ${d.episodes.length} 段，2023 年 7 月那次没托住（60 天后 −10%），所以加的量有上限。</p>
+      <h3 style="font-size:14px;margin:14px 0 4px">国家队在买哪个指数（ETF 净申购，亿元）</h3>
+      <div class="scroll"><table><thead><tr><th>指数</th><th class="r">近 5 日</th><th class="r">近 20 日</th><th class="r">今年</th></tr></thead><tbody>
+        ${top.map(g=>`<tr><td>${g.name}</td><td class="r num">${yi(g.d5)}</td><td class="r num">${yi(g.d20)}</td><td class="r num">${yi(g.ytd)}</td></tr>`).join("")}
+        <tr><td><b>合计</b></td><td class="r num">${yi(tot.d5)}</td><td class="r num">${yi(tot.d20)}</td><td class="r num">${yi(tot.ytd)}</td></tr></tbody></table></div>
+      <p class="concl"><b>结论：</b>近 20 日买得最多的是 <b>${top[0].name}</b>（${yi(top[0].d20)} 亿）${top[1]?`，其次 ${top[1].name}（${yi(top[1].d20)} 亿）`:""}；今年合计 ${yi(tot.ytd)} 亿。份额里也有普通资金，大额变化才看得出国家队。</p>
+      <details class="sub"><summary>看回测和历次信号 ▾</summary>
+      <div class="scroll"><table><thead><tr><th>之后沪深300</th><th class="r">次/天</th><th class="r">20日后</th><th class="r">60日后</th><th class="r">120日后</th></tr></thead><tbody>
+        ${row("加速流入第一天","加速流入第一天")}${row("流入在加速（每天）","流入在加速的每天")}${row("流出在加速（每天）","流出在加速的每天")}${row("放量托底日","放量托底日")}${row("全部交易日","对照：任意一天")}</tbody></table></div>
+      <div class="scroll" style="margin-top:8px"><table><thead><tr><th>日期</th><th>信号</th><th class="r">20 日后</th><th class="r">60 日后</th><th class="r">120 日后</th></tr></thead><tbody>
+        ${[...d.episodes.map(e=>({...e,k:"加速流入"})),...d.vols.map(e=>({...e,k:`放量 ${e.x} 倍`}))].sort((a,b)=>a.date<b.date?1:-1).map(e=>`<tr><td class="num">${e.date}</td><td>${e.k}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td><td class="r num">${fr(e.fwd["120"])}</td></tr>`).join("")}</tbody></table></div>
+      <p class="note">2023 年起。净申购 = 份额变化 × 单位净值；加速度只看 4 只沪深300 ETF（换成 20 只宽基 ETF 回测更差）；放量 = 3 只上交所沪深300 ETF 成交额 ≥ 前 20 日均值 ${d.rule.vol} 倍且当天下跌。</p></details>`;
+    const dates=S.map(r=>r[0]),marks=[...d.episodes.map(e=>({d:e.date,c:"var(--grow)",t:""})),...d.vols.map(e=>({d:e.date,c:"var(--div)",t:""}))];
+    DualChart($("ntf_c1"),{W:720,H:220,dates,leftRange:[0,100],leftTicks:[0,10,50,90,100],leftFmt:v=>v,
+      bands:[{from:90,to:100,fill:"var(--grow-soft)"},{from:0,to:10,fill:"var(--mark-soft)"}],
+      left:[{v:S.map(r=>r[2]),c:"var(--ink)",w:1.6}],right:{v:S.map(r=>r[4]),c:"var(--mark)"},marks,
+      tip:i=>`${dates[i]}<br>加速度 <b>${S[i][1]==null?"—":S[i][1]+" 亿/天"}</b>`+(S[i][2]!=null?`<br>近一年分位 ${S[i][2]}%`:"")+`<br>近 20 日净申购 ${S[i][3]} 亿<br>沪深300 ${S[i][4].toFixed(0)}`});
+    box.querySelectorAll(".bigbtn").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
+    box.querySelectorAll("details").forEach(x=>x.addEventListener("toggle",()=>dispatchEvent(new Event("resize"))));
+  }).catch(()=>{});
 }
 
 // ---------------- 见顶信号灯（市场温度页签）：7 个信号各自独立亮灯，≥3 个接近顶部，只作提醒
