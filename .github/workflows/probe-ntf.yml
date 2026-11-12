@@ -1,0 +1,28 @@
+name: probe-ntf
+on:
+  push:
+    branches: [probe-ntf]
+jobs:
+  sse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      matrix:
+        k: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -q akshare
+      - run: python probe/ntf.py sse ${{ matrix.k }} 6
+  other:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -q akshare
+      - run: python probe/ntf.py other 0 1
