@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-12 12:29",
+ "updated": "2026-11-12 15:16",
  "ok": true,
  "items": {
   "cyb50": {
@@ -44,13 +44,11 @@
   },
   "kc50": {
    "name": "科创50 收盘",
-   "source": "中证指数官网",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-12",
    "days": 1665,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 0,
    "ref": false
   },
@@ -284,11 +282,13 @@
   },
   "cap300": {
    "name": "沪深300 流通市值",
-   "source": "东方财富",
-   "mode": "增量",
+   "source": "本地缓存",
+   "mode": "缓存",
    "last": "2026-11-12",
    "days": 3,
-   "failed": [],
+   "failed": [
+    "东方财富：RuntimeError 没有取到"
+   ],
    "stale_days": 0,
    "ref": true
   },
@@ -416,11 +416,13 @@
   },
   "etf159687": {
    "name": "亚太精选ETF 159687 收盘",
-   "source": "东方财富",
+   "source": "腾讯",
    "mode": "增量",
    "last": "2026-11-12",
    "days": 931,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 0,
    "ref": true
   },
