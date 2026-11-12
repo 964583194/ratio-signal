@@ -12,7 +12,7 @@ def dump(tag):
         print(f"CHUNK{tag}{i // 1500:05d}:" + s[i:i + 1500])
     print("CHUNKEND")
 if mode == "sse":
-    days = [d for d in S._wdays("2018-01-01")]
+    days = [d for d in S._wdays("2023-01-01")]
     days = days[k::n]
     names = {}
     for j, d in enumerate(days):
@@ -38,7 +38,7 @@ else:
     import akshare as ak
     # 深交所：每半年一次，所有基金
     szs = {}; names = {}
-    d0 = dt.date(2018, 1, 1)
+    d0 = dt.date(2023, 1, 1)
     while d0 <= dt.date.today():
         d1 = min(dt.date.today(), d0 + dt.timedelta(days=170))
         for t in range(4):
@@ -61,7 +61,7 @@ else:
         try: nav[c] = S.em_pzd(c)
         except Exception as e: print("净值失败", c, e)
         sec = ("1." if c.startswith(("5", "6")) else "0.") + c
-        q = urllib.parse.urlencode({"secid": sec, "fields1": "f1", "fields2": "f51,f57", "klt": "101", "fqt": "0", "beg": "20180101", "end": "20500101", "ut": "fa5fd1943c7b386f172d6893dbfba10b"})
+        q = urllib.parse.urlencode({"secid": sec, "fields1": "f1", "fields2": "f51,f57", "klt": "101", "fqt": "0", "beg": "20230101", "end": "20500101", "ut": "fa5fd1943c7b386f172d6893dbfba10b"})
         try:
             j = S.jget("https://push2his.eastmoney.com/api/qt/stock/kline/get?" + q, "https://quote.eastmoney.com/")
             amt[c] = {a.split(",")[0]: float(a.split(",")[1]) for a in (j.get("data") or {}).get("klines") or []}
@@ -70,7 +70,7 @@ else:
     out["nav"] = nav; out["amt"] = amt
     idx = {}
     for nm, sec in (("上证指数", "1.000001"), ("上证50", "1.000016"), ("中证500", "1.000905"), ("中证1000", "1.000852"), ("科创50", "1.000688"), ("创业板指", "0.399006"), ("沪深300", "1.000300")):
-        try: idx[nm] = S.em_kline(sec, "20180101")
+        try: idx[nm] = S.em_kline(sec, "20220101")
         except Exception as e: print("指数失败", nm, e)
     out["idx"] = idx
     dump("O")

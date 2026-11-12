@@ -8,14 +8,14 @@ jobs:
     timeout-minutes: 40
     strategy:
       matrix:
-        k: [0, 1, 2, 3, 4, 5]
+        k: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - run: pip install -q akshare
-      - run: python probe/ntf.py sse ${{ matrix.k }} 6
+      - run: python probe/ntf.py sse ${{ matrix.k }} 12
   other:
     runs-on: ubuntu-latest
     timeout-minutes: 40
