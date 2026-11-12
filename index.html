@@ -964,6 +964,7 @@ function loadCombo(){
     const t13=d.test["2013"],a=t13["只看区间"].levels,b=t13["独立投票（4 个）"].levels;
     sec.innerHTML=`<h2>综合判断（实验）</h2>
       <p class="note" style="margin:-6px 0 10px">每个指标<b>各自独立</b>表态：偏多、偏空或不表态（只在回测过有用的那一边表态），再数票：偏多 − 偏空 ≥2 积极 · 1 偏积极 · 0 照常 · −1 偏谨慎 · ≤−2 谨慎。<b>只作实验对比，不改定投规则和倍数。</b></p>
+      <p class="concl"><b>怎么用：只看两头。</b>“积极”= 好几个指标同时看好，很少出现，但出现后半年几乎都涨 → 按规则该加的放心加；“谨慎”= 好几个同时看坏 → 别额外加钱，止盈可以果断。中间三档不用管，照规则走。</p>
       <div><span class="lv ${L.cls}">${L.level}</span> <span style="margin-left:6px">偏多 ${L.bull} 票、偏空 ${L.bear} 票（只看区间是“${L.zone_level}”）</span></div>
       <h3 class="h3">六个指标各自怎么说</h3>
       <div class="scroll"><table><thead><tr><th>现在</th><th>指标</th><th class="r">表态后半年<br><small>加速看 60 日</small></th></tr></thead><tbody>${d.ind.map(lamp).join("")}</tbody></table></div>
