@@ -1,15 +1,15 @@
 {
- "updated": "2026-11-12 04:16",
+ "updated": "2026-11-12 10:49",
  "ok": true,
  "items": {
   "cyb50": {
    "name": "创业板50 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 3994,
+   "last": "2026-11-12",
+   "days": 3995,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "hl100": {
@@ -46,34 +46,30 @@
    "name": "科创50 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 1663,
+   "last": "2026-11-12",
+   "days": 1664,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "a500": {
    "name": "中证A500 收盘",
-   "source": "中证指数官网",
+   "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 4092,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 1,
+   "last": "2026-11-12",
+   "days": 4093,
+   "failed": [],
+   "stale_days": 0,
    "ref": false
   },
   "hs300": {
    "name": "沪深300 收盘",
-   "source": "中证指数官网",
+   "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 5308,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 1,
+   "last": "2026-11-12",
+   "days": 5309,
+   "failed": [],
+   "stale_days": 0,
    "ref": false
   },
   "pe300": {
@@ -120,22 +116,20 @@
    "name": "纳指100 收盘",
    "source": "腾讯",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 3224,
+   "last": "2026-11-11",
+   "days": 3225,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": false
   },
   "gold": {
    "name": "黄金ETF 518880 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 3230,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 1,
+   "last": "2026-11-12",
+   "days": 3231,
+   "failed": [],
+   "stale_days": 0,
    "ref": false
   },
   "pb_below": {
@@ -152,32 +146,30 @@
    "name": "两市融资余额",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 4034,
+   "last": "2026-11-11",
+   "days": 4035,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "margin_ratio": {
    "name": "融资余额占流通市值",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 4034,
+   "last": "2026-11-11",
+   "days": 4035,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "mkt_amt": {
    "name": "两市成交额",
-   "source": "本地缓存",
-   "mode": "缓存",
-   "last": "2026-11-11",
-   "days": 4092,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 1,
+   "source": "东方财富",
+   "mode": "增量",
+   "last": "2026-11-12",
+   "days": 4093,
+   "failed": [],
+   "stale_days": 0,
    "ref": true
   },
   "pe_cyb": {
@@ -284,10 +276,10 @@
    "name": "沪深300 流通市值",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 2,
+   "last": "2026-11-12",
+   "days": 3,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "buffett": {
@@ -334,10 +326,10 @@
    "name": "SPDR 黄金 ETF 持仓",
    "source": "AKShare",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 2906,
+   "last": "2026-11-11",
+   "days": 2907,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "ag0": {
@@ -352,14 +344,12 @@
   },
   "etf513100": {
    "name": "纳指ETF 513100 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 643,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 1,
+   "last": "2026-11-12",
+   "days": 644,
+   "failed": [],
+   "stale_days": 0,
    "ref": false
   },
   "nav513100": {
@@ -414,14 +404,12 @@
   },
   "etf159687": {
    "name": "亚太精选ETF 159687 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 930,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 1,
+   "last": "2026-11-12",
+   "days": 931,
+   "failed": [],
+   "stale_days": 0,
    "ref": true
   },
   "nav159687": {
