@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-14 01:26",
+ "updated": "2026-11-14 04:32",
  "ok": true,
  "items": {
   "cyb50": {
@@ -138,13 +138,11 @@
   },
   "gold": {
    "name": "黄金ETF 518880 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 3232,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": false
   },
@@ -152,10 +150,10 @@
    "name": "全A破净率",
    "source": "乐咕乐股(AKShare)",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 5291,
+   "last": "2026-11-13",
+   "days": 5292,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "margin": {
