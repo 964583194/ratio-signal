@@ -95,7 +95,7 @@ function DualChart(svg, o) {
   (o.bands || []).forEach(b => { const y1 = YL(b.to), y2 = YL(b.from); s += `<rect x="${pl}" y="${y1}" width="${W - pl - pr}" height="${y2 - y1}" fill="${b.fill}"/>` });
   (o.leftTicks).forEach(v => { s += `<line x1="${pl}" x2="${W - pr}" y1="${YL(v)}" y2="${YL(v)}" stroke="var(--line)"/><text x="${pl - 6}" y="${YL(v) + fs * .36}" text-anchor="end" style="fill:${o.leftColor || "var(--muted)"}">${o.leftFmt(v)}</text>` });
   const rt = []; const st = niceStep((r1 - r0) * 0.8); for (let v = Math.ceil(r0 / st) * st; v <= r1; v += st) rt.push(v);
-  rt.forEach(v => { s += `<text x="${W - pr + 6}" y="${YR(v) + fs * .36}" text-anchor="start" style="fill:${o.right.c}">${Math.round(v)}</text>` });
+  rt.forEach(v => { s += `<text x="${W - pr + 6}" y="${YR(v) + fs * .36}" text-anchor="start" style="fill:${o.right.c}">${o.right.fmt ? o.right.fmt(v) : Math.round(v)}</text>` });
   // 横轴按月：每个月一个小刻度；标签每 1/2/3/6/12 个月一个，按图的宽度自动选，保证不挤
   const ms = []; let last = "";
   D.forEach((d, i) => { const k = d.slice(0, 7); if (k !== last) { if (last) ms.push(i); last = k } });

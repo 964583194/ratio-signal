@@ -518,7 +518,7 @@ const kcView=Rot("k_","data/kc.json",{g:"科创50",min:.05,max:.25,tick:.05,cmin
 const bondZone=dv=>dv>=15?["便宜","可以多加","vz-good","g2"]:dv<=-15?["偏贵","照常定投，不加仓","vz-warn","r1"]:["正常","照常定投","vz-mid","c0"];
 function Val(view,file,kind){
   const root=$(view),P=kind==="a500"?"a_":kind==="hs300"?"h_":kind==="gold"?"g_":kind==="bond"?"b_":"n_",isV=kind==="a500"||kind==="hs300",isG=kind==="gold",isB=kind==="bond";
-  const sec=(t,body,cls="")=>`<section class="panel ${cls}">${t?`<h2>${t}</h2>`:""}${body}</section>`;
+  const sec=(t,body,cls="",id="")=>`<section class="panel ${cls}"${id?` id="${id}"`:""}>${t?`<h2>${t}</h2>`:""}${body}</section>`;
   const chartBox=(id,h)=>`<div class="ranges" role="group" aria-label="时间范围" data-for="${id}"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y">近3年</button><button type="button" data-r="all" aria-pressed="true">全部</button></div>
     <div class="chartwrap"><svg class="chart" id="${id}" viewBox="0 0 720 ${h}" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
     <p class="note hint">手指按住或鼠标移到图上查看每天的数值</p>`;
@@ -535,7 +535,10 @@ function Val(view,file,kind){
     (kind==="ndx"?sec(`纳指100 走势与年线<button type="button" class="bigbtn" id="n_pxbig">⤢ 横屏看大图</button>`,`<div class="ranges" role="group" aria-label="时间范围" data-for="n_px"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y" aria-pressed="true">近3年</button><button type="button" data-r="10y">近10年</button><button type="button" data-r="all">全部</button></div>
       <div class="chartwrap"><svg class="chart" id="n_px" viewBox="0 0 720 260" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
       <p class="note" style="margin:4px 0 0"><span style="color:var(--mark);font-weight:700">——</span> 纳指100　<span style="color:var(--ink);font-weight:700">- - -</span> 年线（250 日均线）</p>
-      <p class="concl" id="n_pxc"></p>`):"")+
+      <p class="concl" id="n_pxc"></p>`)+sec(`嘉实美国成长股票 走势与年线<button type="button" class="bigbtn" id="n_fdbig">⤢ 横屏看大图</button>`,`<div class="ranges" role="group" aria-label="时间范围" data-for="n_fd"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y" aria-pressed="true">近3年</button><button type="button" data-r="10y">近10年</button><button type="button" data-r="all">全部</button></div>
+      <div class="chartwrap"><svg class="chart" id="n_fd" viewBox="0 0 720 260" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+      <p class="note" style="margin:4px 0 0"><span style="color:var(--mark);font-weight:700">——</span> 复权净值（分红加回）　<span style="color:var(--ink);font-weight:700">- - -</span> 年线（250 日均线）</p>
+      <p class="concl" id="n_fdc"></p>`,"","n_fdsec"):"")+
     sec(isV?"便宜指数走势":isB?"十年国债收益率（%）":"离最高点的回撤",chartBox(P+"c1",260)+`<p class="note" id="${P}c1n"></p>`)+
     sec(isB?"债券便宜指数走势":"偏离年线（MA250）",chartBox(P+"c2",220)+`<p class="note">${isB?"越高越便宜。绿色区域（≥75，利率比近一年均值高 15bp 以上）便宜，可以多加；红色区域（<25，低 15bp 以上）偏贵，照常定投、不加仓。":"0 线以下表示收盘价低于年线。连续 2 天收在年线下方才算“有效跌破”。"}</p>`)+
     sec("历史检验：在这个位置买入，之后一年怎样",`<div class="scroll"><table><thead><tr><th>当时所处位置</th><th class="r">样本天数</th><th class="r">一年后平均</th><th class="r">上涨概率</th><th class="r">最差</th></tr></thead><tbody id="${P}fwd"></tbody></table></div><p class="note" id="${P}fwdNote"></p>`)+
@@ -623,18 +626,15 @@ function Val(view,file,kind){
       // 走势与年线
       const PX=d.px_series||[];
       if(PX.length){
-        const bar=document.querySelector('.ranges[data-for="n_px"]');
-        const draw=r=>{const X=PX.slice(-(r==="1y"?250:r==="3y"?750:r==="10y"?2500:PX.length)),dates=X.map(x=>x[0]);
-          DualChart($("n_px"),{W:720,H:260,dates,sameAxis:true,leftTicks:[],leftFmt:v=>v,
-            left:[{v:X.map(x=>x[2]),c:"var(--ink)",w:1.4,dash:"5 4"}],right:{v:X.map(x=>x[1]),c:"var(--mark)"},
-            tip:i=>`${dates[i]}<br>纳指100 <b>${X[i][1].toLocaleString()}</b><br>年线 ${X[i][2].toLocaleString()}（偏离 ${sign(X[i][1]/X[i][2]-1)}）`})};
-        let rg="3y";draw(rg);
-        // 横屏大图：画近 10 年
-        $("n_pxbig").onclick=()=>{const keep=rg;draw("10y");openBig("n_px","纳指100 与年线（近 10 年）");draw(keep)};
-        if(!bar.__on){bar.__on=1;bar.querySelectorAll("button[data-r]").forEach(b=>b.addEventListener("click",()=>{bar.querySelectorAll("button[data-r]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));rg=b.dataset.r;draw(rg)}));addEventListener("resize",()=>draw(rg))}
+        pxChart("n_px",PX,"纳指100","纳指100 与年线（近 10 年）",0);
         const yrs=d.ma_events.filter(e=>e[2]>=20);
         $("n_pxc").innerHTML=`<b>结论：</b>现在 ${L.close.toFixed(0)}，${L.below?"在年线下方":"在年线上方"}（偏离 ${sign(L.dev)}），离最高点 −${(L.dd*100).toFixed(1)}%。纳指大部分时间都在年线上方，跌破后一般几周到几个月站回（近几次有效跌破里持续 20 个交易日以上的有 ${yrs.length} 次）。<b>→ 跌破年线不卖、不停，照常定投；只是提醒波动会变大。</b>`;
       }
+      Promise.all([getJ("fund_charts.json"),getJ("myfunds.json")]).then(([F,M])=>{const f=F&&F["000043"];if(!f){$("n_fdsec").hidden=true;return}
+        const me=M&&M.funds.find(x=>x.code==="000043"),tg=me&&M.labels[me.tag];
+        const X=f.series,l=X[X.length-1],dev=l[1]/l[2]-1;let mx=0;X.forEach(x=>mx=Math.max(mx,x[1]));
+        pxChart("n_fd",X,"净值","嘉实美国成长股票 与年线（近 10 年）",3);
+        $("n_fdc").innerHTML=`<b>结论：</b>${f.date} 净值（复权）${l[1].toFixed(3)}，${dev<0?"在年线下方":"在年线上方"}（偏离 ${sign(dev)}），离最高点 −${((1-l[1]/mx)*100).toFixed(1)}%。这是主动管理的美股基金，人民币计价，走势和纳指接近但会有差别。${me?`<b>→ 我的基金里它现在是“${tg[0]}”：${me.reason}。</b>`:""}`});
     }
     if(isB)c2.set(d.cheap_series||[],{tip:(dt,v)=>`${dt}<br>债券便宜指数 <b>${v.toFixed(0)}</b> · ${v>=75?"便宜":v<25?"偏贵":"正常"}`});
     else c2.set(d.dev_series.map(([a,b])=>[a,b*100]),{tip:(dt,v)=>`${dt}<br>偏离年线 <b>${v>0?"+":""}${v.toFixed(1)}%</b>`});
@@ -663,6 +663,19 @@ function Val(view,file,kind){
   }
   return {load};
 }
+// 价格 + 年线的同轴图（纳指页签用）：时间范围按钮 + 横屏大图（近 10 年）
+function pxChart(id,PX,name,bigTitle,dec){
+  const bar=document.querySelector(`.ranges[data-for="${id}"]`),fmt=v=>v.toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec});
+  const sg=x=>(x>0?"+":"")+(x*100).toFixed(1)+"%";
+  const draw=r=>{const X=PX.slice(-(r==="1y"?250:r==="3y"?750:r==="10y"?2500:PX.length)),dates=X.map(x=>x[0]);
+    DualChart($(id),{W:720,H:260,dates,sameAxis:true,leftTicks:[],leftFmt:v=>v,
+      left:[{v:X.map(x=>x[2]),c:"var(--ink)",w:1.4,dash:"5 4"}],right:{v:X.map(x=>x[1]),c:"var(--mark)",fmt:dec?(v=>v.toFixed(1)):null},
+      tip:i=>`${dates[i]}<br>${name} <b>${fmt(X[i][1])}</b><br>年线 ${fmt(X[i][2])}（偏离 ${sg(X[i][1]/X[i][2]-1)}）`})};
+  let rg=(bar.querySelector('[aria-pressed="true"]')||{dataset:{r:"3y"}}).dataset.r;draw(rg);
+  $(id+"big")&&($(id+"big").onclick=()=>{const keep=rg;draw("10y");openBig(id,bigTitle);draw(keep)});
+  if(!bar.__on){bar.__on=1;bar.querySelectorAll("button[data-r]").forEach(b=>b.addEventListener("click",()=>{bar.querySelectorAll("button[data-r]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));rg=b.dataset.r;draw(rg)}));addEventListener("resize",()=>draw(rg))}
+}
+
 const aView=Val("viewA","data/a500.json","a500");
 const hView=Val("viewH","data/hs300.json","hs300");
 const nView=Val("viewN","data/ndx.json","ndx");

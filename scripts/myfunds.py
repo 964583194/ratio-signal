@@ -24,6 +24,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LIST = os.path.join(ROOT, "data", "myfunds_list.json")
 CACHE = os.path.join(ROOT, "data", "raw", "myfunds_nav.json")
 OUT = os.path.join(ROOT, "data", "myfunds.json")
+CHARTS = {"000043": "嘉实美国成长股票"}   # 纳指页签画走势与年线
 LABELS = {"add": ("可以加", "g1"), "hold": ("照常", "c0"), "wait": ("先别加", "h1"), "cut": ("可以减", "r1")}
 
 
@@ -231,6 +232,19 @@ def run():
             "labels": {k: list(v) for k, v in LABELS.items()}, "count": cnt, "funds": out, "group_sim": gsim, "stats": stats}
     with open(OUT, "w", encoding="utf-8") as fh:
         json.dump(data, fh, ensure_ascii=False, separators=(",", ":"))
+    # 纳指页签上单独画走势和年线的基金（复权净值）
+    charts = {}
+    for c, nm in CHARTS.items():
+        sr = cache.get(c)
+        if not sr or len(sr) < 260:
+            continue
+        v, _ = feats(sr)
+        ma = [None] * len(v)
+        for i in range(249, len(v)):
+            ma[i] = sum(v[i - 249:i + 1]) / 250
+        charts[c] = {"name": nm, "date": sr[-1][0], "series": [[sr[i][0], round(v[i], 4), round(ma[i], 4)] for i in range(len(v)) if ma[i]]}
+    with open(os.path.join(ROOT, "data", "fund_charts.json"), "w", encoding="utf-8") as fh:
+        json.dump(charts, fh, ensure_ascii=False, separators=(",", ":"))
     print(f"写入 {OUT}：{len(out)} 只，" + "、".join(f"{LABELS[k][0]} {cnt[k]}" for k in LABELS) + f"；净值更新 {ok} 只，失败 {fail} 只")
     return data
 
