@@ -1,27 +1,27 @@
 {
- "updated": "2026-11-13 14:23",
+ "updated": "2026-11-13 14:37",
  "ok": true,
  "items": {
   "cyb50": {
    "name": "创业板50 收盘",
-   "source": "国证指数官网",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 3996,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 0,
    "ref": false
   },
   "hl100": {
    "name": "红利低波100 收盘",
-   "source": "中证指数官网",
+   "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 4095,
-   "failed": [],
-   "stale_days": 2,
+   "last": "2026-11-13",
+   "days": 4097,
+   "failed": [
+    "中证指数官网：最新只到 2026-11-11"
+   ],
+   "stale_days": 0,
    "ref": false
   },
   "hl100_pe": {
@@ -30,7 +30,10 @@
    "mode": "增量",
    "last": "2026-11-11",
    "days": 2314,
-   "failed": [],
+   "failed": [
+    "中证指数官网：最新只到 2026-11-11",
+    "中证日度指标：最新只到 2026-11-11"
+   ],
    "stale_days": 2,
    "ref": false
   },
@@ -40,7 +43,10 @@
    "mode": "增量",
    "last": "2026-11-11",
    "days": 4095,
-   "failed": [],
+   "failed": [
+    "中证指数官网：最新只到 2026-11-11",
+    "东方财富：没有数据"
+   ],
    "stale_days": 2,
    "ref": false
   },
@@ -80,7 +86,10 @@
    "mode": "增量",
    "last": "2026-11-11",
    "days": 3669,
-   "failed": [],
+   "failed": [
+    "中证指数官网：最新只到 2026-11-11",
+    "中证日度指标（折算）：最新只到 2026-11-11"
+   ],
    "stale_days": 2,
    "ref": false
   },
@@ -90,7 +99,10 @@
    "mode": "增量",
    "last": "2026-11-11",
    "days": 528,
-   "failed": [],
+   "failed": [
+    "中证指数官网：最新只到 2026-11-11",
+    "中证日度指标（折算）：最新只到 2026-11-11"
+   ],
    "stale_days": 2,
    "ref": false
   },
@@ -126,11 +138,13 @@
   },
   "gold": {
    "name": "黄金ETF 518880 收盘",
-   "source": "东方财富",
+   "source": "腾讯",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 3232,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 0,
    "ref": false
   },
@@ -166,13 +180,11 @@
   },
   "mkt_amt": {
    "name": "两市成交额",
-   "source": "本地缓存",
-   "mode": "缓存",
+   "source": "东方财富",
+   "mode": "增量",
    "last": "2026-11-13",
    "days": 4094,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 0,
    "ref": true
   },
@@ -348,13 +360,11 @@
   },
   "etf513100": {
    "name": "纳指ETF 513100 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 645,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 0,
    "ref": false
   },
