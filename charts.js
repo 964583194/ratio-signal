@@ -71,6 +71,9 @@ function LineChart(svg,opt){
   svg.addEventListener("pointerdown",e=>{show(e)});
   svg.addEventListener("pointermove",e=>{if(e.pointerType==="mouse"||e.buttons||e.pressure>0)show(e)});
   svg.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse")hide()});
+  svg.addEventListener("pointerup",e=>{if(e.pointerType!=="mouse"){clearTimeout(svg.__ht);svg.__ht=setTimeout(hide,2000)}});
+  svg.addEventListener("pointercancel",()=>{clearTimeout(svg.__ht);svg.__ht=setTimeout(hide,2000)});
+  svg.addEventListener("pointerdown",()=>clearTimeout(svg.__ht));
   document.addEventListener("pointerdown",e=>{if(!svg.contains(e.target))hide()});
   return {set(series,o){full=series;Object.assign(opt,o||{});svg.__lc={full,opt};draw()}};
 }
@@ -117,6 +120,15 @@ function DualChart(svg, o) {
     const g = svg.querySelector(".cursor"); g.style.display = ""; g.querySelector("line").setAttribute("x1", X(i)); g.querySelector("line").setAttribute("x2", X(i));
     tip.innerHTML = o.tip(i); tip.hidden = false; const ww = o.rot ? svg.clientWidth : r.width, px = X(i) / W * ww; let left = px + 12; if (left + tip.offsetWidth > ww) left = px - tip.offsetWidth - 12; tip.style.left = Math.max(0, left) + "px"; tip.style.top = "8px" };
   svg.addEventListener("pointerdown", show); svg.addEventListener("pointermove", e => { if (e.pointerType === "mouse" || e.buttons) show(e) });
+  // 收起提示框：鼠标移开、手指松开 2 秒后、点图外面
+  const hide = () => { tip.hidden = true; const g = svg.querySelector(".cursor"); if (g) g.style.display = "none" };
+  svg.addEventListener("pointerleave", e => { if (e.pointerType === "mouse") hide() });
+  svg.addEventListener("pointerdown", () => clearTimeout(svg.__ht));
+  svg.addEventListener("pointerup", e => { if (e.pointerType !== "mouse") { clearTimeout(svg.__ht); svg.__ht = setTimeout(hide, 2000) } });
+  svg.addEventListener("pointercancel", () => { clearTimeout(svg.__ht); svg.__ht = setTimeout(hide, 2000) });
+  if (svg.__docHide) document.removeEventListener("pointerdown", svg.__docHide);
+  svg.__docHide = e => { if (!svg.contains(e.target)) hide() };
+  document.addEventListener("pointerdown", svg.__docHide);
 }
 
 // 单线图（LineChart）的数据换成 DualChart 的参数，给横屏大图用
