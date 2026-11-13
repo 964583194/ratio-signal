@@ -213,6 +213,10 @@ def run(cyb_raw):
     tr_raw, _ = S.get_series("hl100_tr", 2500)
     y10, _ = S.get_series("cn10y", 2500)
     px = {d: (v, pe_raw.get(d)) for d, v in close.items()}
+    # 全收益指数偶尔比价格晚几天（中证停更、东方财富没有）：缺的几天按价格涨跌补上（几天内分红影响可忽略）
+    tl = max(tr_raw)
+    for d in sorted(x for x in close if x > tl)[:10]:
+        tr_raw[d] = tr_raw[tl] * close[d] / close[tl]
     tr = {d: (v, None) for d, v in tr_raw.items()}
     print(f"红利低波100：价格 {len(px)} 天、全收益 {len(tr)} 天；十年国债 {len(y10)} 天")
     if len(px) < 1000 or len(tr) < 1000 or len(y10) < 1000:

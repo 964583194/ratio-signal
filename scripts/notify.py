@@ -347,6 +347,8 @@ def group_of(n, b, cur, report):
     """今天就做：卖出类、红利打分（按日买）；周五再定：其他定投板块（周五按周四收盘下单）"""
     if n == "数据源":
         return "数据源"
+    if n == "红利打分" and b not in ("下单", "减仓"):
+        return "提醒"
     if n in OPS or (n == "国家队流向" and b.startswith("加仓")):
         if SELL.search(re.split(r"；距|（阈值", cur[n]["act"])[0]) or (n == "红利打分" and b in ("下单", "减仓")):
             return "今天就做"
