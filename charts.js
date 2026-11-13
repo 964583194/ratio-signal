@@ -80,9 +80,11 @@ function DualChart(svg, o) {
   const W = o.W || 720, H = o.H || 260, pt = 14, lw = o.big ? 1.5 : 1;
   const wrap = svg.parentNode, tip = wrap.querySelector(".tip");
   const D = o.dates, n = D.length;
-  const ly = o.left.flatMap(s => s.v.filter(v => v != null)), ry = o.right.v.filter(v => v != null);
-  const [l0, l1] = o.leftRange || [Math.min(...ly), Math.max(...ly)];
+  // sameAxis：左右用同一个刻度（比如价格和它的均线），刻度只显示在右边
+  const ly = o.left.flatMap(s => s.v.filter(v => v != null)), ry = (o.sameAxis ? o.right.v.concat(ly) : o.right.v).filter(v => v != null);
+  let [l0, l1] = o.leftRange || [Math.min(...ly), Math.max(...ly)];
   const rpad = (Math.max(...ry) - Math.min(...ry)) * .06, r0 = Math.min(...ry) - rpad, r1 = Math.max(...ry) + rpad;
+  if (o.sameAxis) [l0, l1] = [r0, r1];
   const cw = svg.clientWidth || W, fs = Math.min(o.big ? 34 : 22, Math.max(11, (o.big ? 11.5 : 10.5) * W / cw));
   svg.style.setProperty("--fs", fs + "px");
   const pb = Math.round(fs * 1.9), pl = o.leftTicks.length ? Math.round(Math.max(...o.leftTicks.map(v => String(o.leftFmt(v)).length)) * fs * .62 + fs * .9) : Math.round(fs * .6), pr = Math.round(Math.max(2.9, String(Math.round(r1)).length * .62 + .7) * fs);

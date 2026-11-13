@@ -389,7 +389,7 @@
 </footer>
 </div>
 
-<script src="charts.js?v=4"></script>
+<script src="charts.js?v=5"></script>
 <script>
 (function(){
 const $=id=>document.getElementById(id);
@@ -532,6 +532,10 @@ function Val(view,file,kind){
         <div><p class="note" id="${P}why" style="margin:0"></p></div></div>
       <div class="kv" id="${P}kv"></div><div id="${P}alert"></div></section>`+
     sec("指标体检",`<p class="note" style="margin:-6px 0 12px" id="${P}dimNote"></p><div class="dims" id="${P}dims"></div>`)+
+    (kind==="ndx"?sec("纳指100 走势与年线",`<div class="ranges" role="group" aria-label="时间范围" data-for="n_px"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y" aria-pressed="true">近3年</button><button type="button" data-r="all">全部</button></div>
+      <div class="chartwrap"><svg class="chart" id="n_px" viewBox="0 0 720 260" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+      <p class="note" style="margin:4px 0 0"><span style="color:var(--mark);font-weight:700">——</span> 纳指100　<span style="color:var(--ink);font-weight:700">- - -</span> 年线（250 日均线）</p>
+      <p class="concl" id="n_pxc"></p>`):"")+
     sec(isV?"便宜指数走势":isB?"十年国债收益率（%）":"离最高点的回撤",chartBox(P+"c1",260)+`<p class="note" id="${P}c1n"></p>`)+
     sec(isB?"债券便宜指数走势":"偏离年线（MA250）",chartBox(P+"c2",220)+`<p class="note">${isB?"越高越便宜。绿色区域（≥75，利率比近一年均值高 15bp 以上）便宜，可以多加；红色区域（<25，低 15bp 以上）偏贵，照常定投、不加仓。":"0 线以下表示收盘价低于年线。连续 2 天收在年线下方才算“有效跌破”。"}</p>`)+
     sec("历史检验：在这个位置买入，之后一年怎样",`<div class="scroll"><table><thead><tr><th>当时所处位置</th><th class="r">样本天数</th><th class="r">一年后平均</th><th class="r">上涨概率</th><th class="r">最差</th></tr></thead><tbody id="${P}fwd"></tbody></table></div><p class="note" id="${P}fwdNote"></p>`)+
@@ -616,6 +620,19 @@ function Val(view,file,kind){
         (pr?`<div class="dim"><div class="top"><span class="name">ETF 溢价率</span><span class="w">决定买哪种</span></div><div class="row"><span class="sv">${(pr.value*100).toFixed(1)}<small> %</small></span><span class="lv ${pr.value>.05?"r2":pr.value>.03?"r1":"g1"}">${pr.value>.05?"别买场内":pr.value>.03?"偏高":"正常"}</span></div><div class="meter"><i style="width:${Math.min(100,pr.value/.25*100)}%;background:var(--mark)"></i></div><div class="ends"><span>0%</span><span>25%</span></div><div class="det">513100 收盘价 ÷ 净值 − 1，${pr.date}。3% 以内正常买，超过 5% 改买场外联接基金。</div></div>`:"");
       c1.set(d.series,{tip:(dt,v)=>`${dt}<br>回撤 <b>${v.toFixed(1)}%</b>`});
       q("c1n").textContent="虚线为回撤 10% 和 30%，绿色区域为回撤 20% 以上。";
+      // 走势与年线
+      const PX=d.px_series||[];
+      if(PX.length){
+        const bar=document.querySelector('.ranges[data-for="n_px"]');
+        const draw=r=>{const X=PX.slice(-(r==="1y"?250:r==="3y"?750:PX.length)),dates=X.map(x=>x[0]);
+          DualChart($("n_px"),{W:720,H:260,dates,sameAxis:true,leftTicks:[],leftFmt:v=>v,
+            left:[{v:X.map(x=>x[2]),c:"var(--ink)",w:1.4,dash:"5 4"}],right:{v:X.map(x=>x[1]),c:"var(--mark)"},
+            tip:i=>`${dates[i]}<br>纳指100 <b>${X[i][1].toLocaleString()}</b><br>年线 ${X[i][2].toLocaleString()}（偏离 ${sign(X[i][1]/X[i][2]-1)}）`})};
+        let rg="3y";draw(rg);
+        if(!bar.__on){bar.__on=1;bar.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{bar.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));rg=b.dataset.r;draw(rg)}));addEventListener("resize",()=>draw(rg))}
+        const yrs=d.ma_events.filter(e=>e[2]>=20);
+        $("n_pxc").innerHTML=`<b>结论：</b>现在 ${L.close.toFixed(0)}，${L.below?"在年线下方":"在年线上方"}（偏离 ${sign(L.dev)}），离最高点 −${(L.dd*100).toFixed(1)}%。纳指大部分时间都在年线上方，跌破后一般几周到几个月站回（近几次有效跌破里持续 20 个交易日以上的有 ${yrs.length} 次）。<b>→ 跌破年线不卖、不停，照常定投；只是提醒波动会变大。</b>`;
+      }
     }
     if(isB)c2.set(d.cheap_series||[],{tip:(dt,v)=>`${dt}<br>债券便宜指数 <b>${v.toFixed(0)}</b> · ${v>=75?"便宜":v<25?"偏贵":"正常"}`});
     else c2.set(d.dev_series.map(([a,b])=>[a,b*100]),{tip:(dt,v)=>`${dt}<br>偏离年线 <b>${v>0?"+":""}${v.toFixed(1)}%</b>`});

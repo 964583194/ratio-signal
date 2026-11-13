@@ -329,6 +329,7 @@ def run_ndx():
         "ma_events": ma_events(dates, below)[-10:],
         "series": [[d, round(-x * 100, 2)] for d, x in zip(dates[i0:], DD)],
         "dev_series": [[dates[k], round(px[k] / m250[k] - 1, 4)] for k in range(len(dates)) if m250[k]],
+        "px_series": [[dates[k], round(px[k], 1), round(m250[k], 1)] for k in range(len(dates)) if m250[k]],   # 收盘、年线
     }
     dump("ndx.json", data)
 

@@ -39,7 +39,7 @@ html,body{margin:0;padding:0;background:var(--bg)}
 </head>
 <body>
 <div class="card" id="card"></div>
-<script src="charts.js?v=4"></script>
+<script src="charts.js?v=5"></script>
 <script>
 const $=id=>document.getElementById(id),Q=new URLSearchParams(location.search),K=Q.get("card")||"div";
 const J=f=>fetch("data/"+f+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null);
