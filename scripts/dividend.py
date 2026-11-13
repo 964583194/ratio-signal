@@ -129,8 +129,18 @@ def xirr(cfs):
     return (lo + hi) / 2
 
 
-def simulate(dates, tr, scores, mode):
-    """预算中性：外部每天投入 BASE，少投的进现金池；多投从现金池出，池子不够就投池子里有的。"""
+DOWN = 2   # 攒着一起买：红利低波100 连续跌 DOWN 个交易日后，第二天把攒着的一起买
+
+
+def gates(px):
+    """第 i 天是不是下单日：前 DOWN 个交易日都收跌（下单前就知道）"""
+    return [i >= DOWN and all(px[i - j] < px[i - j - 1] for j in range(1, DOWN + 1)) for i in range(len(px))]
+
+
+def simulate(dates, tr, scores, mode, gate=None):
+    """预算中性：外部每天投入 BASE，少投的进现金池；多投从现金池出，池子不够就投池子里有的。
+    gate：下单日列表（攒着一起买）；不是下单日时，当天该买的金额先记着，到下单日一起买。"""
+    owed = 0.0
     hold = pool = sell_pool = 0.0
     nav, peak, mdd, prev = 1.0, 1.0, 0.0, 0.0
     hit, cfs = set(), []
@@ -163,9 +173,12 @@ def simulate(dates, tr, scores, mode):
                     hold += sell_pool * (1 - FEE)
                     sell_pool = 0.0
             mult, _ = tier(s)
-            amt = min(BASE * mult, pool)
-            hold += amt * (1 - FEE)
-            pool -= amt
+            owed += BASE * mult
+            if gate is None or gate[i]:
+                amt = min(owed, pool)
+                hold += amt * (1 - FEE)
+                pool -= amt
+                owed = 0.0
         prev = hold + pool + sell_pool
     final = hold + pool + sell_pool
     cfs.append((dates[-1], final))
@@ -306,8 +319,23 @@ def run(cyb_raw):
     bt_tr = [tri[r["i"]] for r in rows]
     bt_sc = [r["score"] for r in rows]
     eff = confirm(bt_sc)
+    bt_px = [close[r["i"]] for r in rows]
+    gate = gates(bt_px)
     plain = simulate(bt_dates, bt_tr, eff, "plain")
-    scored = simulate(bt_dates, bt_tr, eff, "score")
+    daily = simulate(bt_dates, bt_tr, eff, "score")            # 对照：每天买
+    scored = simulate(bt_dates, bt_tr, eff, "score", gate)     # 现行：攒着一起买
+    # 每天的“攒着 / 下单”：owed 是到当天收盘为止攒着没买的钱（按每天 BASE 元），buy 是当天下单买了多少
+    owed, ledger = 0.0, []
+    for k, e in enumerate(eff):
+        owed += BASE * tier(e)[0]
+        if gate[k]:
+            ledger.append((round(owed), 0))
+            owed = 0.0
+        else:
+            ledger.append((0, round(owed)))
+    # 明天是不是下单日：今天、昨天都收跌
+    nxt = len(bt_px) >= 3 and all(bt_px[-j] < bt_px[-j - 1] for j in range(1, DOWN + 1))
+    owed_now = ledger[-1][1] + BASE * tier(eff[-1])[0]     # 明天下单要买的：攒着的 + 明天自己的
 
     last = rows[-1]
     mult, name = tier(eff[-1])
@@ -326,6 +354,7 @@ def run(cyb_raw):
             "dy": round(last["dy"], 4), "y10": last["y10"], "spread": round(last["sp"], 2),
             "score": round(last["score"], 2), "tier": name, "amount": BASE * mult,
             "eff": round(eff[-1], 2), "pending": tier(last["score"])[0] != tier(eff[-1])[0],   # 新档位还没连续 2 天，先按上一档
+            "owed": ledger[-1][1], "buy_next": nxt, "buy_amt": round(owed_now) if nxt else 0,     # 攒着一起买
             "sub": {"val": r1(last["val"]), "tech": r1(last["tech"]),
                     "spread": r1(last["spread"]), "style": r1(last["style"])},
             "rsi": round(last["rsi"], 1), "pb": round(last["pb"], 2),
@@ -335,7 +364,7 @@ def run(cyb_raw):
         "stats": {"days": len(rows), "start": rows[0]["date"],
                   "max": round(hi_r["score"], 1), "max_date": hi_r["date"],
                   "min": round(lo_r["score"], 1), "min_date": lo_r["date"]},
-        "backtest": {"plain": plain, "score": scored},
+        "backtest": {"plain": plain, "score": scored, "daily": daily},
         "personality": {
             "hl": {"ac20": round(autocorr20(close), 3), "mdd": round(max_dd(close), 3)},
             "cyb": {"ac20": round(autocorr20(cyb_close), 3), "mdd": round(max_dd(cyb_close), 3)},
@@ -343,7 +372,7 @@ def run(cyb_raw):
         },
         "lines": lines,
         "forward": fwd_stats,
-        "series": [[r["date"], round(r["score"], 2), round(close[r["i"]], 2), round(e, 2)] for r, e in zip(rows, eff)],   # 日期、评分、红利低波100、执行用分数
+        "series": [[r["date"], round(r["score"], 2), round(close[r["i"]], 2), round(e, 2), b, o] for r, e, (b, o) in zip(rows, eff, ledger)],   # 日期、评分、红利低波100、执行用分数、当天买、攒着
     }
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as fh:

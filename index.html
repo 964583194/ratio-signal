@@ -29,7 +29,7 @@
   <p id="subN" hidden>纳斯达克100 指数（美元计价）· 回撤、年线与国内 ETF 溢价率 · 数据更新于 <span class="num" id="n_updated">—</span></p>
   <p id="subG" hidden>黄金ETF（518880）· 压舱石：平时照常买，便宜多入一点，涨得极端卖一部分 · 数据更新于 <span class="num" id="g_updated">—</span></p>
   <p id="subB" hidden>中债7-10年政策性金融债指数类基金 · 用十年国债收益率判断 · 数据更新于 <span class="num" id="b_updated">—</span></p>
-  <p id="subDiv" hidden>每个交易日 200 元 · 四维打分 0~20 分决定买多少 · 数据更新于 <span class="num" id="dUpdated">—</span></p>
+  <p id="subDiv" hidden>每天 200 元为 1 倍 · 四维打分 0~20 分决定买多少 · 先攒着，红利低波100 连跌 2 天后一起买 · 数据更新于 <span class="num" id="dUpdated">—</span></p>
 </header>
 
 <div class="tabwrap"><nav class="tabs" role="tablist" aria-label="切换策略">
@@ -295,6 +295,7 @@
     </div>
     <div>
       <span class="action tierpill" id="dAction">加载中</span>
+      <p class="note" id="dBatch" style="margin:6px 0 0;font-weight:600"></p>
       <p class="note" id="dPct"></p>
     </div>
   </div>
@@ -336,8 +337,8 @@
 
 <section class="panel">
   <h2>近半个月每天怎么买</h2>
-  <div class="scroll"><table id="dRecent"><thead><tr><th>日期</th><th class="r">评分</th><th>当天怎么买</th><th class="r">指数涨跌</th></tr></thead><tbody></tbody></table></div>
-  <p class="note">指数是红利低波100。每天收盘后按当天评分算出第二天买多少（每天 200 元为 1 倍）。换档要连续 2 天落在新档位才算，避免在 8 分线上下来回跳（回测年化 8.59% → 8.62%，换档次数少一半）。评分涨、指数跌，说明越跌越便宜；评分跌、指数涨，说明涨贵了。</p>
+  <div class="scroll"><table id="dRecent"><thead><tr><th>日期</th><th class="r">评分</th><th>当天</th><th class="r">指数涨跌</th></tr></thead><tbody></tbody></table></div>
+  <p class="note">指数是红利低波100。每天收盘后按评分记下该买多少（每天 200 元为 1 倍），<b>先攒着；红利低波100 连续跌 2 天后，第二天把攒着的一起买</b>（回测年化 8.54%，每天买是 8.62%，下单次数少到约四分之一）。换档要连续 2 天落在新档位才算；减仓当天就做。评分涨、指数跌，说明越跌越便宜；评分跌、指数涨，说明涨贵了。</p>
 </section>
 
 <section class="panel">
@@ -760,7 +761,7 @@ function loadPlan(){
     if(!P){$("planRows").innerHTML=`<div class="note">下次自动更新后会出现</div>`;return}
     const draw=()=>{const b=+inp.value||0,k=b/P.base;let tot=0,fx=0;
       $("planRows").innerHTML=P.rows.map(r=>{const a=Math.round(r.amt*k);tot+=a;fx+=r.fixed;
-        return `<div class="prow"><div class="n">${r.name}<small>${r.what}</small></div><div class="a">${r.note}</div><div class="amt num">${a.toLocaleString()} 元${r.daily?`<small>每天约 ${Math.round(a/5)}</small>`:""}${r.fixed?`<small>另加 ${r.fixed} 元</small>`:""}</div></div>`}).join("")
+        return `<div class="prow"><div class="n">${r.name}<small>${r.what}</small></div><div class="a">${r.note}</div><div class="amt num">${a.toLocaleString()} 元${r.daily?`<small>攒着，连跌 2 天一起买</small>`:""}${r.fixed?`<small>另加 ${r.fixed} 元</small>`:""}</div></div>`}).join("")
         +(P.side||[]).map(r=>`<div class="prow"><div class="n">${r.name}<small>${r.what}</small></div><div class="a">${r.note}</div><div class="amt num"><small>单独</small></div></div>`).join("");
       const over=tot-b;
       $("planSum").textContent=`每周 ${b.toLocaleString()} 元：合计 ${tot.toLocaleString()} 元${over>0?`，多 ${over.toLocaleString()} 元从备用金出`:""}`;
@@ -1187,6 +1188,11 @@ function renderDiv(d){
   $("dGap").textContent=L.score<10?`距正常线还差 ${(10-L.score).toFixed(1)} 分（10 分恢复 200 元/天）`
     :`高于正常线 ${(L.score-10).toFixed(1)} 分`;
   if(L.pending)$("dGap").textContent=`评分 ${L.score.toFixed(2)} 已到“${tierOf(L.score)[2]}”档，但换档要连续 2 天，今天先按“${t[2]}”` ;
+  if(L.owed!=null){const B=$("dBatch");
+    B.textContent=L.buy_next&&L.buy_amt?`红利低波100 已连跌 2 天 → 明天下单 ${L.buy_amt} 元（攒着的一起买）`
+      :L.owed>0?`先攒着：已攒 ${L.owed} 元，等红利低波100 连跌 2 天再一起买`
+      :L.amount>0?`从今天开始攒，等红利低波100 连跌 2 天再一起买`:"";
+    B.style.color=L.buy_next&&L.buy_amt?"var(--grow)":"inherit"}
   $("dPct").textContent=`评分历史分位 ${pc(L.score_pctile,0)} · 共 ${S.days} 个交易日（${S.start} 起）`;
 
   // 区间尺
@@ -1228,9 +1234,10 @@ function renderDiv(d){
       bar.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));rg=b.dataset.r;drawScore(SS,rg)}));
       addEventListener("resize",()=>drawScore(SS,rg))}
     // 近半个月：最近 10 个交易日
-    const R=SS.slice(-11),amt=v=>{const t=tierOf(v);return t[1]?`${t[2]} · ${P.base*t[1]} 元`:t[2]+(v>6?" · 0 元":"")},ex=x=>x[3]??x[1];
+    const R=SS.slice(-11),ex=x=>x[3]??x[1],amt=x=>{const v=ex(x),t=tierOf(v);
+      if(x[4]>0)return `买 ${x[4]} 元`;if(x[5]>0)return `${t[2]} · 已攒 ${x[5]}`;return t[1]?`${t[2]} · ${P.base*t[1]} 元`:t[2]+(v>6?" · 0 元":"")};
     $("dRecent").tBodies[0].innerHTML=R.slice(1).reverse().map((x,k,a)=>{const prev=R[R.length-1-k-1],c=x[2]/prev[2]-1,ds=x[1]-prev[1];
-      return `<tr${k===0?' class="cur"':''}><td class="num">${x[0].slice(5)}</td><td class="r num">${x[1].toFixed(2)} <small style="color:${ds>0?"var(--grow)":ds<0?"var(--mark)":"inherit"}">${ds>0?"↑":ds<0?"↓":""}</small></td><td><span class="tierpill ${tierOf(ex(x))[4]}" style="font-size:12px;padding:1px 6px">${amt(ex(x))}</span>${tierOf(ex(x))[2]!==tierOf(x[1])[2]?'<br><small class="note">新档未满 2 天</small>':""}</td><td class="r num" style="color:${c>0?"var(--mark)":c<0?"var(--grow)":"inherit"}">${c>0?"+":""}${pc(c,1)}</td></tr>`}).join("");
+      return `<tr${k===0?' class="cur"':''}><td class="num">${x[0].slice(5)}</td><td class="r num">${x[1].toFixed(2)} <small style="color:${ds>0?"var(--grow)":ds<0?"var(--mark)":"inherit"}">${ds>0?"↑":ds<0?"↓":""}</small></td><td><span class="tierpill ${x[4]>0?"t-more":tierOf(ex(x))[4]}" style="font-size:12px;padding:1px 6px">${amt(x)}</span>${tierOf(ex(x))[2]!==tierOf(x[1])[2]?'<br><small class="note">新档未满 2 天</small>':""}</td><td class="r num" style="color:${c>0?"var(--mark)":c<0?"var(--grow)":"inherit"}">${c>0?"+":""}${pc(c,1)}</td></tr>`}).join("");
     // 图下结论：近一年评分和指数的关系
     const Y=SS.slice(-250),lo=Y.reduce((a,x)=>x[1]<a[1]?x:a),hi=Y.reduce((a,x)=>x[1]>a[1]?x:a);
     $("dChartConcl").innerHTML=`<b>结论：</b>评分和指数几乎反着走（每周变化的相关系数约 −0.9）：指数涨上去评分就降（变贵少买），指数跌下来评分就升（变便宜多买），所以是“越跌越买、越涨越少买”。近一年评分最高 ${hi[1].toFixed(1)}（${hi[0]}），最低 ${lo[1].toFixed(1)}（${lo[0]}）；现在 ${L.score.toFixed(1)} 分，<b>${tierOf(L.eff??L.score)[2]}</b>。`;

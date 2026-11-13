@@ -57,11 +57,20 @@ def rotation(d, g, tab):
 
 
 def dividend(d):
+    """红利打分：每天按评分记下该买多少，先攒着；红利低波100 连跌 2 天后第二天一起买。只在“要下单 / 档位变了”时提醒"""
     L = d["latest"]
     es = L.get("eff", L["score"])
-    amt = f"{L['amount']:.0f} 元/天" if L["amount"] else ("分批卖出" if es <= 6 else "暂停定投")
     wait = "（新档位还没连续 2 天，先按上一档）" if L.get("pending") else ""
-    return L["tier"], f"评分 {L['score']:.2f} / 20（{L['tier']}）{wait}", f"{L['tier']} · {amt}", "dividend"
+    buy = bool(L.get("buy_next") and L.get("buy_amt"))
+    if es <= 6:
+        act = f"{L['tier']} · 分批卖出"
+    elif buy:
+        act = f"红利低波100 已连跌 2 天，明天下单 {L['buy_amt']} 元（攒着的一起买）"
+    elif L["amount"]:
+        act = f"{L['tier']} · 先攒着（已攒 {L.get('owed', 0)} 元，等红利低波100 连跌 2 天一起买）"
+    else:
+        act = f"{L['tier']} · 暂停定投"
+    return f"{L['tier']}|{'下单' if buy else '攒着'}", f"评分 {L['score']:.2f} / 20（{L['tier']}）{wait}", act, "dividend"
 
 
 def a500(d):
@@ -283,7 +292,7 @@ def build_plan(cur):
         elif m == 0:
             rows.append({"name": "红利打分", "what": "红利低波100", "amt": 0, "fixed": 0, "note": f"{L['tier']}，暂停，这部分存着（现金池）"})
         else:
-            rows.append({"name": "红利打分", "what": "红利低波100", "amt": share * m, "fixed": 0, "note": f"{L['tier']} {m:g} 倍，分到每个交易日买", "daily": True})
+            rows.append({"name": "红利打分", "what": "红利低波100", "amt": share * m, "fixed": 0, "note": f"{L['tier']} {m:g} 倍，先攒着，红利低波100 连跌 2 天后一起买", "daily": True})
     for name, f, what, w in (("A500 / 沪深300", "a500.json", "A500（或沪深300）", "A500 / 沪深300"), ("黄金", "gold.json", "黄金", "黄金")):
         d = load(f)
         if not d:
@@ -338,7 +347,7 @@ def group_of(n, b, cur, report):
     if n == "数据源":
         return "数据源"
     if n in OPS or (n == "国家队流向" and b.startswith("加仓")):
-        if SELL.search(re.split(r"；距|（阈值", cur[n]["act"])[0]) or n == "红利打分":
+        if SELL.search(re.split(r"；距|（阈值", cur[n]["act"])[0]) or (n == "红利打分" and "下单" in b):
             return "今天就做"
         return "本周下单" if report else "周五再定"
     return "提醒"
@@ -410,7 +419,7 @@ def main():
                 + headline() + "\n\n### 本周下单清单（每 1000 元）\n\n" + plan_md(P)
                 + (f"\n\n### 这周有变化的\n\n{chg}" if chg else "") + (f"\n\n## 到期复盘\n\n{dues}" if dues else "")
                 + "\n\n### 各板块现在\n\n" + table(cur)
-                + "\n\n轮动、A500 / 沪深300、黄金每周五买一次；红利打分按日买；卖出信号出现时当天另发邮件。没买完的钱都放红利低波100。")
+                + "\n\n轮动、A500 / 沪深300、黄金每周五买一次；红利打分先攒着，红利低波100 连跌 2 天后一起买；卖出信号出现时当天另发邮件。没买完的钱都放红利低波100。")
         post(f"【周报】{TODAY} 今天 15:00 前下单" + ("（含变化）" if chg else "") + ("（含到期复盘）" if due else ""), body, "【周报】")
     elif changes or due:
         tt = []
