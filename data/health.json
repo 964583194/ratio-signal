@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-13 15:34",
+ "updated": "2026-11-13 21:04",
  "ok": true,
  "items": {
   "cyb50": {
@@ -45,32 +45,28 @@
    "days": 4095,
    "failed": [
     "中证指数官网：最新只到 2026-11-11",
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
+    "东方财富：没有数据"
    ],
    "stale_days": 2,
    "ref": false
   },
   "kc50": {
    "name": "科创50 收盘",
-   "source": "中证指数官网",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 1666,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 0,
    "ref": false
   },
   "a500": {
    "name": "中证A500 收盘",
-   "source": "中证指数官网",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 4095,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 0,
    "ref": false
   },
@@ -116,10 +112,10 @@
    "name": "中国十年国债",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 4220,
+   "last": "2026-11-13",
+   "days": 4221,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "us10y": {
@@ -200,20 +196,20 @@
    "name": "创业板指市盈率(周)",
    "source": "蛋卷基金",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 523,
+   "last": "2026-11-13",
+   "days": 524,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "pe_kc": {
    "name": "科创50市盈率(周)",
    "source": "蛋卷基金",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 357,
+   "last": "2026-11-13",
+   "days": 358,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "sh510300": {
@@ -270,10 +266,10 @@
    "name": "510310 单位净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 3330,
+   "last": "2026-11-13",
+   "days": 3331,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "unav510330": {
@@ -290,10 +286,10 @@
    "name": "159919 单位净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 3530,
+   "last": "2026-11-13",
+   "days": 3531,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "cap300": {
@@ -310,19 +306,22 @@
    "name": "巴菲特指标（总市值÷GDP）",
    "source": "乐咕乐股",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 5237,
+   "last": "2026-11-13",
+   "days": 5238,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "m1": {
    "name": "M1 同比",
-   "source": "东方财富",
-   "mode": "增量",
+   "source": "本地缓存",
+   "mode": "缓存",
    "last": "2026-09-01",
    "days": 225,
-   "failed": [],
+   "failed": [
+    "东方财富：AttributeError module 'akshare' has no attribute 'macro_china_money_supply'",
+    "AKShare 货币供应：AttributeError module 'akshare' has no attribute 'macro_china_supply_of_mon"
+   ],
    "stale_days": 73,
    "ref": true
   },
@@ -330,10 +329,10 @@
    "name": "新增人民币贷款",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-09-01",
-   "days": 225,
+   "last": "2026-10-01",
+   "days": 226,
    "failed": [],
-   "stale_days": 73,
+   "stale_days": 43,
    "ref": true
   },
   "real10": {
@@ -348,11 +347,13 @@
   },
   "spdr": {
    "name": "SPDR 黄金 ETF 持仓",
-   "source": "AKShare",
-   "mode": "增量",
+   "source": "本地缓存",
+   "mode": "缓存",
    "last": "2026-11-12",
    "days": 2908,
-   "failed": [],
+   "failed": [
+    "AKShare：AttributeError module 'akshare' has no attribute 'macro_cons_gold'"
+   ],
    "stale_days": 1,
    "ref": true
   },
@@ -360,10 +361,10 @@
    "name": "白银期货主力",
    "source": "新浪",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 3530,
+   "last": "2026-11-13",
+   "days": 3531,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "etf513100": {
@@ -382,30 +383,30 @@
    "name": "纳指ETF 513100 净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 3251,
+   "last": "2026-11-12",
+   "days": 3252,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": false
   },
   "nav006555": {
    "name": "浦银全球智能科技 累计净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 1880,
+   "last": "2026-11-12",
+   "days": 1881,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "nav539002": {
    "name": "建信新兴市场混合 累计净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 3549,
+   "last": "2026-11-12",
+   "days": 3550,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "nav007280": {
@@ -422,10 +423,10 @@
    "name": "南方亚太精选ETF联接 累计净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 584,
+   "last": "2026-11-12",
+   "days": 585,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "etf159687": {
@@ -444,10 +445,10 @@
    "name": "亚太精选ETF 159687 净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 941,
+   "last": "2026-11-12",
+   "days": 942,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   }
  }
