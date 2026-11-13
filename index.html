@@ -45,7 +45,7 @@
 <div class="ranges grp" role="group" aria-label="切换" id="grpSw" hidden></div>
 
 <div id="viewO">
-<section class="panel"><h2>本周这么做</h2>
+<section class="panel"><h2>本周这么做<button type="button" class="bigbtn" onclick="shareImg('week')">生成分享图</button></h2>
   <div class="todo" id="o_rows"><div class="note">加载中</div></div>
   <p class="note" id="o_note"></p>
 </section>
@@ -280,6 +280,7 @@
 </section>
 
 <section class="panel" id="dScore">
+  <div style="text-align:right;margin:-6px 0 8px"><button type="button" class="bigbtn" style="float:none" onclick="shareImg('div')">生成分享图</button></div>
   <div class="kv5">
     <div><div class="label">收盘</div><div class="v" id="dClose">—</div></div>
     <div><div class="label">PE</div><div class="v" id="dPe">—</div></div>
@@ -769,6 +770,20 @@ function loadPlan(){
     draw();inp.addEventListener("input",()=>{try{localStorage.setItem("weeklyBudget",inp.value)}catch(e){}draw()});
   });
 }
+// 小红书分享图：每次数据更新后自动生成在 data/share/（scripts/share.py），这里弹出来，长按保存
+function shareImg(k){
+  let m=$("shareM");
+  if(!m){m=document.createElement("div");m.id="shareM";
+    m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px";
+    m.addEventListener("click",e=>{if(e.target===m||e.target.dataset.x)m.remove()});document.body.appendChild(m)}
+  m.innerHTML=`<div style="color:#fff;font-size:13px" id="shareT">加载中…</div>
+    <img id="shareI" alt="分享图" style="max-width:100%;max-height:78vh;border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.4)">
+    <div style="color:#fff;font-size:13px;text-align:center">手机上<b>长按图片保存到相册</b>；电脑上右键另存为<br><button type="button" data-x="1" class="bigbtn" style="float:none;margin-top:8px">关闭</button></div>`;
+  const t=Date.now();$("shareI").src=`data/share/${k}.png?t=${t}`;
+  getJ("share/info.json").then(i=>{$("shareT").textContent=i&&i[k]?`按 ${i[k]} 收盘数据生成`+(k==="week"?"（黄金暂不放进分享图）":""):"图片还没生成，下次自动更新后就有"});
+}
+window.shareImg=shareImg;
+
 // 总览标题下面的日期时间（按北京时间，每 20 秒刷新）
 function tickClock(){
   const n=new Date(Date.now()+8*3600e3),p=x=>String(x).padStart(2,"0");

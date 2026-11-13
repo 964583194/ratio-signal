@@ -71,7 +71,7 @@ function divCard(d){
 
 function weekCard(st,T,C){
   const L=T.latest,z=L.z,ZN=["底部","偏冷","正常","偏热","顶部"];
-  const NM=[["创业板轮动","创业板"],["科创板轮动","科创板"],["红利打分","红利低波"],["A500 / 沪深300","A500"],["黄金","黄金"],["纳指100","纳指100"],["债基","债基"]];
+  const NM=[["创业板轮动","创业板"],["科创板轮动","科创板"],["红利打分","红利低波"],["A500 / 沪深300","A500"],["纳指100","纳指100"],["债基","债基"]];   // 黄金暂时不放进分享图
   const brief=(k,a)=>{a=a.split(/；距|（阈值|（只作/)[0].replace(/^本周定投款/,"");
     if(/^买红利低波100（暂停/.test(a))return "暂停，这部分买红利低波100";
     if(k==="纳指100")return a.split("；")[0]+(/场外/.test(a)?"，买场外联接（场内溢价高）":"");
@@ -88,8 +88,8 @@ function weekCard(st,T,C){
 }
 
 (async()=>{
-  if(K==="week"){const [st,T,C]=await Promise.all([J("state.json"),J("temp.json"),J("combo.json")]);weekCard(st,T,C)}
-  else divCard(await J("dividend.json"));
+  if(K==="week"){const [st,T,C]=await Promise.all([J("state.json"),J("temp.json"),J("combo.json")]);weekCard(st,T,C);document.body.dataset.date=st["创业板轮动"]?.date||T.latest.date}
+  else{const d=await J("dividend.json");divCard(d);document.body.dataset.date=d.latest.date}
   document.body.dataset.ready=1;
 })();
 </script>

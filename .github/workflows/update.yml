@@ -51,6 +51,14 @@ jobs:
           REPORT: ${{ (github.event.schedule == '13 0 * * 5' || inputs.report) && '1' || '0' }}
         run: python scripts/notify.py
 
+      - name: 生成小红书分享图（失败不影响其他）
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: |
+          sudo apt-get install -y -qq fonts-noto-cjk > /dev/null
+          pip install -q playwright && python -m playwright install --with-deps chromium > /dev/null
+          python scripts/share.py
+
       - name: 提交更新
         run: |
           git config user.name "github-actions[bot]"
