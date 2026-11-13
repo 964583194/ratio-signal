@@ -532,7 +532,7 @@ function Val(view,file,kind){
         <div><p class="note" id="${P}why" style="margin:0"></p></div></div>
       <div class="kv" id="${P}kv"></div><div id="${P}alert"></div></section>`+
     sec("指标体检",`<p class="note" style="margin:-6px 0 12px" id="${P}dimNote"></p><div class="dims" id="${P}dims"></div>`)+
-    (kind==="ndx"?sec("纳指100 走势与年线",`<div class="ranges" role="group" aria-label="时间范围" data-for="n_px"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y" aria-pressed="true">近3年</button><button type="button" data-r="all">全部</button></div>
+    (kind==="ndx"?sec(`纳指100 走势与年线<button type="button" class="bigbtn" id="n_pxbig">⤢ 横屏看大图</button>`,`<div class="ranges" role="group" aria-label="时间范围" data-for="n_px"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y" aria-pressed="true">近3年</button><button type="button" data-r="10y">近10年</button><button type="button" data-r="all">全部</button></div>
       <div class="chartwrap"><svg class="chart" id="n_px" viewBox="0 0 720 260" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
       <p class="note" style="margin:4px 0 0"><span style="color:var(--mark);font-weight:700">——</span> 纳指100　<span style="color:var(--ink);font-weight:700">- - -</span> 年线（250 日均线）</p>
       <p class="concl" id="n_pxc"></p>`):"")+
@@ -624,12 +624,14 @@ function Val(view,file,kind){
       const PX=d.px_series||[];
       if(PX.length){
         const bar=document.querySelector('.ranges[data-for="n_px"]');
-        const draw=r=>{const X=PX.slice(-(r==="1y"?250:r==="3y"?750:PX.length)),dates=X.map(x=>x[0]);
+        const draw=r=>{const X=PX.slice(-(r==="1y"?250:r==="3y"?750:r==="10y"?2500:PX.length)),dates=X.map(x=>x[0]);
           DualChart($("n_px"),{W:720,H:260,dates,sameAxis:true,leftTicks:[],leftFmt:v=>v,
             left:[{v:X.map(x=>x[2]),c:"var(--ink)",w:1.4,dash:"5 4"}],right:{v:X.map(x=>x[1]),c:"var(--mark)"},
             tip:i=>`${dates[i]}<br>纳指100 <b>${X[i][1].toLocaleString()}</b><br>年线 ${X[i][2].toLocaleString()}（偏离 ${sign(X[i][1]/X[i][2]-1)}）`})};
         let rg="3y";draw(rg);
-        if(!bar.__on){bar.__on=1;bar.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{bar.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));rg=b.dataset.r;draw(rg)}));addEventListener("resize",()=>draw(rg))}
+        // 横屏大图：画近 10 年
+        $("n_pxbig").onclick=()=>{const keep=rg;draw("10y");openBig("n_px","纳指100 与年线（近 10 年）");draw(keep)};
+        if(!bar.__on){bar.__on=1;bar.querySelectorAll("button[data-r]").forEach(b=>b.addEventListener("click",()=>{bar.querySelectorAll("button[data-r]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));rg=b.dataset.r;draw(rg)}));addEventListener("resize",()=>draw(rg))}
         const yrs=d.ma_events.filter(e=>e[2]>=20);
         $("n_pxc").innerHTML=`<b>结论：</b>现在 ${L.close.toFixed(0)}，${L.below?"在年线下方":"在年线上方"}（偏离 ${sign(L.dev)}），离最高点 −${(L.dd*100).toFixed(1)}%。纳指大部分时间都在年线上方，跌破后一般几周到几个月站回（近几次有效跌破里持续 20 个交易日以上的有 ${yrs.length} 次）。<b>→ 跌破年线不卖、不停，照常定投；只是提醒波动会变大。</b>`;
       }
