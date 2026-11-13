@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-13 14:52",
+ "updated": "2026-11-13 15:34",
  "ok": true,
  "items": {
   "cyb50": {
@@ -45,38 +45,44 @@
    "days": 4095,
    "failed": [
     "中证指数官网：最新只到 2026-11-11",
-    "东方财富：没有数据"
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
    ],
    "stale_days": 2,
    "ref": false
   },
   "kc50": {
    "name": "科创50 收盘",
-   "source": "东方财富",
+   "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 1666,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 0,
    "ref": false
   },
   "a500": {
    "name": "中证A500 收盘",
-   "source": "东方财富",
+   "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 4095,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 0,
    "ref": false
   },
   "hs300": {
    "name": "沪深300 收盘",
-   "source": "东方财富",
+   "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 5311,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 0,
    "ref": false
   },
@@ -138,11 +144,13 @@
   },
   "gold": {
    "name": "黄金ETF 518880 收盘",
-   "source": "东方财富",
+   "source": "腾讯",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 3232,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 0,
    "ref": false
   },
@@ -178,11 +186,13 @@
   },
   "mkt_amt": {
    "name": "两市成交额",
-   "source": "东方财富",
-   "mode": "增量",
+   "source": "本地缓存",
+   "mode": "缓存",
    "last": "2026-11-13",
    "days": 4094,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 0,
    "ref": true
   },
@@ -358,11 +368,13 @@
   },
   "etf513100": {
    "name": "纳指ETF 513100 收盘",
-   "source": "东方财富",
+   "source": "腾讯",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 645,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 0,
    "ref": false
   },
@@ -418,11 +430,13 @@
   },
   "etf159687": {
    "name": "亚太精选ETF 159687 收盘",
-   "source": "东方财富",
+   "source": "腾讯",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 932,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 0,
    "ref": true
   },
