@@ -70,7 +70,8 @@ def dividend(d):
         act = f"{L['tier']} · 先攒着（已攒 {L.get('owed', 0)} 元，等红利低波100 连跌 2 天一起买）"
     else:
         act = f"{L['tier']} · 暂停定投"
-    return f"{L['tier']}|{'下单' if buy else '攒着'}", f"评分 {L['score']:.2f} / 20（{L['tier']}）{wait}", act, "dividend"
+    # 只在“要下单 / 要减仓”时提醒；攒钱的日子（档位在少买、空仓之间变）不发
+    return ("下单" if buy else "减仓" if es <= 6 else "攒着"), f"评分 {L['score']:.2f} / 20（{L['tier']}）{wait}", act, "dividend"
 
 
 def a500(d):
@@ -347,7 +348,7 @@ def group_of(n, b, cur, report):
     if n == "数据源":
         return "数据源"
     if n in OPS or (n == "国家队流向" and b.startswith("加仓")):
-        if SELL.search(re.split(r"；距|（阈值", cur[n]["act"])[0]) or (n == "红利打分" and "下单" in b):
+        if SELL.search(re.split(r"；距|（阈值", cur[n]["act"])[0]) or (n == "红利打分" and b in ("下单", "减仓")):
             return "今天就做"
         return "本周下单" if report else "周五再定"
     return "提醒"

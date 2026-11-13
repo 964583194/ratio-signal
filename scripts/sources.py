@@ -797,7 +797,14 @@ def get_series(key, min_days=None):
     incremental = len(cache) >= need
     since = (dt.date.fromisoformat(max(cache)) - dt.timedelta(days=INCR_DAYS)).isoformat() if incremental else None
     tried = []
-    for label, fn in cands:
+    # 中证官网有时会好几天不更新某个指数（不报错、只是没有新日期）：主源落后于最近一个交易日时，再试备用源，取最新的
+    lagcheck = cands[0][0] == "中证指数官网" and len(cands) > 1
+    now = dt.datetime.utcnow() + dt.timedelta(hours=8)
+    want = now.date() if now.hour >= 18 else now.date() - dt.timedelta(days=1)
+    while want.weekday() >= 5:
+        want -= dt.timedelta(days=1)
+    best = None
+    for k, (label, fn) in enumerate(cands):
         try:
             new = fn(since)
         except Exception as e:  # noqa: BLE001
@@ -807,6 +814,14 @@ def get_series(key, min_days=None):
         if why:
             tried.append(f"{label}：{why}")
             continue
+        if lagcheck and max(new) < want.isoformat():
+            if best is None or max(new) > max(best[1]):
+                best = (label, new)
+            tried.append(f"{label}：最新只到 {max(new)}")
+            if k < len(cands) - 1:
+                continue
+        if best and max(best[1]) >= max(new):
+            label, new = best
         merged = {**cache, **new}
         if len(merged) < need:
             tried.append(f"{label}：合并后只有 {len(merged)} 天")
@@ -818,6 +833,16 @@ def get_series(key, min_days=None):
                        "last": max(merged), "days": len(merged), "failed": tried}
         print(f"[数据] {name}：{label}（{'增量' if incremental else '全量'}），收到 {len(new)} 天，最新 {max(new)}"
               + ("" if changed else "，无变化") + (f"（跳过：{'；'.join(tried)}）" if tried else ""))
+        _MEMO[key] = (merged, label)
+        return _MEMO[key]
+    if best:          # 备用源都失败，用主源（虽然落后一点）
+        label, new = best
+        merged = {**cache, **new}
+        if merged != cache:
+            save_cache(key, merged)
+        HEALTH[key] = {"name": name, "source": label, "mode": "增量" if incremental else "全量",
+                       "last": max(merged), "days": len(merged), "failed": tried}
+        print(f"[数据] {name}：{label}，最新 {max(new)}（备用源也没有更新的：{'；'.join(tried)}）")
         _MEMO[key] = (merged, label)
         return _MEMO[key]
     if cache:
