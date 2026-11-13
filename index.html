@@ -686,7 +686,7 @@ function pxChart2(id,rows){
         (x[3]?`<br><span style="color:${BL}">嘉实美国成长</span> <b>${x[3][1].toFixed(3)}</b>（年线 ${x[3][2].toFixed(3)}，${sg(x[3][1]/x[3][2]-1)}）`:"")+
         `<br><small>区间涨幅：纳指 ${sg(nv[i]/100-1)}${fv[i]?` · 嘉实 ${sg(fv[i]/100-1)}`:""}</small>`}})};
   let rg=(bar.querySelector('[aria-pressed="true"]')||{dataset:{r:"3y"}}).dataset.r;draw(rg);
-  $(id+"big").onclick=()=>{const keep=rg;draw("10y");openBig(id,"纳指100 与嘉实美国成长（近 10 年，起点 = 100）");draw(keep)};
+  $(id+"big").onclick=()=>{const keep=rg;draw("10y");openBig(id,`纳指 vs 嘉实美国成长<span style="font-weight:400;font-size:12px;margin-left:10px;white-space:nowrap"><span style="color:var(--mark);font-weight:700">——</span> 纳指100　<span style="color:${BL};font-weight:700">——</span> 嘉实　- - - 年线　起点 = 100</span>`);draw(keep)};
   if(!bar.__on){bar.__on=1;bar.querySelectorAll("button[data-r]").forEach(b=>b.addEventListener("click",()=>{bar.querySelectorAll("button[data-r]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));rg=b.dataset.r;draw(rg)}));addEventListener("resize",()=>draw(rg))}
 }
 
