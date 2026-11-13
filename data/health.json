@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-13 21:04",
+ "updated": "2026-11-14 01:26",
  "ok": true,
  "items": {
   "cyb50": {
@@ -9,7 +9,7 @@
    "last": "2026-11-13",
    "days": 3996,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "hl100": {
@@ -21,7 +21,7 @@
    "failed": [
     "中证指数官网：最新只到 2026-11-11"
    ],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "hl100_pe": {
@@ -34,7 +34,7 @@
     "中证指数官网：最新只到 2026-11-11",
     "中证日度指标：最新只到 2026-11-11"
    ],
-   "stale_days": 2,
+   "stale_days": 3,
    "ref": false
   },
   "hl100_tr": {
@@ -47,7 +47,7 @@
     "中证指数官网：最新只到 2026-11-11",
     "东方财富：没有数据"
    ],
-   "stale_days": 2,
+   "stale_days": 3,
    "ref": false
   },
   "kc50": {
@@ -57,7 +57,7 @@
    "last": "2026-11-13",
    "days": 1666,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "a500": {
@@ -67,19 +67,17 @@
    "last": "2026-11-13",
    "days": 4095,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "hs300": {
    "name": "沪深300 收盘",
-   "source": "中证指数官网",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 5311,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 0,
+   "failed": [],
+   "stale_days": 1,
    "ref": false
   },
   "pe300": {
@@ -92,7 +90,7 @@
     "中证指数官网：最新只到 2026-11-11",
     "中证日度指标（折算）：最新只到 2026-11-11"
    ],
-   "stale_days": 2,
+   "stale_days": 3,
    "ref": false
   },
   "pe_a500": {
@@ -105,7 +103,7 @@
     "中证指数官网：最新只到 2026-11-11",
     "中证日度指标（折算）：最新只到 2026-11-11"
    ],
-   "stale_days": 2,
+   "stale_days": 3,
    "ref": false
   },
   "cn10y": {
@@ -115,7 +113,7 @@
    "last": "2026-11-13",
    "days": 4221,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "us10y": {
@@ -125,7 +123,7 @@
    "last": "2026-11-12",
    "days": 4224,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": false
   },
   "ndx": {
@@ -135,7 +133,7 @@
    "last": "2026-11-12",
    "days": 3226,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": false
   },
   "gold": {
@@ -147,7 +145,7 @@
    "failed": [
     "东方财富：RemoteDisconnected Remote end closed connection without response"
    ],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "pb_below": {
@@ -157,7 +155,7 @@
    "last": "2026-11-12",
    "days": 5291,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   },
   "margin": {
@@ -167,7 +165,7 @@
    "last": "2026-11-12",
    "days": 4036,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   },
   "margin_ratio": {
@@ -177,7 +175,7 @@
    "last": "2026-11-12",
    "days": 4036,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   },
   "mkt_amt": {
@@ -189,7 +187,7 @@
    "failed": [
     "东方财富：RemoteDisconnected Remote end closed connection without response"
    ],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "pe_cyb": {
@@ -199,7 +197,7 @@
    "last": "2026-11-13",
    "days": 524,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "pe_kc": {
@@ -209,15 +207,15 @@
    "last": "2026-11-13",
    "days": 358,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "sh510300": {
    "name": "华泰柏瑞沪深300ETF 份额",
    "source": "上交所",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 2881,
+   "last": "2026-11-13",
+   "days": 2882,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -226,8 +224,8 @@
    "name": "易方达沪深300ETF 份额",
    "source": "上交所",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 2881,
+   "last": "2026-11-13",
+   "days": 2882,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -236,8 +234,8 @@
    "name": "华夏沪深300ETF 份额",
    "source": "上交所",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 2881,
+   "last": "2026-11-13",
+   "days": 2882,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -246,8 +244,8 @@
    "name": "嘉实沪深300ETF 份额",
    "source": "深交所日频",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 2861,
+   "last": "2026-11-13",
+   "days": 2862,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -256,8 +254,8 @@
    "name": "510300 单位净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 3530,
+   "last": "2026-11-13",
+   "days": 3531,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -269,15 +267,15 @@
    "last": "2026-11-13",
    "days": 3331,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "unav510330": {
    "name": "510330 单位净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 3372,
+   "last": "2026-11-13",
+   "days": 3373,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -289,7 +287,7 @@
    "last": "2026-11-13",
    "days": 3531,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "cap300": {
@@ -299,7 +297,7 @@
    "last": "2026-11-13",
    "days": 4,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "buffett": {
@@ -309,7 +307,7 @@
    "last": "2026-11-13",
    "days": 5238,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "m1": {
@@ -322,7 +320,7 @@
     "东方财富：AttributeError module 'akshare' has no attribute 'macro_china_money_supply'",
     "AKShare 货币供应：AttributeError module 'akshare' has no attribute 'macro_china_supply_of_mon"
    ],
-   "stale_days": 73,
+   "stale_days": 74,
    "ref": true
   },
   "loan": {
@@ -332,7 +330,7 @@
    "last": "2026-10-01",
    "days": 226,
    "failed": [],
-   "stale_days": 43,
+   "stale_days": 44,
    "ref": true
   },
   "real10": {
@@ -342,7 +340,7 @@
    "last": "2026-11-12",
    "days": 4218,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   },
   "spdr": {
@@ -354,7 +352,7 @@
    "failed": [
     "AKShare：AttributeError module 'akshare' has no attribute 'macro_cons_gold'"
    ],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   },
   "ag0": {
@@ -364,7 +362,7 @@
    "last": "2026-11-13",
    "days": 3531,
    "failed": [],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "etf513100": {
@@ -376,7 +374,7 @@
    "failed": [
     "东方财富：RemoteDisconnected Remote end closed connection without response"
    ],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": false
   },
   "nav513100": {
@@ -386,7 +384,7 @@
    "last": "2026-11-12",
    "days": 3252,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": false
   },
   "nav006555": {
@@ -396,7 +394,7 @@
    "last": "2026-11-12",
    "days": 1881,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   },
   "nav539002": {
@@ -406,15 +404,15 @@
    "last": "2026-11-12",
    "days": 3550,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   },
   "nav007280": {
    "name": "摩根日本精选 累计净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 1741,
+   "last": "2026-11-13",
+   "days": 1742,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -426,7 +424,7 @@
    "last": "2026-11-12",
    "days": 585,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   },
   "etf159687": {
@@ -438,7 +436,7 @@
    "failed": [
     "东方财富：RemoteDisconnected Remote end closed connection without response"
    ],
-   "stale_days": 0,
+   "stale_days": 1,
    "ref": true
   },
   "nav159687": {
@@ -448,7 +446,7 @@
    "last": "2026-11-12",
    "days": 942,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 2,
    "ref": true
   }
  }
