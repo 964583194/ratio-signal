@@ -1,15 +1,15 @@
 {
- "updated": "2026-11-13 01:51",
+ "updated": "2026-11-13 13:56",
  "ok": true,
  "items": {
   "cyb50": {
    "name": "创业板50 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 3995,
+   "last": "2026-11-13",
+   "days": 3996,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "hl100": {
@@ -46,30 +46,30 @@
    "name": "科创50 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 1665,
+   "last": "2026-11-13",
+   "days": 1666,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "a500": {
    "name": "中证A500 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 4094,
+   "last": "2026-11-13",
+   "days": 4095,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "hs300": {
    "name": "沪深300 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 5310,
+   "last": "2026-11-13",
+   "days": 5311,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "pe300": {
@@ -106,30 +106,32 @@
    "name": "美国十年国债",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 4223,
+   "last": "2026-11-12",
+   "days": 4224,
    "failed": [],
-   "stale_days": 3,
+   "stale_days": 1,
    "ref": false
   },
   "ndx": {
    "name": "纳指100 收盘",
    "source": "腾讯",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 3225,
+   "last": "2026-11-12",
+   "days": 3226,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": false
   },
   "gold": {
    "name": "黄金ETF 518880 收盘",
-   "source": "东方财富",
+   "source": "腾讯",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 3231,
-   "failed": [],
-   "stale_days": 1,
+   "last": "2026-11-13",
+   "days": 3232,
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
+   "stale_days": 0,
    "ref": false
   },
   "pb_below": {
@@ -146,32 +148,30 @@
    "name": "两市融资余额",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 4035,
+   "last": "2026-11-12",
+   "days": 4036,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "margin_ratio": {
    "name": "融资余额占流通市值",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 4035,
+   "last": "2026-11-12",
+   "days": 4036,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "mkt_amt": {
    "name": "两市成交额",
-   "source": "本地缓存",
-   "mode": "缓存",
-   "last": "2026-11-12",
-   "days": 4093,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 1,
+   "source": "东方财富",
+   "mode": "增量",
+   "last": "2026-11-13",
+   "days": 4094,
+   "failed": [],
+   "stale_days": 0,
    "ref": true
   },
   "pe_cyb": {
@@ -278,10 +278,10 @@
    "name": "沪深300 流通市值",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 3,
+   "last": "2026-11-13",
+   "days": 4,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "buffett": {
@@ -318,20 +318,20 @@
    "name": "美国 10 年期实际利率",
    "source": "美国财政部",
    "mode": "增量",
-   "last": "2026-11-10",
-   "days": 4217,
+   "last": "2026-11-12",
+   "days": 4218,
    "failed": [],
-   "stale_days": 3,
+   "stale_days": 1,
    "ref": true
   },
   "spdr": {
    "name": "SPDR 黄金 ETF 持仓",
    "source": "AKShare",
    "mode": "增量",
-   "last": "2026-11-11",
-   "days": 2907,
+   "last": "2026-11-12",
+   "days": 2908,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "ag0": {
@@ -348,12 +348,12 @@
    "name": "纳指ETF 513100 收盘",
    "source": "腾讯",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 644,
+   "last": "2026-11-13",
+   "days": 645,
    "failed": [
     "东方财富：RemoteDisconnected Remote end closed connection without response"
    ],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "nav513100": {
@@ -410,12 +410,12 @@
    "name": "亚太精选ETF 159687 收盘",
    "source": "腾讯",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 931,
+   "last": "2026-11-13",
+   "days": 932,
    "failed": [
     "东方财富：RemoteDisconnected Remote end closed connection without response"
    ],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "nav159687": {
