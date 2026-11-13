@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-13 14:37",
+ "updated": "2026-11-13 14:52",
  "ok": true,
  "items": {
   "cyb50": {
@@ -138,13 +138,11 @@
   },
   "gold": {
    "name": "黄金ETF 518880 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 3232,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 0,
    "ref": false
   },
