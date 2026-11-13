@@ -71,13 +71,15 @@ function divCard(d){
 
 function weekCard(st,T,C){
   const L=T.latest,z=L.z,ZN=["底部","偏冷","正常","偏热","顶部"];
-  const NM=[["创业板轮动","创业板"],["科创板轮动","科创板"],["红利打分","红利低波"],["A500 / 沪深300","A500"],["纳指100","纳指100"],["债基","债基"]];   // 黄金暂时不放进分享图
+  const NM=[["创业板轮动","创业板"],["科创板轮动","科创板"],["红利打分","红利低波"],["A500 / 沪深300","A500"],["黄金","黄金"],["纳指100","纳指100"],["债基","债基"]];
   const brief=(k,a)=>{a=a.split(/；距|（阈值|（只作/)[0].replace(/^本周定投款/,"");
     if(/^买红利低波100（暂停/.test(a))return "暂停，这部分买红利低波100";
     if(k==="纳指100")return a.split("；")[0]+(/场外/.test(a)?"，买场外联接（场内溢价高）":"");
     if(k==="债基")return a.replace(/^利率比近一年均值低，/,"");
     return a.replace(/（已攒 0 元，/,"（").replace(/先攒着（(.+)）$/,"先攒着，$1").replace(/红利低波100 连跌/,"连跌")};
-  const items=NM.filter(([k])=>st[k]).map(([k,n])=>`<div class="it"><div class="n">${n}</div><div>${brief(k,st[k].act)}</div></div>`).join("");
+  // 黄金只写现在的位置，暂时不给建议
+  const line=k=>k==="黄金"?`${st[k].now.split("；")[0]}<span style="color:var(--muted)"> · 暂不给建议</span>`:brief(k,st[k].act);
+  const items=NM.filter(([k])=>st[k]).map(([k,n])=>`<div class="it"><div class="n">${n}</div><div>${line(k)}</div></div>`).join("");
   const cb=C&&C.latest,cl=cb&&(cb.level==="积极"?"g":cb.level==="谨慎"?"r":"c");
   const date=st["创业板轮动"]?.date||L.date;
   $("card").innerHTML=`<div class="hd"><h1>本周定投<br>怎么做</h1><div class="d">${date}<br>周五下单</div></div>
