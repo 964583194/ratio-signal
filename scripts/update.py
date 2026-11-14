@@ -244,6 +244,7 @@ def main():
         ("海外小仓位", lambda: __import__("overseas").run()),   # 要读 ndx.json，放在后面
         ("黄金分析", lambda: __import__("goldmodel").run()),   # 要读 gold.json
         ("我的基金", lambda: __import__("myfunds").run()),     # 要读 temp.json 和各页签结果，放最后
+        ("关键指标", lambda: __import__("keyind").run()),     # 汇总各页签结果，放最后
     ]
     for name, job in jobs:
         try:

@@ -163,6 +163,23 @@ def run():
     groups = [{"name": g, "d5": gt(cs, n - 5, n), "d20": gt(cs, n - 20, n), "ytd": gt(cs, yi, n)} for g, cs in GROUPS.items()]
     total = {"name": "合计", **{k: sum(g[k] for g in groups) for k in ("d5", "d20", "ytd")}}
     # 现在
+    # 大买之后的回落（实验，只作提醒）：近 20 天里 20 日净申购排进近一年最高 10%（大买过），现在近 5 日净赎回、20 日仍净流入
+    d5 = [sum(f4[max(0, k - 4):k + 1]) for k in range(n)]
+    d20 = [sum(f4[max(0, k - 19):k + 1]) for k in range(n)]
+    p20 = [sum(x <= d20[k] for x in d20[max(0, k - 250):k + 1]) / len(d20[max(0, k - 250):k + 1]) for k in range(n)]
+
+    def pull_of(k):
+        if k < 60 or not (d5[k] < 0 < d20[k]) or max(p20[max(0, k - 20):k + 1]) < 0.9:
+            return None
+        return "明显回落" if -d5[k] >= d20[k] / 4 else "轻度回落"
+    pulls = [pull_of(k) for k in range(n)]
+    pstats = {lab: agg([fwd(k) for k in range(n) if pulls[k] == lab]) for lab in ("轻度回落", "明显回落")}
+    pstats["任意一天"] = agg([fwd(k) for k in range(60, n)])
+    pnow = pulls[-1]
+    pull = {"level": pnow or ("持续流入" if d5[-1] > 0 and d20[-1] > 0 else "无"), "d5": round(d5[-1]), "d20": round(d20[-1]),
+            "note": {"轻度回落": "国家队大买后开始小幅赎回：短期偏弱（之后 60 日沪深300 平均约 −2%），按规则买，不额外加钱",
+                     "明显回落": "国家队大买后赎回较多（超过近 20 日流入的 1/4）：短期偏弱（之后 60 日平均约 −5%），按规则买，不额外加钱"}.get(pnow, "没有大买后回落"),
+            "stats": pstats}
     i = n - 1
     s = state[i]
     last_ep = eps[-1] if eps else None
@@ -189,7 +206,7 @@ def run():
         "updated": dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M"),
         "latest": {"date": days[-1], "state": s, "acc": round(acc[i], 1), "pct": round(pct[i], 3), "f4_20": round(sum(f4[-20:])),
                    "action": act, "cls": cls, "key": key, "episode": last_ep, "fresh": fresh, "hot": hot,
-                   "vol_last": lv, "vol_recent": vol_recent},
+                   "vol_last": lv, "vol_recent": vol_recent, "pull": pull},
         "groups": groups + [total],
         "episodes": eps, "vols": vols, "stats": stats,
         "series": [[days[k], None if acc[k] is None else round(acc[k], 1), None if pct[k] is None else round(pct[k] * 100),

@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="交易系统">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="几个指数的定投信号，每个交易日自动更新">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <div class="wrap">
@@ -48,6 +48,10 @@
 <section class="panel"><h2>本周这么做<button type="button" class="bigbtn" onclick="shareImg('week')">生成分享图</button></h2>
   <div class="todo" id="o_rows"><div class="note">加载中</div></div>
   <p class="note" id="o_note"></p>
+</section>
+<section class="panel" id="kiSec"><h2>关键指标</h2>
+  <p class="note" style="margin:-6px 0 8px">集中看最重要的几个数。<b>规则</b> = 直接决定买卖；<b>提醒</b> = 只作提醒；<span class="exptag">实验</span> = 还在观察，不改规则。点名字进对应页签。</p>
+  <div id="kiBody"><div class="note">加载中</div></div>
 </section>
 <details class="panel fold" id="planSec"><summary>本周下单清单<small id="planSum">加载中</small></summary><div class="pbody">
   <div class="budget">每周预算 <input type="number" id="budget" inputmode="numeric" min="0" step="100" aria-label="每周预算（元）"> 元<span class="note" style="margin:0 0 0 6px">只存在这台手机上</span></div>
@@ -816,6 +820,15 @@ function loadPlan(){
     draw();inp.addEventListener("input",()=>{try{localStorage.setItem("weeklyBudget",inp.value)}catch(e){}draw()});
   });
 }
+// 关键指标（总览）：data/keyind.json，分 规则 / 提醒 / 实验
+function loadKeyInd(){
+  getJ("keyind.json").then(d=>{if(!d){$("kiSec").hidden=true;return}
+    $("kiBody").innerHTML=d.groups.map(g=>`<div class="kig">${g.key==="exp"?'<span class="exptag">实验</span>':g.title}<small>${g.desc}</small></div>`+
+      g.rows.map(r=>`<div class="ki"><div class="n"><a href="${r.tab.includes(".html")?r.tab:"#"+r.tab}">${r.name}</a>${g.key==="exp"?' <span class="exptag">实验</span>':""}</div><div class="v">${r.value}</div><div class="s"><span class="lv ${r.cls}">${r.status}</span></div><div class="x">${r.note}</div></div>`).join("")).join("");
+  });
+}
+window.loadKeyInd=loadKeyInd;
+
 // 小红书分享图：每次数据更新后自动生成在 data/share/（scripts/share.py），这里弹出来，长按保存
 function shareImg(k){
   let m=$("shareM");
@@ -846,7 +859,7 @@ function loadOverview(){
       return `<a href="#${v.tab}"><div class="n">${n}</div><div class="a"><span class="lv ${OCLS(v.state)}">${v.state.split("|")[0]}</span>${main}${rest?`<small>${rest}</small>`:""}</div><span class="chev">›</span></a>`}).join("");
     $("o_note").textContent=`和每周五早上的周报邮件一致。点一行看原因和阈值。数据日期 ${[...dates].sort().pop()||"—"}。`;
   }).catch(e=>{$("o_rows").innerHTML=`<div class="note">读取失败，请稍后刷新（${e.message}）</div>`});
-  renderTemp($("o_temp"),true);loadPlan();
+  renderTemp($("o_temp"),true);loadPlan();loadKeyInd();
   getJ("health.json").then(h=>{if(h&&h.updated)$("o_data").textContent=h.updated.slice(5).replace("-","月").replace(" ","日 ")});
   getJ("myfunds.json").then(d=>{if(d){const c=d.count,L=d.labels;$("o_my").textContent=`${d.funds.length} 只：`+Object.keys(L).filter(k=>c[k]).map(k=>L[k][0]+" "+c[k]).join("、")}});
 }
@@ -1068,6 +1081,7 @@ function loadNtf(){
         <div><div class="label">近 20 日净申购</div><div class="v">${L.f4_20>0?"+":""}${L.f4_20.toLocaleString()} 亿</div><div class="s">4 只沪深300 ETF</div></div>
         <div><div class="label">上一段加速流入</div><div class="v" style="font-size:17px">${L.episode?L.episode.date:"—"}</div><div class="s">${L.episode&&L.episode.fwd["60"]!=null?"之后 60 日 "+sg(L.episode.fwd["60"]):""}</div></div>
 </div>
+      ${L.pull?`<div style="margin:10px 0 0;padding:8px 10px;border:1px dashed var(--div);border-radius:8px"><span class="exptag">实验</span> <b>大买后回落：${L.pull.level}</b>（近 5 日 ${L.pull.d5>0?"+":""}${L.pull.d5.toLocaleString()} 亿，近 20 日 ${L.pull.d20>0?"+":""}${L.pull.d20.toLocaleString()} 亿）<br><small>${L.pull.note}。2023 年起：轻度回落之后 60 日 ${sg(L.pull.stats["轻度回落"]["60"].avg)}（${L.pull.stats["轻度回落"].n} 天），明显回落 ${sg(L.pull.stats["明显回落"]["60"].avg)}（${L.pull.stats["明显回落"].n} 天），任意一天 ${sg(L.pull.stats["任意一天"]["60"].avg)}。样本少，只作提醒。</small></div>`:""}
       <h3 style="font-size:14px;margin:14px 0 4px">加速度分位与沪深300<button type="button" class="bigbtn" data-big="ntf_c1" data-title="流入加速度的近一年分位（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
       <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 分位（%，左轴；绿色 ≥90% 加速流入，红色 ≤10% 加速流出）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">加速流入第一天</span></p>
       <div class="chartwrap"><svg class="chart" id="ntf_c1" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
