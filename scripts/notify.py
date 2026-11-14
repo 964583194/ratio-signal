@@ -131,7 +131,7 @@ def ntf_pull(d):
     on = lv in ("轻度回落", "明显回落") and dn >= 2
     state = f"{lv}|{p.get('since')}" if on else "无"
     now = f"{lv}：已连续 {dn} 天（{p.get('since')} 起），近 5 日 {p.get('d5', 0):+,} 亿、近 20 日 {p.get('d20', 0):+,} 亿" if on else f"{lv or '无'}（近 5 日 {p.get('d5', 0):+,} 亿）"
-    act = ("短期偏弱，按规则买，不额外加钱；想减仓的话这时减比较合适（参考：减 1/3、60 天后买回，回测不稳定）【实验】"
+    act = ("短期偏弱，按规则买，不额外加钱。想减仓的话这时减比较合适（参考：减 1/3、60 天后买回，回测不稳定）【实验】"
            if on else "没有持续回落")
     return state, now, act, "temp"
 
