@@ -87,7 +87,8 @@ def run():
         p = NT["latest"]["pull"]
         cls = {"轻度回落": "h1", "明显回落": "r1", "持续流入": "g1"}.get(p["level"], "c0")
         exp.append(row("国家队大买后回落", f"5 日 {p['d5']:+,} 亿", p["level"], cls,
-                       f"近 20 日 {p['d20']:+,} 亿。" + p["note"], "temp", NT["latest"]["date"]))
+                       (f"已连续 {p['days']} 天（{p['since']} 起），满 2 天发邮件提醒。" if p.get("days") else "") +
+                       f"近 20 日 {p['d20']:+,} 亿。" + p["note"] + ("。想减仓的话这时减比较合适（参考：减 1/3、60 天后买回，回测不稳定）" if p.get("days", 0) >= 2 else ""), "temp", NT["latest"]["date"]))
     data = {"updated": dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M"),
             "groups": [{"key": "rule", "title": "规则", "desc": "直接决定买卖", "rows": rule},
                        {"key": "warn", "title": "提醒", "desc": "已上线，只作提醒，不改倍数", "rows": warn},

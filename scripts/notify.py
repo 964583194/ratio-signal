@@ -124,6 +124,18 @@ def ntf(d):
     return L["key"], now, L["action"] + "（只作提醒，不改倍数）", "temp"
 
 
+def ntf_pull(d):
+    """国家队大买后回落（实验）：连续 2 天以上才提醒；只作参考，不改倍数"""
+    p = d["latest"].get("pull") or {}
+    lv, dn = p.get("level"), p.get("days", 0)
+    on = lv in ("轻度回落", "明显回落") and dn >= 2
+    state = f"{lv}|{p.get('since')}" if on else "无"
+    now = f"{lv}：已连续 {dn} 天（{p.get('since')} 起），近 5 日 {p.get('d5', 0):+,} 亿、近 20 日 {p.get('d20', 0):+,} 亿" if on else f"{lv or '无'}（近 5 日 {p.get('d5', 0):+,} 亿）"
+    act = ("短期偏弱，按规则买，不额外加钱；想减仓的话这时减比较合适（参考：减 1/3、60 天后买回，回测不稳定）【实验】"
+           if on else "没有持续回落")
+    return state, now, act, "temp"
+
+
 def judge(zone, cheap, pb_hot):
     """和页面上的暂定判断同一张表：国家队状态 × 沪深300 便宜指数"""
     lv = "mid" if cheap is None else "cheap" if cheap >= 60 else "mid" if cheap >= 40 else "dear"
@@ -184,6 +196,7 @@ def collect(prev):
              ("海外小仓位", "overseas.json", overseas),
              ("托底资金（国家队）", "etf300.json", etf300),
              ("国家队流向", "ntf.json", ntf),
+             ("国家队回落（实验）", "ntf.json", ntf_pull),
              ("见顶信号灯", "topsig.json", topsig)]
     for name, f, fn in pairs:
         d = load(f)

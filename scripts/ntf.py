@@ -176,7 +176,13 @@ def run():
     pstats = {lab: agg([fwd(k) for k in range(n) if pulls[k] == lab]) for lab in ("轻度回落", "明显回落")}
     pstats["任意一天"] = agg([fwd(k) for k in range(60, n)])
     pnow = pulls[-1]
+    run_n = 0                       # 回落已经连续几天
+    for k in range(n - 1, -1, -1):
+        if not pulls[k]:
+            break
+        run_n += 1
     pull = {"level": pnow or ("持续流入" if d5[-1] > 0 and d20[-1] > 0 else "无"), "d5": round(d5[-1]), "d20": round(d20[-1]),
+            "days": run_n, "since": days[n - run_n] if run_n else None,
             "note": {"轻度回落": "国家队大买后开始小幅赎回：短期偏弱（之后 60 日沪深300 平均约 −2%），按规则买，不额外加钱",
                      "明显回落": "国家队大买后赎回较多（超过近 20 日流入的 1/4）：短期偏弱（之后 60 日平均约 −5%），按规则买，不额外加钱"}.get(pnow, "没有大买后回落"),
             "stats": pstats}
