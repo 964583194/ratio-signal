@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-14 04:32",
+ "updated": "2026-11-14 08:48",
  "ok": true,
  "items": {
   "cyb50": {
@@ -120,10 +120,10 @@
    "name": "美国十年国债",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 4224,
+   "last": "2026-11-13",
+   "days": 4225,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": false
   },
   "ndx": {
@@ -178,13 +178,11 @@
   },
   "mkt_amt": {
    "name": "两市成交额",
-   "source": "本地缓存",
-   "mode": "缓存",
+   "source": "东方财富",
+   "mode": "增量",
    "last": "2026-11-13",
    "days": 4094,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": true
   },
@@ -292,10 +290,10 @@
    "name": "沪深300 流通市值",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-13",
-   "days": 4,
+   "last": "2026-11-14",
+   "days": 5,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "buffett": {
@@ -335,10 +333,10 @@
    "name": "美国 10 年期实际利率",
    "source": "美国财政部",
    "mode": "增量",
-   "last": "2026-11-12",
-   "days": 4218,
+   "last": "2026-11-13",
+   "days": 4219,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "spdr": {
@@ -365,13 +363,11 @@
   },
   "etf513100": {
    "name": "纳指ETF 513100 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 645,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": false
   },
@@ -427,13 +423,11 @@
   },
   "etf159687": {
    "name": "亚太精选ETF 159687 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-13",
    "days": 932,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": true
   },
