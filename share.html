@@ -6,35 +6,40 @@
 <title>分享图</title>
 <link rel="stylesheet" href="style.css?v=5">
 <style>
-/* 小红书 3:4 竖图：360×480（截图时放大 3 倍 = 1080×1440）。只用浅色 */
+/* 小红书 3:4 竖图：360×480（截图时放大 3 倍 = 1080×1440）。只用浅色；不写基金名称和代码，只写指数 */
 :root{color-scheme:light;--bg:#f4efe6;--panel:#fffdf8;--ink:#1b2430;--muted:#6b6f76;--line:#e4dccd;
-  --grow:#2f8f5b;--grow-soft:#dcefe3;--div:#c98a12;--div-soft:#fbeec8;--mid:#ece7de;--mark:#c8372d;--mark-soft:#f7dcd8;--y1:#fdf3d6;--y2:#f8e39a;--y3:#efc95a}
+  --grow:#2f8f5b;--grow-soft:#dcefe3;--div:#c98a12;--div-soft:#fbeec8;--mid:#ece7de;--mark:#c8372d;--mark-soft:#f7dcd8}
 html,body{margin:0;padding:0;background:var(--bg)}
-.card{width:360px;height:480px;overflow:hidden;padding:18px 18px 12px;display:flex;flex-direction:column;gap:8px;background:var(--bg);color:var(--ink);font-family:var(--f-body)}
-.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:6px}
-.hd h1{font-family:var(--f-display);font-size:22px;margin:0;line-height:1.15}
-.hd .d{font-family:var(--f-num);font-size:12px;color:var(--muted);text-align:right;line-height:1.3}
-.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.card{width:360px;height:480px;overflow:hidden;padding:16px 18px 12px;display:flex;flex-direction:column;gap:8px;background:var(--bg);color:var(--ink);font-family:var(--f-body);box-sizing:border-box}
+.band{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);font-family:var(--f-num)}
+.band b{color:var(--ink);font-family:var(--f-body);letter-spacing:.5px}
+.big{font-family:var(--f-display);font-size:34px;font-weight:800;line-height:1.12;margin:2px 0 0;letter-spacing:-.5px}
+.big .hl{background:linear-gradient(transparent 58%,var(--hl,#f8e39a) 58%);padding:0 2px}
+.sub{font-size:14px;color:var(--muted);margin-top:-2px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
 .row{display:flex;align-items:center;gap:10px}
-.score{font-family:var(--f-num);font-size:44px;font-weight:700;line-height:1}
-.score small{font-size:14px;color:var(--muted);font-weight:400}
-.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:700;font-size:13px}
+.score{font-family:var(--f-num);font-size:40px;font-weight:700;line-height:1}
+.score small{font-size:13px;color:var(--muted);font-weight:400}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:700;font-size:13px;white-space:nowrap}
 .g{background:var(--grow-soft);color:var(--grow)}.y{background:var(--div-soft);color:var(--div)}.r{background:var(--mark-soft);color:var(--mark)}.c{background:var(--mid);color:var(--ink)}
-.todo{font-size:14px;font-weight:700;margin-top:4px}
-.mini{width:100%;border-collapse:collapse;font-size:12px}
-.mini td,.mini th{padding:2px 2px!important;line-height:1.3;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
-.mini th{color:var(--muted);font-weight:400}
-.mini .r_{text-align:right;font-family:var(--f-num)}
-.ft{margin-top:auto;font-size:10px;color:var(--muted);line-height:1.4;display:flex;justify-content:space-between;gap:8px}
 .lbl{font-size:11px;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.stats div{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.stats b{display:block;font-family:var(--f-num);font-size:17px;margin-top:1px}
 .chartbox svg{display:block;width:100%;height:auto}
-.zb{display:flex;gap:2px;margin:6px 0 4px}.zb div{flex:1;text-align:center;font-size:11px;padding:3px 0;border-radius:4px;background:var(--mid);color:var(--muted)}
+.ft{margin-top:auto;font-size:10px;color:var(--muted);line-height:1.4;display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:6px}
+.zb{display:flex;gap:2px;margin:5px 0 4px}.zb div{flex:1;text-align:center;font-size:11px;padding:3px 0;border-radius:4px;background:var(--mid);color:var(--muted)}
 .zb .on{font-weight:700;color:#fff}.zb .z0.on,.zb .z1.on{background:var(--grow)}.zb .z2.on{background:#7b8794}.zb .z3.on{background:var(--div)}.zb .z4.on{background:var(--mark)}
-.plist{display:flex;flex-direction:column}
-.plist .it{display:grid;grid-template-columns:76px 1fr;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:12.5px;line-height:1.35}
-.plist .it:last-child{border-bottom:0}
-.plist .n{font-weight:700}
-.tipx{font-size:12px;line-height:1.45}
+.plist .it{display:grid;grid-template-columns:70px 1fr;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:12.5px;line-height:1.35}
+.plist .it:last-child{border-bottom:0}.plist .n{font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.kv2{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px;line-height:1.4}.kv2 .k{color:var(--muted)}
+.bars .b{display:grid;grid-template-columns:64px 1fr 52px;align-items:center;gap:6px;font-size:12.5px;padding:1.5px 0}
+.bars .t{height:12px;background:var(--mid);border-radius:3px;position:relative}
+.bars .t i{position:absolute;top:0;bottom:0;border-radius:3px}
+.bars .v{text-align:right;font-family:var(--f-num);font-weight:700}
+.tipx{font-size:12px;line-height:1.5}
+pre{white-space:pre-wrap;font-family:var(--f-body);font-size:14px;padding:12px;margin:0}
 </style>
 </head>
 <body>
@@ -43,55 +48,136 @@ html,body{margin:0;padding:0;background:var(--bg)}
 <script>
 const $=id=>document.getElementById(id),Q=new URLSearchParams(location.search),K=Q.get("card")||"div";
 const J=f=>fetch("data/"+f+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null);
+const CSV=f=>fetch("data/raw/"+f+".csv?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>t.trim().split("\n").slice(1).map(l=>l.split(",")).filter(a=>a.length>1&&!isNaN(+a[1])).map(a=>[a[0],+a[1]]));
 const pc=(x,d=1)=>(x*100).toFixed(d)+"%",sg=x=>(x>0?"+":"")+pc(x);
 const WD=d=>"周"+"日一二三四五六"[new Date(d+"T00:00:00+08:00").getDay()];
-const FT=`<div class="ft"><span>个人指数定投记录，按规则自动计算<br>不构成投资建议</span><span>交易系统</span></div>`;
-// 和红利页同一套档位
-const TI=[[18,5,"加码","g"],[16,4,"加码","g"],[14,3,"加码","g"],[12,2,"多买 · 买回","g"],[10,1,"正常","c"],[8,.5,"少买","y"],[6.0001,0,"空仓","c"],[4.0001,0,"减仓 25%","r"],[2.0001,0,"减仓 33%","r"],[-99,0,"减仓 50%","r"]];
+const WK=d=>{const t=new Date(d+"T00:00:00Z"),day=(t.getUTCDay()+6)%7;t.setUTCDate(t.getUTCDate()-day+3);const y0=new Date(Date.UTC(t.getUTCFullYear(),0,4));return 1+Math.round(((t-y0)/864e5-3+((y0.getUTCDay()+6)%7))/7)};
+const FT=`<div class="ft"><span>个人指数定投记录，按规则自动计算，不构成投资建议</span><span>交易系统</span></div>`;
+const TI=[[18,5,"加码","g"],[16,4,"加码","g"],[14,3,"加码","g"],[12,2,"多买","g"],[10,1,"正常买","c"],[8,.5,"少买","y"],[6.0001,0,"不买","c"],[4.0001,0,"减仓 25%","r"],[2.0001,0,"减仓 33%","r"],[-99,0,"减仓 50%","r"]];
 const tier=v=>TI.find(t=>v>=t[0]);
+const TAGS="#指数定投 #红利低波 #基金定投 #理财日记 #长期投资";
 
+// ---------------- 每日 1 张：红利低波定投日记
+function divInfo(d){
+  const L=d.latest,S=d.series,ES=L.eff??L.score,t=tier(ES),p=S[S.length-2],c=L.close/p[2]-1,p5=S[Math.max(0,S.length-6)],c5=L.close/p5[2]-1;
+  const head=ES<=6?"到减仓线":L.buy_next&&L.buy_amt?"明天一起买":L.amount>0?"先攒着":"今天不买";
+  const why=ES<=6?"评分跌到减仓线，分批卖出":L.buy_next&&L.buy_amt?`连跌 2 天了，明天把攒的 ${L.buy_amt} 元一起买`
+    :L.amount>0?`评分 ${L.score.toFixed(1)}，${t[2]}；等指数连跌 2 天再一起买`:`评分 ${L.score.toFixed(1)} 偏低（偏贵），暂停，钱先存着`;
+  return {L,S,t,c,c5,head,why,ES};
+}
 function divCard(d){
-  const L=d.latest,S=d.series,ES=L.eff??L.score,t=tier(ES);
-  const todo=ES<=6?"到减仓线，今天分批卖出":L.buy_next&&L.buy_amt?`连跌 2 天了 → 明天把攒的 ${L.buy_amt} 元一起买`
-    :L.amount>0?(L.owed>0?`先攒着（已攒 ${L.owed} 元），等指数连跌 2 天一起买`:`今天起先攒着，等指数连跌 2 天一起买`):"评分偏低，暂停买入，钱先存着";
-  const R=S.slice(-5),rows=R.slice(1).reverse().map((x,k)=>{const p=R[R.length-2-k],c=x[2]/p[2]-1,tt=tier(x[3]??x[1]);
-    const what=x[4]>0?`买 ${x[4]} 元`:x[5]>0?`${tt[2]} · 已攒 ${x[5]}`:tt[2];
-    return `<tr><td class="num">${x[0].slice(5)}</td><td class="r_">${x[1].toFixed(2)}</td><td><span class="pill ${x[4]>0?"g":tt[3]}" style="font-size:11px;padding:0 6px">${what}</span></td><td class="r_" style="color:${c>0?"var(--mark)":"var(--grow)"}">${c>0?"+":""}${pc(c)}</td></tr>`}).join("");
-  $("card").innerHTML=`<div class="hd"><h1>红利低波100<br>今天买多少</h1><div class="d">${L.date}<br>${WD(L.date)} 收盘后</div></div>
-    <div class="box"><div class="row"><div class="score">${L.score.toFixed(2)}<small> / 20</small></div><div><span class="pill ${t[3]}">${t[2]}${t[1]?` · ${t[1]} 倍`:""}</span><div class="lbl" style="margin-top:4px">分越高越便宜、买越多</div></div></div>
-      <div class="todo">→ ${todo}</div></div>
-    <div class="box chartbox" style="padding:6px 8px"><div class="lbl">近一年：评分（黑）和指数（红）几乎反着走</div><svg id="c" viewBox="0 0 480 128"></svg></div>
-    <div class="box" style="padding:6px 10px"><table class="mini"><tr><th>日期</th><th class="r_">评分</th><th>当天</th><th class="r_">指数</th></tr>${rows}</table></div>
+  const {L,S,t,c,c5,head,why}=divInfo(d);
+  $("card").innerHTML=`<div class="band"><b>红利低波 · 定投日记</b><span>${L.date} ${WD(L.date)}</span></div>
+    <div class="big" style="--hl:${head==="明天一起买"?"#cfe9d8":head==="到减仓线"?"#f3c8c3":"#f8e39a"}"><span class="hl">${head}</span></div>
+    <div class="sub">${why}</div>
+    <div class="box"><div class="row"><div class="score">${L.score.toFixed(2)}<small> / 20</small></div><div><span class="pill ${t[3]}">${t[2]}${t[1]?` · ${t[1]} 倍`:""}</span><div class="lbl" style="margin-top:4px">分越高越便宜、买越多</div></div></div></div>
+    <div class="stats"><div><span class="lbl">今天指数</span><b style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</b></div><div><span class="lbl">近 5 日</span><b style="color:${c5>0?"var(--mark)":"var(--grow)"}">${sg(c5)}</b></div><div><span class="lbl">已攒的钱</span><b>${L.owed||0} 元</b></div></div>
+    <div class="box chartbox" style="padding:6px 8px"><div class="lbl">近一年：评分（黑）和指数（红）几乎反着走 → 越跌越买（每天 200 元为 1 倍）</div><svg id="c" viewBox="0 0 480 140"></svg></div>
     ${FT}`;
   const X=S.slice(-250);
-  DualChart($("c"),{W:480,H:128,dates:X.map(x=>x[0]),leftRange:[0,20],leftTicks:[0,8,12,20],leftFmt:v=>v,
+  DualChart($("c"),{W:480,H:140,dates:X.map(x=>x[0]),leftRange:[0,20],leftTicks:[0,8,12,20],leftFmt:v=>v,
     bands:[{from:12,to:20,fill:"var(--grow-soft)"},{from:0,to:8,fill:"var(--mid)"}],
     left:[{v:X.map(x=>x[1]),c:"var(--ink)",w:1.4}],right:{v:X.map(x=>x[2]),c:"var(--mark)"},tip:()=>""});
 }
+function divCap(d){
+  const {L,t,c,head,why}=divInfo(d);
+  return `红利低波定投日记｜${L.date.slice(5)} ${head}
 
-function weekCard(st,T,C){
-  const L=T.latest,z=L.z,ZN=["底部","偏冷","正常","偏热","顶部"];
-  const NM=[["创业板轮动","创业板"],["科创板轮动","科创板"],["红利打分","红利低波"],["A500 / 沪深300","A500"],["黄金","黄金"],["纳指100","纳指100"],["债基","债基"]];
-  const brief=(k,a)=>{a=a.split(/；距|（阈值|（只作/)[0].replace(/^本周定投款/,"");
-    if(/^买红利低波100（暂停/.test(a))return "暂停，这部分买红利低波100";
-    if(k==="纳指100")return a.split("；")[0]+(/场外/.test(a)?"，买场外联接（场内溢价高）":"");
-    if(k==="债基")return a.replace(/^利率比近一年均值低，/,"");
-    return a.replace(/（已攒 0 元，/,"（").replace(/先攒着（(.+)）$/,"先攒着，$1").replace(/红利低波100 连跌/,"连跌")};
-  // 黄金只写现在的位置，暂时不给建议
-  const line=k=>k==="黄金"?`${st[k].now.split("；")[0]}<span style="color:var(--muted)"> · 暂不给建议</span>`:brief(k,st[k].act);
-  const items=NM.filter(([k])=>st[k]).map(([k,n])=>`<div class="it"><div class="n">${n}</div><div>${line(k)}</div></div>`).join("");
-  const cb=C&&C.latest,cl=cb&&(cb.level==="积极"?"g":cb.level==="谨慎"?"r":"c");
-  const date=st["创业板轮动"]?.date||L.date;
-  $("card").innerHTML=`<div class="hd"><h1>本周定投<br>怎么做</h1><div class="d">${date}<br>周五下单</div></div>
+今天红利低波100 ${sg(c)}，打分 ${L.score.toFixed(2)} / 20（${t[2]}）。
+${why}。
+
+我的规则：
+· 每天按评分记下该买多少，分越高越便宜、买越多
+· 不每天下单，先攒着，指数连跌 2 天后一起买
+· 评分太低（偏贵）就停，跌到减仓线分批卖
+
+个人记录，不构成投资建议。
+
+${TAGS} #红利指数`;
+}
+
+// ---------------- 每周 2~3 张
+const NM=[["创业板轮动","创业板"],["科创板轮动","科创板"],["红利打分","红利低波"],["A500 / 沪深300","宽基A500"],["黄金","黄金"],["纳指100","纳指100"],["债基","债券"]];
+const brief=(k,a)=>{a=a.split(/；距|（阈值|（只作/)[0].replace(/^本周定投款/,"");
+  if(/^买红利低波100（暂停/.test(a))return "暂停，这部分买红利低波";
+  if(k==="纳指100")return a.split("；")[0].replace(/，买场外联接.*/,"");
+  if(k==="债基")return a.replace(/^利率比近一年均值低，/,"");
+  if(k==="A500 / 沪深300")return a.replace(/，已有效跌破年线|（.*）/g,"");
+  return a.replace(/（已攒 0 元，/,"（").replace(/先攒着（(.+)）$/,"先攒着，$1").replace(/红利低波100 连跌/,"连跌")};
+const line=(st,k)=>k==="黄金"?`${st[k].now.split("；")[0]}<span style="color:var(--muted)"> · 暂不给建议</span>`:brief(k,st[k].act);
+function weekHead(st){
+  const pause=["创业板轮动","科创板轮动"].filter(k=>st[k]&&/暂停/.test(st[k].act)).length;
+  const buyG=["创业板轮动","科创板轮动"].filter(k=>st[k]&&!/暂停/.test(st[k].act)&&/买/.test(st[k].act));
+  return pause===2?["成长暂停","钱放红利"]:buyG.length?[buyG.map(k=>k.replace("轮动","")).join("、"),"开始买"]:["按规则","照常定投"];
+}
+async function weekData(){
+  const [st,T,C,NT]=await Promise.all([J("state.json"),J("temp.json"),J("combo.json"),J("ntf.json")]);
+  const IX=[["cyb50","创业板50"],["kc50","科创50"],["hs300","沪深300"],["a500","中证A500"],["hl100","红利低波"],["gold","黄金"],["ndx","纳指100"]];
+  const rows=await Promise.all(IX.map(async([f,n])=>{const s=await CSV(f);if(s.length<6)return null;
+    const last=s[s.length-1],wk=WK(last[0]);let i=s.length-1;while(i>0&&WK(s[i-1][0])===wk)i--;const base=s[Math.max(0,i-1)];return {n,r:last[1]/base[1]-1,d:last[0]}}));
+  return {st,T,C,NT,ret:rows.filter(Boolean),date:st["创业板轮动"]?.date||T.latest.date};
+}
+function w1(D){
+  const {st,T,ret,date}=D,[h1,h2]=weekHead(st),L=T.latest;
+  const buy=NM.filter(([k])=>st[k]&&k!=="黄金"&&!/暂停|不买|空仓/.test(st[k].act)).map(([k,n])=>n);
+  const stop=NM.filter(([k])=>st[k]&&/暂停|空仓/.test(st[k].act)).map(([k,n])=>n);
+  const wk=WK(date);
+  $("card").innerHTML=`<div class="band"><b>指数定投 · 周记</b><span>${date.slice(0,4)} 第 ${wk} 周</span></div>
+    <div class="big" style="font-size:36px;margin-top:4px">${h1}<br><span class="hl">${h2}</span></div>
+    <div class="sub">市场温度：<b style="color:var(--ink)">${L.zone}</b> · 见底灯 ${L.bottom.count}/6 · 见顶灯 ${L.top.count}/7</div>
+    <div class="box"><div class="kv2"><span class="k">本周买</span><span class="chips">${buy.map(n=>`<span class="pill g">${n}</span>`).join("")||"—"}</span>
+      <span class="k">本周停</span><span class="chips">${stop.map(n=>`<span class="pill c">${n}</span>`).join("")||"—"}</span></div></div>
+    <div class="box bars">${ret.slice(0,5).map(x=>barRow(x,Math.max(...ret.map(y=>Math.abs(y.r)),.02))).join("")}<div class="lbl" style="margin-top:2px">本周涨跌（截至 ${ret[0]?.d||date}）</div></div>
+    ${FT}`;
+}
+const barRow=(x,m)=>{const w=Math.abs(x.r)/m*50,col=x.r>0?"var(--mark)":"var(--grow)";
+  return `<div class="b"><span>${x.n}</span><span class="t"><i style="left:${x.r>0?50:50-w}%;width:${w}%;background:${col}"></i><i style="left:50%;width:1px;background:var(--muted)"></i></span><span class="v" style="color:${col}">${sg(x.r)}</span></div>`};
+function w2(D){
+  const {st,T,C,date}=D,L=T.latest,z=L.z,ZN=["底部","偏冷","正常","偏热","顶部"],cb=C&&C.latest,cl=cb&&(cb.level==="积极"?"g":cb.level==="谨慎"?"r":"c");
+  $("card").innerHTML=`<div class="band"><b>本周各板块怎么做</b><span>${date} 周五下单</span></div>
     <div class="box"><div class="lbl">市场温度</div><div class="zb">${ZN.map((n,i)=>`<div class="z${i}${i===z?" on":""}">${n}</div>`).join("")}</div>
       <div class="tipx">见底灯 <b>${L.bottom.count}/6</b> · 见顶灯 <b>${L.top.count}/7</b> · 方向${L.dir?.label||"—"}${cb?` · 综合 <span class="pill ${cl}" style="font-size:11px;padding:0 6px">${cb.level}</span>`:""}<br>→ <b>${L.action}</b></div></div>
-    <div class="box" style="padding:4px 12px"><div class="plist">${items}</div></div>
+    <div class="box" style="padding:3px 12px"><div class="plist">${NM.filter(([k])=>st[k]).map(([k,n])=>`<div class="it"><div class="n">${n}</div><div>${line(st,k)}</div></div>`).join("")}</div></div>
     ${FT}`;
+}
+function w3(D){
+  const {NT,T,ret,date}=D,N=NT&&NT.latest,p=N&&N.pull,m=Math.max(...ret.map(y=>Math.abs(y.r)),.02);
+  const g=(NT&&NT.groups)||[],top=g.filter(x=>x.name!=="合计").sort((a,b)=>b.d5-a.d5);
+  $("card").innerHTML=`<div class="band"><b>本周回顾</b><span>截至 ${date}</span></div>
+    <div class="box bars"><div class="lbl" style="margin-bottom:2px">各指数本周涨跌</div>${ret.map(x=>barRow(x,m)).join("")}</div>
+    <div class="box"><div class="lbl">国家队（宽基 ETF 净申购）</div>
+      <div class="tipx" style="margin-top:3px">近 5 日 <b>${top.reduce((a,x)=>a+x.d5,0).toLocaleString()} 亿</b> · 近 20 日 <b>${top.reduce((a,x)=>a+x.d20,0).toLocaleString()} 亿</b><br>
+      ${p&&/回落/.test(p.level)?`<span class="pill y" style="font-size:11px;padding:0 6px">${p.level}</span> 大买后小幅赎回，短期偏弱`:N?`流入加速度：${N.state}`:""}</div></div>
+    <div class="box" style="padding:7px 12px"><div class="lbl">下周看什么</div><div class="tipx" style="margin-top:3px">${nextWatch(D)}</div></div>
+    ${FT}`;
+}
+function nextWatch(D){
+  const {st}=D,out=[];
+  for(const k of ["创业板轮动","科创板轮动"]){const s=st[k];if(!s)continue;const m=s.now.match(/信号值 ([\d.]+)/),th=s.act.match(/中位数 ([\d.]+)|距每周买入线还需下跌约 ([\d.]+)%/);
+    if(/暂停/.test(s.act))out.push(`${k.replace("轮动","")}：再跌一点进入买入区就开始买`)}
+  out.push("红利低波：等连跌 2 天一起买");
+  return out.map(x=>"· "+x).join("<br>");
+}
+function weekCap(D){
+  const {st,T,ret,date}=D,[h1,h2]=weekHead(st),L=T.latest;
+  const r=ret.map(x=>`${x.n} ${sg(x.r)}`).join("，");
+  return `第 ${WK(date)} 周定投记录｜${h1}${h2}
+
+本周：${r}。
+市场温度：${L.zone}（见底灯 ${L.bottom.count}/6，见顶灯 ${L.top.count}/7）。
+
+本周怎么做：
+${NM.filter(([k])=>st[k]&&k!=="黄金").map(([k,n])=>`· ${n}：${brief(k,st[k].act)}`).join("\n")}
+· 黄金：${st["黄金"]?.now.split("；")[0]||""}（暂不给建议）
+
+规则都是事先定好的，按信号执行，不猜涨跌。个人记录，不构成投资建议。
+
+${TAGS} #A股 #创业板`;
 }
 
 (async()=>{
-  if(K==="week"){const [st,T,C]=await Promise.all([J("state.json"),J("temp.json"),J("combo.json")]);weekCard(st,T,C);document.body.dataset.date=st["创业板轮动"]?.date||T.latest.date}
-  else{const d=await J("dividend.json");divCard(d);document.body.dataset.date=d.latest.date}
+  if(K==="div"||K==="cap_div"){const d=await J("dividend.json");if(K==="div")divCard(d);else{$("card").outerHTML=`<pre id="cap">${divCap(d)}</pre>`};document.body.dataset.date=d.latest.date}
+  else{const D=await weekData();({week:w1,week1:w1,week2:w2,week3:w3})[K]?.(D);if(K==="cap_week")$("card").outerHTML=`<pre id="cap">${weekCap(D)}</pre>`;document.body.dataset.date=D.date}
   document.body.dataset.ready=1;
 })();
 </script>
