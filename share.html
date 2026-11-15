@@ -73,7 +73,7 @@ function divInfo(d){
 }
 function divCard(d){
   const {L,S,t,c,c5,head,why}=divInfo(d);
-  $("card").innerHTML=`<div class="band"><b>红利低波 · 定投日记</b><span>${L.date} ${WD(L.date)}</span></div>
+  $("card").innerHTML=`<div class="band"><b>红利低波 · 定投日记</b><span>${L.date} · ${WD(L.date)}</span></div>
     <div class="big" style="--hl:${head==="明天一起买"?"#cfe9d8":head==="到减仓线"?"#f3c8c3":"#f8e39a"}"><span class="hl">${head}</span></div>
     <div class="sub">${why}</div>
     <div class="box"><div class="row"><div class="score">${L.score.toFixed(2)}<small> / 20</small></div><div><span class="pill ${t[3]}">${t[2]}${t[1]?` · ${t[1]} 倍`:""}</span><div class="lbl" style="margin-top:4px">分越高越便宜、买越多</div></div></div></div>
@@ -152,7 +152,7 @@ function w3(D){
   const g=(NT&&NT.groups)||[],gs=g.filter(x=>x.name!=="合计");
   const buy=NM.filter(([k])=>st[k]&&k!=="黄金"&&!/暂停|不买|空仓/.test(st[k].act)).map(([k,n])=>n);
   const stop=NM.filter(([k])=>st[k]&&/暂停|空仓/.test(st[k].act)).map(([k,n])=>n);
-  $("card").innerHTML=`<div class="band"><b>指数定投 · 周记</b><span>${date.slice(0,4)} 第 ${WK(date)} 周</span></div>
+  $("card").innerHTML=`<div class="band"><b>指数定投 · 周记</b><span>${date} · 第 ${WK(date)} 周</span></div>
     <div class="big" style="font-size:30px">${h1}，<span class="hl">${h2}</span></div>
     <div class="sub" style="font-size:12.5px">市场温度 <b style="color:var(--ink)">${L.zone}</b> · 见底灯 ${L.bottom.count}/6 · 见顶灯 ${L.top.count}/7</div>
     <div class="box bars" style="padding:6px 12px">${ret.map(x=>barRow(x,m)).join("")}</div>
@@ -175,7 +175,7 @@ function wdiv(d){
   const rows=W.map((x,j)=>{const pv=S[i+j-1],c=pv?x[2]/pv[2]-1:0,t=tier(x[3]??x[1]),amt=t[1]*200;
     return `<tr><td>${WD(x[0])}<span class="lbl"> ${x[0].slice(5)}</span></td><td style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</td><td><b>${x[1].toFixed(1)}</b></td><td>${amt?`记 ${amt}`:`<span class="lbl">${t[2]}</span>`}</td><td>${x[4]>0?`<span class="pill g">买 ${x[4]}</span>`:x[5]>0?`<span class="lbl">攒 ${x[5]}</span>`:"—"}</td></tr>`}).join("");
   const h=orders.length?`下单 ${orders.length} 次`:"一次没买";
-  $("card").innerHTML=`<div class="band"><b>红利低波 · 本周日记</b><span>${L.date.slice(0,4)} 第 ${wk} 周</span></div>
+  $("card").innerHTML=`<div class="band"><b>红利低波 · 本周日记</b><span>${L.date} · 第 ${wk} 周</span></div>
     <div class="big" style="font-size:30px"><span class="hl">${h}</span>${orders.length?`，共 ${tot} 元`:""}</div>
     <div class="sub" style="font-size:12.5px">本周指数 ${sg(wr)} · 周末还攒着 ${L.owed||0} 元 · 评分 ${L.score.toFixed(1)}（${tier(L.eff??L.score)[2]}）</div>
     <div class="box" style="padding:4px 10px"><table class="wt"><tr><th>日期</th><th>涨跌</th><th>评分</th><th>当天该买</th><th>实际</th></tr>${rows}</table></div>
@@ -195,7 +195,7 @@ function wrot(R,Kc){
       <div class="sl">${seg.map(s=>`<span style="left:${(X(s[0])+X(s[1]))/2}%">${s[2]}</span>`).join("")}</div>
       <div class="tipx">比值 <b>${v.toFixed(4)}</b> · 上周 ${pv.toFixed(4)} · ${gap>0?`再降 <b style="color:var(--grow)">${pc(gap,0)}</b> 进每周买`:"已在买入区"}</div></div>`}};
   const a=scale("创业板",R),b=scale("科创板",Kc),near=[a,b].sort((x,y)=>x.gap-y.gap)[0];
-  $("card").innerHTML=`<div class="band"><b>成长板块 · 离买入还有多远</b><span>${R.latest.date}</span></div>
+  $("card").innerHTML=`<div class="band"><b>成长板块 · 离买入还有多远</b><span>${R.latest.date} · 第 ${WK(R.latest.date)} 周</span></div>
     <div class="big" style="font-size:28px">${near.gap>0?`${near.nm}<span class="hl">还差 ${pc(near.gap,0)}</span>`:`<span class="hl">${[a,b].filter(x=>!x.gap).map(x=>x.nm).join("、")}在买入区</span>`}</div>
     <div class="sub" style="font-size:12.5px">看的是「成长指数 ÷ 红利低波」：越低 = 成长相对越便宜</div>
     ${a.html}${b.html}
