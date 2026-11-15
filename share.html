@@ -141,22 +141,26 @@ function w2(D){
     ${FT}`;
 }
 function w3(D){
-  const {NT,T,ret,date}=D,N=NT&&NT.latest,p=N&&N.pull,m=Math.max(...ret.map(y=>Math.abs(y.r)),.02);
-  const g=(NT&&NT.groups)||[],top=g.filter(x=>x.name!=="合计").sort((a,b)=>b.d5-a.d5);
-  $("card").innerHTML=`<div class="band"><b>本周回顾</b><span>截至 ${date}</span></div>
-    <div class="box bars"><div class="lbl" style="margin-bottom:2px">各指数本周涨跌</div>${ret.map(x=>barRow(x,m)).join("")}</div>
-    <div class="box"><div class="lbl">国家队（宽基 ETF 净申购）</div>
-      <div class="tipx" style="margin-top:3px">近 5 日 <b>${top.reduce((a,x)=>a+x.d5,0).toLocaleString()} 亿</b> · 近 20 日 <b>${top.reduce((a,x)=>a+x.d20,0).toLocaleString()} 亿</b><br>
-      ${p&&/回落/.test(p.level)?`<span class="pill y" style="font-size:11px;padding:0 6px">${p.level}</span> 大买后小幅赎回，短期偏弱`:N?`流入加速度：${N.state}`:""}</div></div>
-    <div class="box" style="padding:7px 12px"><div class="lbl">下周看什么</div><div class="tipx" style="margin-top:3px">${nextWatch(D)}</div></div>
+  // 每周只发这一张：标题（本周结论）→ 各指数本周涨跌 → 本周买 / 停 → 国家队 → 下周看什么
+  const {st,NT,T,ret,date}=D,N=NT&&NT.latest,p=N&&N.pull,m=Math.max(...ret.map(y=>Math.abs(y.r)),.02),[h1,h2]=weekHead(st),L=T.latest;
+  const g=(NT&&NT.groups)||[],gs=g.filter(x=>x.name!=="合计");
+  const buy=NM.filter(([k])=>st[k]&&k!=="黄金"&&!/暂停|不买|空仓/.test(st[k].act)).map(([k,n])=>n);
+  const stop=NM.filter(([k])=>st[k]&&/暂停|空仓/.test(st[k].act)).map(([k,n])=>n);
+  $("card").innerHTML=`<div class="band"><b>指数定投 · 周记</b><span>${date.slice(0,4)} 第 ${WK(date)} 周</span></div>
+    <div class="big" style="font-size:30px">${h1}，<span class="hl">${h2}</span></div>
+    <div class="sub" style="font-size:12.5px">市场温度 <b style="color:var(--ink)">${L.zone}</b> · 见底灯 ${L.bottom.count}/6 · 见顶灯 ${L.top.count}/7</div>
+    <div class="box bars" style="padding:6px 12px">${ret.map(x=>barRow(x,m)).join("")}</div>
+    <div class="box" style="padding:7px 12px"><div class="kv2" style="font-size:12.5px"><span class="k">本周买</span><span>${buy.join("、")||"—"}</span><span class="k">本周停</span><span>${stop.join("、")||"—"}</span>
+      <span class="k">国家队</span><span>近 5 日 ${gs.reduce((a,x)=>a+x.d5,0).toLocaleString()} 亿${p&&/回落/.test(p.level)?`，<b style="color:var(--div)">${p.level}</b>（大买后小幅赎回，短期偏弱）`:""}</span>
+      <span class="k">下周看</span><span>${nextWatch(D)}</span></div></div>
     ${FT}`;
 }
 function nextWatch(D){
   const {st}=D,out=[];
-  for(const k of ["创业板轮动","科创板轮动"]){const s=st[k];if(!s)continue;const m=s.now.match(/信号值 ([\d.]+)/),th=s.act.match(/中位数 ([\d.]+)|距每周买入线还需下跌约 ([\d.]+)%/);
-    if(/暂停/.test(s.act))out.push(`${k.replace("轮动","")}：再跌一点进入买入区就开始买`)}
-  out.push("红利低波：等连跌 2 天一起买");
-  return out.map(x=>"· "+x).join("<br>");
+  const ps=["创业板轮动","科创板轮动"].filter(k=>st[k]&&/暂停/.test(st[k].act)).map(k=>k.replace("轮动",""));
+  if(ps.length)out.push(`${ps.join("、")}再跌一点就进买入区`);
+  out.push("红利低波连跌 2 天就一起买");
+  return out.join("；");
 }
 function weekCap(D){
   const {st,T,ret,date}=D,[h1,h2]=weekHead(st),L=T.latest;
@@ -177,7 +181,7 @@ ${TAGS} #A股 #创业板`;
 
 (async()=>{
   if(K==="div"||K==="cap_div"){const d=await J("dividend.json");if(K==="div")divCard(d);else{$("card").outerHTML=`<pre id="cap">${divCap(d)}</pre>`};document.body.dataset.date=d.latest.date}
-  else{const D=await weekData();({week:w1,week1:w1,week2:w2,week3:w3})[K]?.(D);if(K==="cap_week")$("card").outerHTML=`<pre id="cap">${weekCap(D)}</pre>`;document.body.dataset.date=D.date}
+  else{const D=await weekData();({week:w3,week1:w1,week2:w2,week3:w3})[K]?.(D);if(K==="cap_week")$("card").outerHTML=`<pre id="cap">${weekCap(D)}</pre>`;document.body.dataset.date=D.date}
   document.body.dataset.ready=1;
 })();
 </script>

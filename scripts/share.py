@@ -1,5 +1,6 @@
 """小红书分享图：用 share.html 渲染两张 3:4 竖图（1080×1440），放在 data/share/。
-div.png 红利每日；week.png 每周总览。网页上的“生成分享图”按钮直接打开这两张图，长按保存。"""
+div.png 红利每日（定投日记）；week.png 每周一张（周记：本周涨跌、买 / 停、国家队、下周看什么）。
+info.json 里还有配套文案 cap_div / cap_week。网页上的“生成分享图”按钮打开图，长按保存，下面一键复制文案。"""
 import functools
 import http.server
 import json
@@ -30,6 +31,9 @@ def run():
             pg.wait_for_timeout(300)
             pg.screenshot(path=os.path.join(OUT, f"{k}.png"), clip={"x": 0, "y": 0, "width": 360, "height": 480})
             info[k] = pg.evaluate("document.body.dataset.date || ''")
+            pg.goto(f"http://127.0.0.1:{port}/share.html?card=cap_{k}")      # 配套小红书文案
+            pg.wait_for_selector("body[data-ready]", timeout=20000)
+            info["cap_" + k] = pg.eval_on_selector("#cap", "e => e.textContent")
         b.close()
     srv.shutdown()
     with open(os.path.join(OUT, "info.json"), "w", encoding="utf-8") as fh:
