@@ -39,6 +39,12 @@ html,body{margin:0;padding:0;background:var(--bg)}
 .bars .t i{position:absolute;top:0;bottom:0;border-radius:3px}
 .bars .v{text-align:right;font-family:var(--f-num);font-weight:700}
 .tipx{font-size:12px;line-height:1.5}
+.wt{width:100%;border-collapse:collapse;font-size:12.5px;font-family:var(--f-num)}.wt th{font-size:11px;color:var(--muted);font-weight:400;text-align:left;padding:4px 2px}
+.wt td{padding:5px 2px;border-top:1px solid var(--line);white-space:nowrap}.wt .pill{font-size:11.5px;padding:1px 7px}
+.sc{position:relative;height:12px;margin:12px 0 2px;border-radius:3px;overflow:visible}.sc i{position:absolute;top:0;bottom:0}
+.sc em{position:absolute;top:-5px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--ink);border:2px solid #fff;box-sizing:border-box}
+.sc em.pv{background:#fff;border:2px solid var(--ink);opacity:.6}
+.sl{position:relative;height:15px;font-size:10.5px;color:var(--muted)}.sl span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 pre{white-space:pre-wrap;font-family:var(--f-body);font-size:14px;padding:12px;margin:0}
 </style>
 </head>
@@ -162,6 +168,40 @@ function nextWatch(D){
   out.push("红利低波连跌 2 天就一起买");
   return out.join("；");
 }
+// 周 · 第 2 张：红利低波本周 5 天日记
+function wdiv(d){
+  const S=d.series,L=d.latest,wk=WK(L.date);let i=S.length-1;while(i>0&&WK(S[i-1][0])===wk)i--;
+  const W=S.slice(i),orders=W.filter(x=>x[4]>0),tot=orders.reduce((a,x)=>a+x[4],0),wr=L.close/S[Math.max(0,i-1)][2]-1;
+  const rows=W.map((x,j)=>{const pv=S[i+j-1],c=pv?x[2]/pv[2]-1:0,t=tier(x[3]??x[1]),amt=t[1]*200;
+    return `<tr><td>${WD(x[0])}<span class="lbl"> ${x[0].slice(5)}</span></td><td style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</td><td><b>${x[1].toFixed(1)}</b></td><td>${amt?`记 ${amt}`:`<span class="lbl">${t[2]}</span>`}</td><td>${x[4]>0?`<span class="pill g">买 ${x[4]}</span>`:x[5]>0?`<span class="lbl">攒 ${x[5]}</span>`:"—"}</td></tr>`}).join("");
+  const h=orders.length?`下单 ${orders.length} 次`:"一次没买";
+  $("card").innerHTML=`<div class="band"><b>红利低波 · 本周日记</b><span>${L.date.slice(0,4)} 第 ${wk} 周</span></div>
+    <div class="big" style="font-size:30px"><span class="hl">${h}</span>${orders.length?`，共 ${tot} 元`:""}</div>
+    <div class="sub" style="font-size:12.5px">本周指数 ${sg(wr)} · 周末还攒着 ${L.owed||0} 元 · 评分 ${L.score.toFixed(1)}（${tier(L.eff??L.score)[2]}）</div>
+    <div class="box" style="padding:4px 10px"><table class="wt"><tr><th>日期</th><th>涨跌</th><th>评分</th><th>当天该买</th><th>实际</th></tr>${rows}</table></div>
+    <div class="box tipx" style="padding:7px 12px">怎么买：每天按评分<b>记下</b>该买多少（1 倍 = 200 元），不当天下单；指数<b>连跌 2 天</b>后，把攒的钱一起买。少操作，也更容易买在小低点。</div>
+    <div class="box tipx" style="padding:7px 12px">下周：评分 ${L.score.toFixed(1)}（${tier(L.eff??L.score)[2]}）${tier(L.eff??L.score)[1]?`，每天记 ${tier(L.eff??L.score)[1]*200} 元，连跌 2 天一起买`:"，先不买，等评分回升"}</div>
+    ${FT}`;
+}
+// 周 · 第 3 张：创业板 / 科创板离买入区还有多远
+function wrot(R,Kc){
+  const scale=(nm,d)=>{const th=d.params.th,v=d.latest.ratio,S=d.series,wk=WK(d.latest.date);let i=S.length-1;while(i>0&&WK(S[i-1][0])===wk)i--;
+    const pv=S[Math.max(0,i-1)][1],lo=th.dbl-(th.mid-th.dbl)*.6,hi=th.s1+(th.s1-th.mid)*.25,X=x=>Math.max(0,Math.min(100,(x-lo)/(hi-lo)*100));
+    const seg=[[lo,th.dbl,"翻倍","#1f6e44"],[th.dbl,th.day,"加大","var(--grow)"],[th.day,th.mid,"每周买","#8cc7a2"],[th.mid,th.s1,"暂停","#c9c2b5"],[th.s1,hi,"卖出","var(--mark)"]];
+    const gap=v>th.mid?1-th.mid/v:0,z=(d.plan&&d.plan.zone_name)||"";
+    return {gap,nm,html:`<div class="box" style="padding:8px 12px 6px"><div class="row" style="justify-content:space-between"><b style="font-size:15px">${nm}</b><span class="pill ${/暂停/.test(z)?"c":/卖/.test(z)?"r":"g"}">${z}</span></div>
+      <div class="sc">${seg.map(s=>`<i style="left:${X(s[0])}%;width:${X(s[1])-X(s[0])}%;background:${s[3]}"></i>`).join("")}
+        <em class="pv" style="left:${X(pv)}%"></em><em style="left:${X(v)}%"></em></div>
+      <div class="sl">${seg.map(s=>`<span style="left:${(X(s[0])+X(s[1]))/2}%">${s[2]}</span>`).join("")}</div>
+      <div class="tipx">比值 <b>${v.toFixed(4)}</b> · 上周 ${pv.toFixed(4)} · ${gap>0?`再降 <b style="color:var(--grow)">${pc(gap,0)}</b> 进每周买`:"已在买入区"}</div></div>`}};
+  const a=scale("创业板",R),b=scale("科创板",Kc),near=[a,b].sort((x,y)=>x.gap-y.gap)[0];
+  $("card").innerHTML=`<div class="band"><b>成长板块 · 离买入还有多远</b><span>${R.latest.date}</span></div>
+    <div class="big" style="font-size:28px">${near.gap>0?`${near.nm}<span class="hl">还差 ${pc(near.gap,0)}</span>`:`<span class="hl">${[a,b].filter(x=>!x.gap).map(x=>x.nm).join("、")}在买入区</span>`}</div>
+    <div class="sub" style="font-size:12.5px">看的是「成长指数 ÷ 红利低波」：越低 = 成长相对越便宜</div>
+    ${a.html}${b.html}
+    <div class="lbl" style="line-height:1.5">● 现在　○ 上周。比值再降 X% ≈ 成长要比红利再多跌 X%。分界线 = 近 10 年（科创 6.5 年）的分位数：中位数以下才买，越低买越多；暂停时这部分钱买红利低波。</div>
+    ${FT}`;
+}
 function weekCap(D){
   const {st,T,ret,date}=D,[h1,h2]=weekHead(st),L=T.latest;
   const r=ret.map(x=>`${x.n} ${sg(x.r)}`).join("，");
@@ -181,6 +221,8 @@ ${TAGS} #A股 #创业板`;
 
 (async()=>{
   if(K==="div"||K==="cap_div"){const d=await J("dividend.json");if(K==="div")divCard(d);else{$("card").outerHTML=`<pre id="cap">${divCap(d)}</pre>`};document.body.dataset.date=d.latest.date}
+  else if(K==="wdiv"){const d=await J("dividend.json");wdiv(d);document.body.dataset.date=d.latest.date}
+  else if(K==="wrot"){const [R,Kc]=await Promise.all([J("ratio.json"),J("kc.json")]);wrot(R,Kc);document.body.dataset.date=R.latest.date}
   else{const D=await weekData();({week:w3,week1:w1,week2:w2,week3:w3})[K]?.(D);if(K==="cap_week")$("card").outerHTML=`<pre id="cap">${weekCap(D)}</pre>`;document.body.dataset.date=D.date}
   document.body.dataset.ready=1;
 })();
