@@ -50,12 +50,20 @@ def pb_hot_series():
     return out
 
 
+PB_STALE_DAYS = 7   # 破净率超过 7 天没更新，就当作没见底：暂停加码和极低值转仓，并报警
+
+
 def hot_lookup(hot):
     ks = sorted(hot)
 
     def f(day):
         j = bisect.bisect_right(ks, day) - 1
-        return hot[ks[j]] if j >= 0 else False
+        if j < 0:
+            return False
+        if (dt.date.fromisoformat(day) - dt.date.fromisoformat(ks[j])).days > PB_STALE_DAYS:
+            return False
+        return hot[ks[j]]
+    f.last = ks[-1] if ks else None
     return f
 
 

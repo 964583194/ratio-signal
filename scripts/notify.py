@@ -232,6 +232,10 @@ def collect(prev):
     try:
         if nt and hs and (dt.date.fromisoformat(hs["latest"]["date"]) - dt.date.fromisoformat(nt["latest"]["date"])).days > 7:
             stale.append("国家队流向（ETF 份额 / 净值）")
+        for k in ("ratio.json", "kc.json"):
+            pl = (load(k) or {}).get("plan") or {}
+            if pl.get("pb_stale") and "全A破净率（加码已暂停）" not in stale:
+                stale.append("全A破净率（加码已暂停）")
     except Exception:  # noqa: BLE001
         pass
     out["数据源"] = {"state": "异常:" + "、".join(stale) if stale else "正常",

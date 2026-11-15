@@ -153,7 +153,11 @@ def build(g_raw, g_src, hl_raw, hl_src, out, lo, hi, sells, div_g, start, g_name
     hot_now = hot(allc[-1])
     bear_now = gm[-1] is not None and g_all[-1] < gm[-1] and not hot_now
     plan = PL.latest_plan(D_all, r_all, th_all, ma_all, score, state, g_name, hot_now, bear_now, gm[-1] or 0)
-    plan.update({"hot": hot_now, "bear": bear_now, "g_close": g_all[-1], "g_ma250": round(gm[-1] or 0, 2)})
+    import market as MK  # noqa: PLC0415
+    pb_last = getattr(hot, "last", None)
+    pb_stale = bool(pb_last) and (dt.date.fromisoformat(allc[-1]) - dt.date.fromisoformat(pb_last)).days > MK.PB_STALE_DAYS
+    plan.update({"hot": hot_now, "bear": bear_now, "g_close": g_all[-1], "g_ma250": round(gm[-1] or 0, 2),
+                 "pb_last": pb_last, "pb_stale": pb_stale})
     T = th_all[-1]
 
     s = sorted(ratio)

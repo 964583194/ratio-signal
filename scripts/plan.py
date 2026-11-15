@@ -6,7 +6,8 @@
 买入：每周集中一次，在每周最后一个交易日（一般是周五）收盘前，按前一交易日（周四）收盘的信号。进入某个区间要连续 3 个交易日在线下才算。
   暂停区（中位数以上）：每周定投款买红利低波100（闲钱放红利）。
   每周买入区：每周定投款买成长端。
-  加大买入区 / 翻倍买入区：见底时（全A破净率 ≥ 近 10 年 85% 分位）另外掏钱加码 2000 / 4000 元（无限子弹）。
+  加大买入区 / 翻倍买入区：见底时（全A破净率 ≥ 近 10 年 85% 分位）另外掏钱加码 2000 / 4000 元，每个板块每年最多加 6 万。
+  破净率超过 7 天没更新，当作没见底（暂停加码和极低值转仓），并在邮件“数据源”里报警。
   跌破年线：成长端收在 250 日均线下方、又还没见底时，暂停买成长端，定投款买红利。
 卖出（卖出的钱都转红利）：
   趋势确认：信号值过某档卖出线后，跌破信号 20 日均线时才卖这一档（1/3、再一半、全部）。
@@ -28,6 +29,7 @@ FEE = 0.0005
 SW = 0.001          # 红利 ⇄ 成长端 转换：卖出 + 买入两次费用
 DIV_SCORE = 14
 EXTRA = {"day": 2000, "dbl": 4000}   # 见底时（破净率 ≥85% 分位）每周额外投入
+EXTRA_CAP = 60000   # 每个板块每个自然年加码上限（元）；回测：创业板年化 24.2% → 23.2%，十年加码 34.6 万 → 18.0 万
 TIERS = (("s1", 1 / 3, "卖出 1/3"), ("s2", 0.5, "再卖剩下的一半"), ("s3", 1.0, "全部卖出"))
 ZONE_NAME = {"dbl": "翻倍买入区", "day": "加大买入区", "wk": "每周买入区", "pause": "暂停区"}
 
@@ -97,6 +99,7 @@ def simulate(dates, g, hl, r, th, ma20, score, i0, div_g, g_name, hot, gm):
     nav = peak = 1.0
     mdd, prev = 0.0, 0.0
     cfs, weeks, trades = [], [], []
+    ex_year = {}   # 每年已加码多少
     ep, below = set(), {}
     bk, bl, bt = 0, None, None
     wk = None
@@ -158,6 +161,10 @@ def simulate(dates, g, hl, r, th, ma20, score, i0, div_g, g_name, hot, gm):
             else:
                 to_g(WEEKLY, f"{WEEKLY} 元买{g_name}")
                 ex = EXTRA.get(z, 0) if h_ else 0
+                if ex and EXTRA_CAP is not None:   # 每年加码上限
+                    ex = max(0, min(ex, EXTRA_CAP - ex_year.get(d.year, 0)))
+                if ex:
+                    ex_year[d.year] = ex_year.get(d.year, 0) + ex
                 if ex:   # 无限子弹：见底时另外掏钱加码
                     cfs.append((d, -ex))
                     cy += ex * (1 - FEE)
@@ -206,9 +213,12 @@ def simulate(dates, g, hl, r, th, ma20, score, i0, div_g, g_name, hot, gm):
     x = xirr(cfs)
     res = {"xirr": round(x, 4) if x is not None else None, "mdd": round(mdd, 4), "final": round(final),
            "invested": round(-sum(a for _, a in cfs[:-1])), "pool": round(pool), "sells": nsell,
-           "g_share": round(cy / final, 3) if final else 0}
+           "g_share": round(cy / final, 3) if final else 0,
+           "extra_total": round(sum(ex_year.values())), "extra_max_year": max(ex_year.values()) if ex_year else 0,
+           "extra_years": {str(k): v for k, v in sorted(ex_year.items())}}
     state = {"ep": sorted(ep), "batch": bk, "batch_low": bl, "batch_date": bt.isoformat() if bt else None,
-             "below": below, "gain": round(cy / cost - 1, 3) if cost > 1 else None}
+             "below": below, "gain": round(cy / cost - 1, 3) if cost > 1 else None,
+             "ex_year": {str(k): v for k, v in ex_year.items()}}
     return res, state, weeks, trades
 
 
@@ -228,8 +238,12 @@ def latest_plan(dates, r, th, ma20, score, state, g_name, hot_now, bear_now, g_m
     else:
         acts.append(f"本周定投款买{g_name}")
         if z in EXTRA:
-            if hot_now:
-                acts.append(f"已见底（破净率高）：另外加码 {EXTRA[z]} 元买{g_name}")
+            used = (state.get("ex_year") or {}).get(str(dates[-1].year), 0)
+            left = EXTRA[z] if EXTRA_CAP is None else max(0, min(EXTRA[z], EXTRA_CAP - used))
+            if hot_now and left:
+                acts.append(f"已见底（破净率高）：另外加码 {left} 元买{g_name}" + (f"（今年已加码 {used // 10000:g} 万，上限 {EXTRA_CAP // 10000} 万）" if EXTRA_CAP else ""))
+            elif hot_now:
+                warn.append(f"已见底，但今年加码已到上限 {EXTRA_CAP // 10000} 万，本周不再加码")
             else:
                 warn.append(f"进入{ZONE_NAME[z]}，但破净率还没到见底标准，先不加码、不转仓")
     sell_now = []

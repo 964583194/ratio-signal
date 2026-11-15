@@ -2,10 +2,12 @@ name: 更新比值数据
 
 on:
   schedule:
-    - cron: "30 9 * * 1-5"    # 北京时间工作日 17:30
-    - cron: "7 13 * * 1-5"    # 北京时间工作日 21:07，补中证官网晚发布的数据
-    - cron: "13 0 * * 5"      # 北京时间周五 08:13，补上美股周四收盘并发周报
-    - cron: "13 1 * * 6"      # 北京时间周六 09:13，补齐周五 A 股与美股收盘
+    # 整点、半点 GitHub 排队最严重（常晚几个小时），都错开到零散分钟；晚上多一次兜底
+    - cron: "41 9 * * 1-5"    # 北京时间工作日 17:41
+    - cron: "17 11 * * 1-5"   # 北京时间工作日 19:17，兜底（前一次被推迟时）
+    - cron: "23 13 * * 1-5"   # 北京时间工作日 21:23，补中证指数官网晚发布的数据
+    - cron: "37 0 * * 5"      # 北京时间周五 08:37，补上美股周四收盘；周报若周四没发出，这次发
+    - cron: "29 1 * * 6"      # 北京时间周六 09:29，补齐周五 A 股与美股收盘
   workflow_dispatch:
     inputs:
       force:
@@ -48,7 +50,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPORT: ${{ (github.event.schedule == '13 0 * * 5' || inputs.report) && '1' || '0' }}
+          REPORT: ${{ (github.event.schedule == '37 0 * * 5' || inputs.report) && '1' || '0' }}
         run: python scripts/notify.py
 
       - name: 生成小红书分享图（失败不影响其他）

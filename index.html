@@ -49,16 +49,16 @@
   <div class="todo" id="o_rows"><div class="note">加载中</div></div>
   <p class="note" id="o_note"></p>
 </section>
-<section class="panel" id="kiSec"><h2>关键指标</h2>
-  <p class="note" style="margin:-6px 0 8px">集中看最重要的几个数。<b>规则</b> = 直接决定买卖；<b>提醒</b> = 只作提醒；<span class="exptag">实验</span> = 还在观察，不改规则。点名字进对应页签。</p>
-  <div id="kiBody"><div class="note">加载中</div></div>
-</section>
 <details class="panel fold" id="planSec"><summary>本周下单清单<small id="planSum">加载中</small></summary><div class="pbody">
   <div class="budget">每周预算 <input type="number" id="budget" inputmode="numeric" min="0" step="100" aria-label="每周预算（元）"> 元<span class="note" style="margin:0 0 0 6px">只存在这台手机上</span></div>
   <div class="todo" id="planRows"><div class="note">加载中</div></div>
   <p class="note" id="planNote"></p>
 </div></details>
-<section class="panel"><h2>市场温度<a class="hmore" href="#temp">看详情 ›</a></h2><div id="o_temp"><div class="note">加载中</div></div></section>
+<section class="panel" id="kiSec"><h2>关键指标<a class="hmore" href="#temp">市场温度详情 ›</a></h2>
+  <p class="note" style="margin:-6px 0 8px">集中看最重要的几个数。<b>规则</b> = 直接决定买卖；<b>提醒</b> = 只作提醒；<span class="exptag">实验</span> = 还在观察，不改规则。点名字进对应页签。</p>
+  <div id="kiBody"><div class="note">加载中</div></div>
+</section>
+<div id="o_temp" hidden></div>
 <a class="panel oneline" href="funds.html"><b>我的基金</b><span class="note" id="o_my">每只能不能加，含海外小仓位</span><span class="chev">›</span></a>
 </div>
 
@@ -386,10 +386,12 @@
 </div>
 
 <footer>
-  <p style="text-align:left;margin:0 0 10px">怎么用：轮动（创业板、科创板）、宽基（A500 / 沪深300 二选一）、黄金每周买一次，周报在周四收盘后发，周五 15:00 前按周报下单；卖出信号出现当天会发邮件。红利打分每天按评分记账、先攒着，红利低波100 连跌 2 天后一起买。纳指100 不占比例，单独小额定投（场外联接）。各板块没买完的钱都放红利低波100。QDII 小仓位在“我的基金”页，只作提醒。市场温度、托底资金只作提醒；标“实验”的指标还在观察，不改规则。</p>
-  数据来源：东方财富、中证指数官网、国证指数官网、腾讯、新浪、纳斯达克官网等，每项数据有多个备用接口，自动选择可用的<br>
   <span id="health">数据源状态读取中</span><br>
-  回测用价格指数加回股息率假设，未计跟踪误差与管理费。个人研究记录，不构成投资建议。
+  个人研究记录，不构成投资建议。
+  <details style="text-align:left;margin-top:8px"><summary style="cursor:pointer">怎么用 · 数据来源</summary>
+  <p style="margin:8px 0">怎么用：轮动（创业板、科创板）、宽基（A500 / 沪深300 二选一）、黄金每周买一次，周报在周四收盘后发，周五 15:00 前按周报下单；卖出信号出现当天会发邮件。红利打分每天按评分记账、先攒着，红利低波100 连跌 2 天后一起买。纳指100 不占比例，单独小额定投（场外联接）。各板块没买完的钱都放红利低波100。QDII 小仓位在“我的基金”页，只作提醒。市场温度、托底资金只作提醒；标“实验”的指标还在观察，不改规则。</p>
+  <p style="margin:0 0 8px">数据来源：东方财富、中证指数官网、国证指数官网、腾讯、新浪、纳斯达克官网等，每项数据有多个备用接口，自动选择可用的。回测用价格指数加回股息率假设，未计跟踪误差与管理费。</p>
+  </details>
 </footer>
 </div>
 
@@ -787,7 +789,7 @@ function loadGold(){
 fetch("data/health.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(hh=>{
   const it=Object.values(hh.items||{}),cache=it.filter(v=>v.source==="本地缓存"),stale=it.filter(v=>!v.ref&&(v.stale_days==null||v.stale_days>12));   // 参考类、月度数据过期不算异常（和后台体检一致）
   $("health").textContent=stale.length?`数据源异常：${stale.map(v=>v.name).join("、")} 已超过 12 天没更新`
-    :cache.length?`数据源：${cache.map(v=>v.name).join("、")} 今天所有接口都失败，暂用缓存（${hh.updated}）`
+    :cache.length?`数据源：${cache.slice(0,3).map(v=>v.name).join("、")}${cache.length>3?` 等 ${cache.length} 项`:""} 今天接口失败，暂用缓存（${hh.updated}）`
     :`数据源：${it.length} 项全部正常（${hh.updated} 体检）`;
   if(stale.length||cache.length)$("health").style.color="var(--mark)";
 }).catch(()=>{$("health").textContent=""});
@@ -795,11 +797,11 @@ fetch("data/health.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).the
 function nextUpdate(){
   const n=new Date(Date.now()+8*3600e3),slots=[];   // 北京时间
   for(let k=0;k<8;k++){const d=new Date(Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate()+k)),w=d.getUTCDay();
-    if(w===5)slots.push([d,8,13]);if(w>=1&&w<=5)slots.push([d,17,30],[d,21,7]);if(w===6)slots.push([d,9,13])}
+    if(w===5)slots.push([d,8,37]);if(w>=1&&w<=5)slots.push([d,17,41],[d,19,17],[d,21,23]);if(w===6)slots.push([d,9,29])}
   for(const [d,h,m] of slots){const t=new Date(d.getTime()+(h*60+m)*6e4);if(t>n){
     const same=t.getUTCDate()===n.getUTCDate(),tom=t.getUTCDate()===new Date(n.getTime()+864e5).getUTCDate();
     const wd="日一二三四五六"[t.getUTCDay()];
-    return `下次更新：${same?"今天":tom?"明天":"周"+wd} ${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}（北京时间，可能晚几分钟）`}}
+    return `下次更新：${same?"今天":tom?"明天":"周"+wd} ${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}（北京时间，GitHub 有时会晚一两个小时）`}}
   return "";
 }
 // 统一配色：绿=可以买 / 多买，灰=照常或暂停等待，橙=过热或偏贵（不加钱），红=卖出 / 减仓 / 异常

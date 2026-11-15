@@ -723,7 +723,7 @@ OVERSEAS_KEYS = {"nav006555", "nav539002", "nav007280", "nav021189", "etf159687"
 ETF300_KEYS = {"buffett", "sh510300", "sh510310", "sh510330", "sz159919", "unav510300", "unav510310", "unav510330", "unav159919", "cap300"}
 MONTHLY_KEYS = {"m1", "loan"}     # 月度数据：最新一条本来就是一个多月前的
 GOLD_KEYS = {"real10", "spdr", "ag0"}
-REF_KEYS = {"pb_below", "margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc"} | OVERSEAS_KEYS | ETF300_KEYS | MONTHLY_KEYS | GOLD_KEYS
+REF_KEYS = {"margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc"} | OVERSEAS_KEYS | ETF300_KEYS | MONTHLY_KEYS | GOLD_KEYS
 TOL = {"cn10y": ("abs", 0.15), "us10y": ("abs", 0.15), "m1": ("abs", 0.5), "loan": ("rel", 0.05), "real10": ("abs", 0.15), "pb_below": ("abs", 0.01), "ag0": ("rel", 0.02)}
 INCR_DAYS = 60          # 增量更新时回看的天数（同时用于和缓存比对）
 
