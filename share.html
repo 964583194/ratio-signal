@@ -66,15 +66,15 @@ const TAGS="#指数定投 #红利低波 #基金定投 #理财日记 #长期投�
 // ---------------- 每日 1 张：红利低波定投日记
 function divInfo(d){
   const L=d.latest,S=d.series,ES=L.eff??L.score,t=tier(ES),p=S[S.length-2],c=L.close/p[2]-1,p5=S[Math.max(0,S.length-6)],c5=L.close/p5[2]-1;
-  const head=ES<=6?"到减仓线":L.buy_next&&L.buy_amt?"明天一起买":L.amount>0?"先攒着":"今天不买";
-  const why=ES<=6?"评分跌到减仓线，分批卖出":L.buy_next&&L.buy_amt?`连跌 2 天了，明天把攒的 ${L.buy_amt} 元一起买`
+  const NX=L.next_label||"明天",head=ES<=6?"到减仓线":L.buy_next&&L.buy_amt?NX+"一起买":L.amount>0?"先攒着":"今天不买";
+  const why=ES<=6?"评分跌到减仓线，分批卖出":L.buy_next&&L.buy_amt?`连跌 2 天了，${NX}把攒的 ${L.buy_amt} 元一起买`
     :L.amount>0?`评分 ${L.score.toFixed(1)}，${t[2]}；等指数连跌 2 天再一起买`:`评分 ${L.score.toFixed(1)} 偏低（偏贵），暂停，钱先存着`;
   return {L,S,t,c,c5,head,why,ES};
 }
 function divCard(d){
   const {L,S,t,c,c5,head,why}=divInfo(d);
   $("card").innerHTML=`<div class="band"><b>红利低波 · 定投日记</b><span>${L.date} · ${WD(L.date)}</span></div>
-    <div class="big" style="--hl:${head==="明天一起买"?"#cfe9d8":head==="到减仓线"?"#f3c8c3":"#f8e39a"}"><span class="hl">${head}</span></div>
+    <div class="big" style="--hl:${head.endsWith("一起买")?"#cfe9d8":head==="到减仓线"?"#f3c8c3":"#f8e39a"}"><span class="hl">${head}</span></div>
     <div class="sub">${why}</div>
     <div class="box"><div class="row"><div class="score">${L.score.toFixed(2)}<small> / 20</small></div><div><span class="pill ${t[3]}">${t[2]}${t[1]?` · ${t[1]} 倍`:""}</span><div class="lbl" style="margin-top:4px">分越高越便宜、买越多</div></div></div></div>
     <div class="stats"><div><span class="lbl">今天指数</span><b style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</b></div><div><span class="lbl">近 5 日</span><b style="color:${c5>0?"var(--mark)":"var(--grow)"}">${sg(c5)}</b></div><div><span class="lbl">已攒的钱</span><b>${L.owed||0} 元</b></div></div>

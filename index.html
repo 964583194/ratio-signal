@@ -1321,7 +1321,7 @@ function renderDiv(d){
     :`高于正常线 ${(L.score-10).toFixed(1)} 分`;
   if(L.pending)$("dGap").textContent=`评分 ${L.score.toFixed(2)} 已到“${tierOf(L.score)[2]}”档，但换档要连续 2 天，今天先按“${t[2]}”` ;
   if(L.owed!=null){const B=$("dBatch");
-    B.textContent=L.buy_next&&L.buy_amt?`红利低波100 已连跌 2 天 → 明天下单 ${L.buy_amt} 元（攒着的一起买）`
+    B.textContent=L.buy_next&&L.buy_amt?`红利低波100 已连跌 2 天 → ${L.next_label||"明天"}下单 ${L.buy_amt} 元（攒着的一起买）`
       :L.owed>0?`先攒着：已攒 ${L.owed} 元，等红利低波100 连跌 2 天再一起买`
       :L.amount>0?`从今天开始攒，等红利低波100 连跌 2 天再一起买`:"";
     B.style.color=L.buy_next&&L.buy_amt?"var(--grow)":"inherit"}

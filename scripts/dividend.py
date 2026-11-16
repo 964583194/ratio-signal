@@ -159,8 +159,8 @@ def simulate(dates, tr, scores, mode, gate=None):
         if mode == "plain":
             hold += pool * (1 - FEE)
             pool = 0.0
-        else:
-            s = scores[i]
+        elif i > 0:
+            s = scores[i - 1]   # 用前一天收盘的评分：当天的评分收盘后才知道，场外基金只能按当天 15:00 前已知的信号下单
             for th, frac in SELLS:
                 if s <= th and th not in hit:
                     amt = hold * frac
@@ -329,9 +329,10 @@ def run(cyb_raw):
     daily = simulate(bt_dates, bt_tr, eff, "score")            # 对照：每天买
     scored = simulate(bt_dates, bt_tr, eff, "score", gate)     # 现行：攒着一起买
     # 每天的“攒着 / 下单”：owed 是到当天收盘为止攒着没买的钱（按每天 BASE 元），buy 是当天下单买了多少
+    # 第 k 天该记的钱按前一天收盘的评分（和回测、邮件里“明天下单 X 元”一致）
     owed, ledger = 0.0, []
-    for k, e in enumerate(eff):
-        owed += BASE * tier(e)[0]
+    for k in range(len(eff)):
+        owed += BASE * tier(eff[k - 1])[0] if k else 0
         if gate[k]:
             ledger.append((round(owed), 0))
             owed = 0.0
@@ -339,7 +340,9 @@ def run(cyb_raw):
             ledger.append((0, round(owed)))
     # 明天是不是下单日：今天、昨天都收跌
     nxt = len(bt_px) >= 3 and all(bt_px[-j] < bt_px[-j - 1] for j in range(1, DOWN + 1))
-    owed_now = ledger[-1][1] + BASE * tier(eff[-1])[0]     # 明天下单要买的：攒着的 + 明天自己的
+    owed_now = ledger[-1][1] + BASE * tier(eff[-1])[0]     # 下个交易日下单要买的：攒着的 + 下个交易日自己的（按今天收盘的评分）
+    nd = dt.date.fromisoformat(rows[-1]["date"])
+    next_label = "下周一" if nd.weekday() >= 4 else "明天"     # 数据是周五的：下一个交易日是周一（节假日另算）
 
     last = rows[-1]
     mult, name = tier(eff[-1])
@@ -358,7 +361,7 @@ def run(cyb_raw):
             "dy": round(last["dy"], 4), "y10": last["y10"], "spread": round(last["sp"], 2),
             "score": round(last["score"], 2), "tier": name, "amount": BASE * mult,
             "eff": round(eff[-1], 2), "pending": tier(last["score"])[0] != tier(eff[-1])[0],   # 新档位还没连续 2 天，先按上一档
-            "owed": ledger[-1][1], "buy_next": nxt, "buy_amt": round(owed_now) if nxt else 0,     # 攒着一起买
+            "owed": ledger[-1][1], "buy_next": nxt, "buy_amt": round(owed_now) if nxt else 0, "next_label": next_label,     # 攒着一起买
             "sub": {"val": r1(last["val"]), "tech": r1(last["tech"]),
                     "spread": r1(last["spread"]), "style": r1(last["style"])},
             "rsi": round(last["rsi"], 1), "pb": round(last["pb"], 2),
