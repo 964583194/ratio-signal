@@ -42,7 +42,7 @@ def run():
     if D:
         L = D["latest"]
         ow = L.get("owed") or 0
-        st = f"明天下单 {L['buy_amt']} 元" if L.get("buy_next") and L.get("buy_amt") else (f"已攒 {ow} 元" if ow else "")
+        st = f"{L.get('next_label', '明天')}下单 {L['buy_amt']} 元" if L.get("buy_next") and L.get("buy_amt") else (f"已攒 {ow} 元" if ow else "")
         rule.append(row("红利评分", f"{L['score']:.2f}", L["tier"], "g1" if L["amount"] else "c0",
                         ("攒着一起买：" + st + "，" if st else "攒着一起买，") + "连跌 2 天后一起下单", "dividend", L["date"]))
     if A:

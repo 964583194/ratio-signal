@@ -66,7 +66,7 @@ def dividend(d):
     if es <= 6:
         act = f"{L['tier']} · 分批卖出"
     elif buy:
-        act = f"红利低波100 已连跌 2 天，明天下单 {L['buy_amt']} 元（攒着的一起买）"
+        act = f"红利低波100 已连跌 2 天，{L.get('next_label', '明天')}下单 {L['buy_amt']} 元（攒着的一起买）"
     elif L["amount"]:
         ow = L.get("owed", 0)
         act = f"{L['tier']} · 先攒着（" + (f"已攒 {ow} 元，" if ow else "") + "等红利低波100 连跌 2 天一起买）"
