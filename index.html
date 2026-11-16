@@ -337,13 +337,13 @@
     <thead><tr><th>评分</th><th class="r">倍数</th><th class="r">每天金额</th><th>含义</th></tr></thead>
     <tbody></tbody>
   </table></div>
-  <p class="note">外部每天固定投入 200 元：少投的钱进现金池，多投的钱从现金池里出。评分跌破 6 / 4 / 2 时分批卖出 25% / 33% / 50%，卖出的钱等评分回到 12 分以上再买回。</p>
+  <p class="note">外部每天固定投入 200 元：少投的钱进现金池，多投的钱从现金池里出。评分跌破 6 / 4 / 2 时，下一个交易日分批卖出 25% / 33% / 50%（每条线一段行情只卖一次），卖出的钱等评分回到 12 分以上再买回。</p>
 </section>
 
 <section class="panel">
   <h2>近半个月每天怎么买</h2>
   <div class="scroll"><table id="dRecent"><thead><tr><th>日期</th><th class="r">评分</th><th>当天</th><th class="r">指数涨跌</th></tr></thead><tbody></tbody></table></div>
-  <p class="note">指数是红利低波100。每天收盘后按评分记下该买多少（每天 200 元为 1 倍），<b>先攒着；红利低波100 连续跌 2 天后，第二天把攒着的一起买</b>（回测年化 8.54%，每天买是 8.62%，下单次数少到约四分之一）。换档要连续 2 天落在新档位才算；减仓当天就做。评分涨、指数跌，说明越跌越便宜；评分跌、指数涨，说明涨贵了。</p>
+  <p class="note">指数是红利低波100。每天收盘后按评分记下该买多少（每天 200 元为 1 倍），<b>先攒着；红利低波100 连续跌 2 天后，第二天把攒着的一起买</b>（回测年化 <span id="dBtS">—</span>，每天买是 <span id="dBtD">—</span>，下单次数少到约四分之一）。换档要连续 2 天落在新档位才算。到减仓线不用等连跌，下一个交易日就卖；每条线一段行情只卖一次，评分回到 12 以上重新计。评分涨、指数跌，说明越跌越便宜；评分跌、指数涨，说明涨贵了。</p>
 </section>
 
 <section class="panel">
@@ -1313,15 +1313,16 @@ function renderDiv(d){
   $("dSp").textContent=L.spread.toFixed(2)+"pp";
   $("dAsof").textContent=L.date;
   $("dScoreV").textContent=L.score.toFixed(2);
+  {const B=d.backtest||{};if(B.score)$("dBtS").textContent=pc(B.score.xirr,2);if(B.daily)$("dBtD").textContent=pc(B.daily.xirr,2)}
   const ES=L.eff??L.score,t=tierOf(ES);
   const a=$("dAction");a.className="action tierpill "+t[4];
-  a.textContent=t[2]+" · "+(L.amount>0?L.amount+" 元/天":(ES<=6?"分批卖出":"暂停定投"));
+  a.textContent=t[2]+" · "+(L.amount>0?L.amount+" 元/天":L.sell_next?`${L.next_label||"明天"}卖出 ${Math.round(L.sell_next*100)}%`:ES<=6?"这条线已卖过，先不动":"暂停定投");
   if(L.pending)a.title="";
   $("dGap").textContent=L.score<10?`距正常线还差 ${(10-L.score).toFixed(1)} 分（10 分恢复 200 元/天）`
     :`高于正常线 ${(L.score-10).toFixed(1)} 分`;
   if(L.pending)$("dGap").textContent=`评分 ${L.score.toFixed(2)} 已到“${tierOf(L.score)[2]}”档，但换档要连续 2 天，今天先按“${t[2]}”` ;
   if(L.owed!=null){const B=$("dBatch");
-    B.textContent=L.buy_next&&L.buy_amt?`红利低波100 已连跌 2 天 → ${L.next_label||"明天"}下单 ${L.buy_amt} 元（攒着的一起买）`
+    B.textContent=L.sell_next?`到减仓线 → ${L.next_label||"明天"}卖出红利仓位的 ${Math.round(L.sell_next*100)}%`:L.buy_next&&L.buy_amt?`红利低波100 已连跌 2 天 → ${L.next_label||"明天"}下单 ${L.buy_amt} 元（攒着的一起买）`
       :L.owed>0?`先攒着：已攒 ${L.owed} 元，等红利低波100 连跌 2 天再一起买`
       :L.amount>0?`从今天开始攒，等红利低波100 连跌 2 天再一起买`:"";
     B.style.color=L.buy_next&&L.buy_amt?"var(--grow)":"inherit"}
@@ -1367,7 +1368,7 @@ function renderDiv(d){
       addEventListener("resize",()=>drawScore(SS,rg))}
     // 近半个月：最近 10 个交易日
     const R=SS.slice(-11),ex=x=>x[3]??x[1],amt=x=>{const v=ex(x),t=tierOf(v);
-      if(x[4]>0)return `买 ${x[4]} 元`;if(x[5]>0)return `${t[2]} · 已攒 ${x[5]}`;return t[1]?`${t[2]} · ${P.base*t[1]} 元`:t[2]+(v>6?" · 0 元":"")};
+      if(x[6])return `卖出 ${Math.round(x[6]*100)}%`;if(x[4]>0)return `买 ${x[4]} 元`;if(x[5]>0)return `${t[2]} · 已攒 ${x[5]}`;return t[1]?`${t[2]} · ${P.base*t[1]} 元`:(v>6?t[2]:"空仓")+" · 0 元"};
     $("dRecent").tBodies[0].innerHTML=R.slice(1).reverse().map((x,k,a)=>{const prev=R[R.length-1-k-1],c=x[2]/prev[2]-1,ds=x[1]-prev[1];
       return `<tr${k===0?' class="cur"':''}><td class="num">${x[0].slice(5)}</td><td class="r num">${x[1].toFixed(2)} <small style="color:${ds>0?"var(--grow)":ds<0?"var(--mark)":"inherit"}">${ds>0?"↑":ds<0?"↓":""}</small></td><td><span class="tierpill ${x[4]>0?"t-more":tierOf(ex(x))[4]}" style="font-size:12px;padding:1px 6px">${amt(x)}</span>${tierOf(ex(x))[2]!==tierOf(x[1])[2]?'<br><small class="note">新档未满 2 天</small>':""}</td><td class="r num" style="color:${c>0?"var(--mark)":c<0?"var(--grow)":"inherit"}">${c>0?"+":""}${pc(c,1)}</td></tr>`}).join("");
     // 图下结论：近一年评分和指数的关系
