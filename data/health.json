@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-17 04:00",
+ "updated": "2026-11-17 05:03",
  "ok": true,
  "items": {
   "cyb50": {
@@ -124,13 +124,11 @@
   },
   "gold": {
    "name": "黄金ETF 518880 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-16",
    "days": 3233,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": false
   },
@@ -166,13 +164,11 @@
   },
   "mkt_amt": {
    "name": "两市成交额",
-   "source": "本地缓存",
-   "mode": "缓存",
+   "source": "东方财富",
+   "mode": "增量",
    "last": "2026-11-16",
    "days": 4095,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": true
   },
@@ -323,10 +319,10 @@
    "name": "美国 10 年期实际利率",
    "source": "美国财政部",
    "mode": "增量",
-   "last": "2026-11-13",
-   "days": 4219,
+   "last": "2026-11-16",
+   "days": 4220,
    "failed": [],
-   "stale_days": 4,
+   "stale_days": 1,
    "ref": true
   },
   "spdr": {
@@ -353,13 +349,11 @@
   },
   "etf513100": {
    "name": "纳指ETF 513100 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-16",
    "days": 646,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": false
   },
@@ -375,13 +369,11 @@
   },
   "bank": {
    "name": "中证银行 收盘",
-   "source": "中证指数官网",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-16",
    "days": 2794,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": true
   },
@@ -447,13 +439,11 @@
   },
   "etf159687": {
    "name": "亚太精选ETF 159687 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
    "last": "2026-11-16",
    "days": 933,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": true
   },
