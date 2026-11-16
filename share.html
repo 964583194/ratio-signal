@@ -65,40 +65,35 @@ const TAGS="#指数定投 #红利低波 #基金定投 #理财日记 #长期投�
 
 // ---------------- 每日 1 张：红利低波定投日记
 function divInfo(d){
-  const L=d.latest,S=d.series,ES=L.eff??L.score,t=tier(ES),p=S[S.length-2],c=L.close/p[2]-1,p5=S[Math.max(0,S.length-6)],c5=L.close/p5[2]-1;
-  const NX=L.next_label||"明天",head=ES<=6?"到减仓线":L.buy_next&&L.buy_amt?NX+"一起买":L.amount>0?"先攒着":"今天不买";
-  const why=ES<=6?"评分跌到减仓线，分批卖出":L.buy_next&&L.buy_amt?`连跌 2 天了，${NX}把攒的 ${L.buy_amt} 元一起买`
-    :L.pending?`评分 ${L.score.toFixed(1)} 到「${tier(L.score)[2]}」档，连续 2 天才换，今天仍按${t[2]}记`:L.amount>0?`评分 ${L.score.toFixed(1)}，${t[2]}；等指数连跌 2 天再一起买`:`评分 ${L.score.toFixed(1)} 偏低（偏贵），暂停，钱先存着`;
-  return {L,S,t,c,c5,head,why,ES};
+  // 图上只说买不买，不讲规则：今天的操作（前一晚就定了）+ 明天的操作
+  const L=d.latest,S=d.series,p=S[S.length-2],c=L.close/p[2]-1,p5=S[Math.max(0,S.length-6)],c5=L.close/p5[2]-1;
+  const buy=S[S.length-1][4]||0,sell=(p[3]??p[1])<=6,NX=L.next_label||"明天";
+  const head=sell?"今天减仓":buy>0?`今天买 ${buy} 元`:"今天不买";
+  const next=(L.eff??L.score)<=6?"减仓":L.buy_next&&L.buy_amt?`买 ${L.buy_amt} 元`:"不买";
+  return {L,S,c,c5,head,buy,sell,next,NX};
 }
 function divCard(d){
-  const {L,S,t,c,c5,head,why}=divInfo(d);
+  const {L,S,c,c5,head,buy,sell,next,NX}=divInfo(d);
   $("card").innerHTML=`<div class="band"><b>红利低波 · 定投日记</b><span>${L.date} · ${WD(L.date)}</span></div>
-    <div class="big" style="--hl:${head.endsWith("一起买")?"#cfe9d8":head==="到减仓线"?"#f3c8c3":"#f8e39a"}"><span class="hl">${head}</span></div>
-    <div class="sub"${why.length>24?' style="font-size:12.5px"':""}>${why}</div>
-    ${d.live?`<div class="lbl" style="color:var(--div);margin-top:-4px">按 ${d.live.time} 盘中价格估算，收盘后以正式评分为准</div>`:""}
-    <div class="box"><div class="row"><div class="score">${L.score.toFixed(2)}<small> / 20</small></div><div><span class="pill ${t[3]}">${t[2]}${t[1]?` · ${t[1]} 倍`:""}</span><div class="lbl" style="margin-top:4px">分越高越便宜、买越多</div></div></div></div>
-    <div class="stats"><div><span class="lbl">${d.live?"盘中 "+d.live.time:"今天指数"}</span><b style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</b></div><div><span class="lbl">近 5 日</span><b style="color:${c5>0?"var(--mark)":"var(--grow)"}">${sg(c5)}</b></div><div><span class="lbl">已攒的钱</span><b>${L.owed||0} 元</b></div></div>
-    <div class="box chartbox" style="padding:6px 8px"><div class="lbl">近一年：评分（黑）和指数（红）几乎反着走 → 越跌越买（每天 200 元为 1 倍）</div><svg id="c" viewBox="0 0 480 140"></svg></div>
+    <div class="big" style="font-size:40px;--hl:${buy>0?"#cfe9d8":sell?"#f3c8c3":"#f8e39a"}"><span class="hl">${head}</span></div>
+    <div class="sub" style="font-size:16px;color:var(--ink)">${NX}${d.live?"（预计）":""}：<b>${next}</b></div>
+    ${d.live?`<div class="lbl" style="color:var(--div)">按 ${d.live.time} 盘中价格估算，收盘后自动更新</div>`:""}
+    <div class="stats"><div><span class="lbl">${d.live?"盘中 "+d.live.time:"今天涨跌"}</span><b style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</b></div><div><span class="lbl">近 5 日</span><b style="color:${c5>0?"var(--mark)":"var(--grow)"}">${sg(c5)}</b></div><div><span class="lbl">评分</span><b>${L.score.toFixed(1)}</b></div></div>
+    <div class="box chartbox" style="padding:6px 8px"><div class="lbl">近一年：评分（黑）· 红利低波100（红）</div><svg id="c" viewBox="0 0 480 215"></svg></div>
     ${FT}`;
   const X=S.slice(-250);
-  DualChart($("c"),{W:480,H:140,dates:X.map(x=>x[0]),leftRange:[0,20],leftTicks:[0,8,12,20],leftFmt:v=>v,
+  DualChart($("c"),{W:480,H:215,dates:X.map(x=>x[0]),leftRange:[0,20],leftTicks:[0,8,12,20],leftFmt:v=>v,
     bands:[{from:12,to:20,fill:"var(--grow-soft)"},{from:0,to:8,fill:"var(--mid)"}],
     left:[{v:X.map(x=>x[1]),c:"var(--ink)",w:1.4}],right:{v:X.map(x=>x[2]),c:"var(--mark)"},tip:()=>""});
 }
 function divCap(d){
-  const {L,t,c,head,why}=divInfo(d);
-  return `红利低波定投日记｜${L.date.slice(5)} ${head}${d.live?`（盘中 ${d.live.time}）`:""}
+  const {L,c,head,next,NX}=divInfo(d);
+  return `红利低波定投日记｜${L.date.slice(5)} ${head}
 
-${d.live?`截至 ${d.live.time}，`:"今天"}红利低波100 ${sg(c)}，打分 ${L.score.toFixed(2)} / 20（${t[2]}${d.live?"，盘中估算，收盘后可能变":""}）。
-${why}。
+${d.live?`截至 ${d.live.time}，`:"今天"}红利低波100 ${sg(c)}，评分 ${L.score.toFixed(1)}${d.live?"（盘中估算）":""}。
+${head}；${NX}${d.live?"预计":""}${next}。
 
-我的规则：
-· 每天按评分记下该买多少，分越高越便宜、买越多
-· 不每天下单，先攒着，指数连跌 2 天后一起买
-· 评分太低（偏贵）就停，跌到减仓线分批卖
-
-个人记录，不构成投资建议。
+按评分定投红利低波，越跌越买，偏贵就停。个人记录，不构成投资建议。
 
 ${TAGS} #红利指数`;
 }
