@@ -403,7 +403,10 @@ def csi_value(code, col="市盈率1"):
     """中证指数官网日度指标文件（近 20 个交易日），经 AKShare"""
     def f(since):
         import akshare as ak  # noqa: PLC0415
-        df = ak.stock_zh_index_value_csindex(symbol=code)
+        fn = getattr(ak, "stock_zh_index_value_csindex", None) or getattr(ak, "index_value_csindex", None)   # 新版 AKShare 改了名
+        if fn is None:
+            raise RuntimeError("AKShare 里找不到中证日度指标接口")
+        df = fn(symbol=code)
         return {str(r["日期"])[:10]: float(r[col]) for _, r in df.iterrows() if str(r[col]) not in ("", "nan")}
     return f
 
@@ -701,6 +704,24 @@ CATALOG = {
         ("东方财富", lambda s: em_lsjz("513100", 3 if s else 10)),
         ("新浪", lambda s: sina_nav("513100", 60 if s else 200)),
     ]),
+    # ---- 银行（实验，债基 · 银行页签；失败不算异常）
+    "bank": ("中证银行 收盘", 2500, [
+        ("东方财富", lambda s: em_kline("0.399986", _ymd(s, "20050101"))),
+        ("中证指数官网", lambda s: cs_perf("399986", "close", _ymd(s, "20100101"))),
+        ("腾讯", lambda s: tx_kline("sz399986", _year(s, 2005))),
+    ]),
+    "bank_pe": ("中证银行 市盈率", 2000, [
+        ("中证指数官网", lambda s: cs_perf("399986", "peg", _ymd(s, "20100101"))),
+        ("中证日度指标", csi_value("399986")),
+    ]),
+    # 全收益指数代码没在官网确认过，几个候选都试；都不行就用银行指数基金的累计净值（分红留在基金里，接近全收益）
+    "bank_tr": ("中证银行 全收益", 2000, [
+        ("中证指数官网 H00986", lambda s: cs_perf("H00986", "close", _ymd(s, "20100101"))),
+        ("中证指数官网 H20986", lambda s: cs_perf("H20986", "close", _ymd(s, "20100101"))),
+        ("中证指数官网 H09986", lambda s: cs_perf("H09986", "close", _ymd(s, "20100101"))),
+        ("东方财富 H00986", lambda s: em_kline("2.H00986", _ymd(s, "19900101"))),
+        ("东方财富 H20986", lambda s: em_kline("2.H20986", _ymd(s, "19900101"))),
+    ] + [("招商中证银行指数 161723 " + a, f) for a, f in fund_acc("161723")]),
     # ---- 海外小仓位（只作提醒，失败不算异常）
     "nav006555": ("浦银全球智能科技 累计净值", 200, fund_acc("006555")),
     "nav539002": ("建信新兴市场混合 累计净值", 200, fund_acc("539002")),
@@ -723,7 +744,8 @@ OVERSEAS_KEYS = {"nav006555", "nav539002", "nav007280", "nav021189", "etf159687"
 ETF300_KEYS = {"buffett", "sh510300", "sh510310", "sh510330", "sz159919", "unav510300", "unav510310", "unav510330", "unav159919", "cap300"}
 MONTHLY_KEYS = {"m1", "loan"}     # 月度数据：最新一条本来就是一个多月前的
 GOLD_KEYS = {"real10", "spdr", "ag0"}
-REF_KEYS = {"margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc"} | OVERSEAS_KEYS | ETF300_KEYS | MONTHLY_KEYS | GOLD_KEYS
+BANK_KEYS = {"bank", "bank_pe", "bank_tr"}
+REF_KEYS = {"margin", "margin_ratio", "mkt_amt", "pe_cyb", "pe_kc"} | OVERSEAS_KEYS | ETF300_KEYS | MONTHLY_KEYS | GOLD_KEYS | BANK_KEYS
 TOL = {"cn10y": ("abs", 0.15), "us10y": ("abs", 0.15), "m1": ("abs", 0.5), "loan": ("rel", 0.05), "real10": ("abs", 0.15), "pb_below": ("abs", 0.01), "ag0": ("rel", 0.02)}
 INCR_DAYS = 60          # 增量更新时回看的天数（同时用于和缓存比对）
 

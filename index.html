@@ -28,7 +28,7 @@
   <p id="subA" hidden>价格：中证A500（000510）· 估值：沪深300 市盈率与十年国债 · 数据更新于 <span class="num" id="a_updated">—</span></p>
   <p id="subN" hidden>纳斯达克100 指数（美元计价）· 回撤、年线与国内 ETF 溢价率 · 数据更新于 <span class="num" id="n_updated">—</span></p>
   <p id="subG" hidden>黄金ETF（518880）· 压舱石：平时照常买，便宜多入一点，涨得极端卖一部分 · 数据更新于 <span class="num" id="g_updated">—</span></p>
-  <p id="subB" hidden>中债7-10年政策性金融债指数类基金 · 用十年国债收益率判断 · 数据更新于 <span class="num" id="b_updated">—</span></p>
+  <p id="subB" hidden>都看十年国债 · 债基：中债7-10年政策性金融债指数类 · 银行：中证银行（实验）· 数据更新于 <span class="num" id="b_updated">—</span></p>
   <p id="subDiv" hidden>每天 200 元为 1 倍 · 四维打分 0~20 分决定买多少 · 先攒着，红利低波100 连跌 2 天后一起买 · 数据更新于 <span class="num" id="dUpdated">—</span></p>
 </header>
 
@@ -39,7 +39,7 @@
   <button type="button" role="tab" id="tabDiv" data-view="dividend" aria-selected="false">红利</button>
   <button type="button" role="tab" id="tabBroad" data-view="broad" aria-selected="false">宽基</button>
   <button type="button" role="tab" id="tabG" data-view="gold" aria-selected="false">黄金</button>
-  <button type="button" role="tab" id="tabB" data-view="bond" aria-selected="false">债基</button>
+  <button type="button" role="tab" id="tabB" data-view="bond" aria-selected="false">债基 · 银行</button>
   <button type="button" role="tab" id="tabN" data-view="ndx" aria-selected="false">纳指</button>
 </nav></div>
 <div class="ranges grp" role="group" aria-label="切换" id="grpSw" hidden></div>
@@ -700,6 +700,58 @@ const aView=Val("viewA","data/a500.json","a500");
 const hView=Val("viewH","data/hs300.json","hs300");
 const nView=Val("viewN","data/ndx.json","ndx");
 const bView=Val("viewB","data/bond.json","bond");
+
+// ---------------- 银行（实验，和债基同一页签；数据在 bank.py）
+function loadBank(){
+  const v=$("viewB");let root=$("bankBox");
+  if(!root){root=document.createElement("div");root.id="bankBox";v.appendChild(root);
+    const box=(id,h)=>`<div class="ranges" role="group" aria-label="时间范围" data-for="${id}"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y">近3年</button><button type="button" data-r="all" aria-pressed="true">全部</button></div>
+      <div class="chartwrap"><svg class="chart" id="${id}" viewBox="0 0 720 ${h}" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div><p class="note hint">手指按住或鼠标移到图上查看每天的数值</p>`;
+    root.innerHTML=`<h2 class="bankh">银行 <span class="lv h1 expv">实验</span> <small>中证银行 399986 · 不占比例，只作提醒</small></h2>
+      <section class="panel err" id="bk_err" hidden><h2>读取银行数据失败</h2><p class="note" id="bk_errMsg"></p></section>
+      <section class="panel"><div class="readout"><div>
+        <div class="label" id="bk_lab">加载中</div><div><span class="big num" id="bk_big">—</span><span class="num of">/ 100</span></div>
+        <span class="action" id="bk_act">加载中</span></div><div><p class="note" id="bk_why" style="margin:0"></p></div></div>
+        <div class="kv" id="bk_kv"></div><p class="concl" id="bk_link"></p></section>
+      <section class="panel"><h2>指标体检</h2><p class="note" style="margin:-6px 0 12px">每项 0~100，越高越便宜。</p><div class="dims" id="bk_dims"></div></section>
+      <section class="panel"><h2>银行便宜指数走势</h2>${box("bk_c1",220)}<p class="note">绿色区域（≥80）很便宜，红色区域（&lt;20）偏贵。</p></section>
+      <section class="panel"><h2>股息率 − 十年国债（百分点）</h2>${box("bk_c2",220)}<p class="note">银行股息率比国债高出多少。越高，银行相对国债越便宜。</p></section>
+      <section class="panel"><h2>历史检验：在这个位置买入，之后一年怎样</h2><div class="scroll"><table><thead><tr><th>当时所处位置</th><th class="r">样本天数</th><th class="r">一年后平均</th><th class="r">上涨概率</th><th class="r">最差</th></tr></thead><tbody id="bk_fwd"></tbody></table></div><p class="note" id="bk_fwdNote"></p></section>
+      <section class="panel"><h2>回测：每周 1000 元</h2><div class="scroll"><table><thead><tr><th>方案</th><th class="r">年化 XIRR</th><th class="r">最大回撤</th><th class="r">未投现金</th></tr></thead><tbody id="bk_bt"></tbody></table></div><p class="note" id="bk_btNote"></p></section>
+      <section class="panel rules"><h2>规则速查（实验）</h2><div id="bk_rules"></div></section>`;
+    root.c1=LineChart($("bk_c1"),{W:720,H:220,fixedY:[0,100],ticks:[0,20,40,60,80,100],bands:[{from:80,fill:"var(--grow-soft)"},{to:20,fill:"var(--mark-soft)"}]});
+    root.c2=LineChart($("bk_c2"),{W:720,H:220});
+  }
+  Promise.all([getJ("bank.json"),getJ("bond.json")]).then(([d,b])=>{
+    if(!d||!d.latest){$("bk_err").hidden=false;$("bk_errMsg").textContent="还没有生成银行数据，等下一次自动更新。";return}
+    const L=d.latest,sg=x=>(x>0?"+":"")+pc(x),chg=L.close/L.prev_close-1;
+    const cls={"很便宜":"vz-good","偏便宜":"vz-ok","正常":"vz-mid","偏贵":"vz-warn"}[L.zone]||"vz-mid";
+    $("bk_lab").textContent="银行便宜指数 · "+L.date;$("bk_big").textContent=L.cheap.toFixed(0);
+    $("bk_act").className="action "+cls;$("bk_act").textContent=L.zone+" · "+L.action;
+    $("bk_why").textContent=`股息率 ${pc(L.dy,2)} − 十年国债 ${L.y10.toFixed(2)}% = 利差 ${L.spread.toFixed(2)} 个百分点，高于近 10 年 ${pc(L.sp_pct,0)} 的时间；市盈率 ${L.pe!=null?L.pe.toFixed(2)+" 倍":"—"}，比近 10 年 ${L.pe_pct!=null?pc(1-L.pe_pct,0):"—"} 的时间便宜。两项各占一半，越高越便宜。`;
+    $("bk_kv").innerHTML=[["中证银行",L.close.toLocaleString(undefined,{maximumFractionDigits:0})+` <small style="color:${chg>=0?"var(--mark)":"var(--grow)"}">${sign2(chg)}</small>`],["股息率",pc(L.dy,2)],["十年国债",L.y10.toFixed(2)+"%"],["利差",L.spread.toFixed(2)+"pp"]]
+      .map(([a,c])=>`<div><div class="label">${a}</div><div class="v">${c}</div></div>`).join("");
+    const bl=b&&b.latest;
+    $("bk_link").innerHTML=`<b>和债基一起看：</b>${bl?`十年国债比近一年均值${bl.dev>=0?"高":"低"} ${Math.abs(bl.dev).toFixed(0)}bp（债基${bondZone(bl.dev)[0]}）。`:""}利率越低，债基越贵，银行的股息相对国债就越值钱。${d.corr_bond!=null?`${d.bt_start.slice(0,4)} 年起两者每周涨跌的相关系数 ${d.corr_bond.toFixed(2)}，${Math.abs(d.corr_bond)<.2?"几乎不相关，可以互相分散":d.corr_bond<0?"常常一涨一跌":"常常同涨同跌"}。`:""}`;
+    const lv=x=>x>=80?["很便宜","g2"]:x>=60?["偏便宜","g1"]:x>=40?["中性","c0"]:x>=20?["偏贵","r1"]:["很贵","r2"];
+    const dim=(n,w,x,det)=>{const [t,c]=lv(x);return `<div class="dim"><div class="top"><span class="name">${n}</span><span class="w">${w}</span></div><div class="row"><span class="sv">${x.toFixed(0)}<small> /100</small></span><span class="lv ${c}">${t}</span></div><div class="meter"><i style="width:${Math.max(2,x)}%;background:var(--grow)"></i></div><div class="ends"><span>贵</span><span>便宜</span></div><div class="det">${det}</div></div>`};
+    $("bk_dims").innerHTML=dim("股息率 − 十年国债","权重 50%",L.sp_pct*100,`利差 ${L.spread.toFixed(2)}pp，高于近 10 年 ${pc(L.sp_pct,0)} 的时间。股息率用全收益指数和价格指数近 12 个月的差推算（来源：${d.sources.tr}）。`)+
+      (L.pe_pct!=null?dim("市盈率","权重 50%",(1-L.pe_pct)*100,`PE ${L.pe.toFixed(2)} 倍。银行常年破净，市净率更直观，但拿不到免费的历史市净率，先用市盈率。`):"")+
+      (L.dev!=null?`<div class="dim"><div class="top"><span class="name">年线（趋势）</span><span class="w">只作参考</span></div><div class="row"><span class="sv" style="font-size:20px">${L.dev<0?"下方":"上方"}</span><span class="lv ${L.dev<0?"r1":"c0"}">${sign2(L.dev)}</span></div><div class="det">中证银行年线 ${L.ma250.toLocaleString(undefined,{maximumFractionDigits:0})}。</div></div>`:"");
+    root.c1.set(d.series,{tip:(dt,x)=>`${dt}<br>银行便宜指数 <b>${x.toFixed(0)}</b> · ${lv(x)[0]}`});
+    root.c2.set(d.sp_series,{tip:(dt,x)=>`${dt}<br>利差 <b>${x.toFixed(2)}pp</b>`});
+    const cur=L.cheap>=80?0:L.cheap>=60?1:L.cheap>=20?2:3;
+    $("bk_fwd").innerHTML=d.forward.map((r,i)=>`<tr class="${i===cur?"hl":""}"><td>${r.zone}${i===cur?"（现在）":""}</td><td class="r num">${r.n}</td><td class="r num">${r.avg==null?"—":sign2(r.avg)}</td><td class="r num">${r.win==null?"—":pc(r.win,0)}</td><td class="r num">${r.worst==null?"—":sign2(r.worst)}</td></tr>`).join("");
+    $("bk_fwdNote").textContent=`按全收益指数（含分红）统计，持有 250 个交易日，样本从 ${d.bt_start} 开始。同一段行情里的天数互相重叠。`;
+    const best=d.backtest.reduce((a,x)=>x.xirr>a.xirr?x:a,d.backtest[0]);
+    $("bk_bt").innerHTML=d.backtest.map(x=>`<tr class="${x===best?"hl":""}"><td>${x.name}${x.desc?`<br><small class="note">${x.desc}</small>`:""}</td><td class="r num">${pc(x.xirr,2)}</td><td class="r num">${pc(x.mdd)}</td><td class="r num">${x.pool.toLocaleString()}</td></tr>`).join("");
+    const plain=d.backtest[0].xirr,top=best.xirr;
+    $("bk_btNote").textContent=`${d.bt_start} 起，每周 1000 元，按全收益指数（含分红）；钱不够就买池子里有的，没买的进现金池（年化 1.5%）。`+(top-plain<.003?"按档位调金额没有明显好过普通定投，所以只作参考。":`最好的方案比普通定投多 ${((top-plain)*100).toFixed(2)} 个百分点。`);
+    $("bk_rules").innerHTML=d.zones.map(([lo,m,z,a],i)=>[i===0?`≥ ${lo}`:lo<0?`< ${d.zones[i-1][0]}`:`${lo}–${d.zones[i-1][0]}`,`${z}：${a}`])
+      .concat([["回测","2019 年起按档调金额都不如普通定投，所以档位只说位置，不改金额"],["比例","不占组合比例，不进下单清单"],["邮件","不发"]]).map(([k,x])=>`<div class="rule"><span class="k">${k}</span><span>${x}</span></div>`).join("");
+  });
+}
+const sign2=x=>(x>0?"+":"")+pc(x);
 // ---------------- 黄金（六档：压舱石，平时照常买，便宜时多入一点，涨得极端时卖一部分；规则在 goldmodel.py）
 const GCOND={sell:"比年线高 30% 以上",hot:"比年线高 25% 以上",more:"ETF 资金恐慌撤出（60 日持仓减少 ≥8%）",wait:"刚开始跌（还在 10 个月线上方），或波动很大",cheap:"比年线低 5% 以上",buy:"其他时候"};
 const GFILL={S:"rgba(200,55,45,.30)",H:"rgba(201,138,18,.24)",M:"rgba(47,143,91,.40)",W:"rgba(201,138,18,.11)",C:"rgba(47,143,91,.16)",B:null};
@@ -1166,12 +1218,12 @@ const VIEWS={overview:["viewO","tabO","subO","交易系统"],
              dividend:["viewDiv","tabDiv","subDiv","红利低波100 · 每日定投打分"],
              broad:["viewBroad","tabBroad","subA","A500 / 沪深300 · 便宜还是贵"],
              gold:["viewG","tabG","subG","黄金 · 压舱石"],
-             bond:["viewB","tabB","subB","债基 · 要不要加仓"],
+             bond:["viewB","tabB","subB","债基 · 银行 · 都看利率"],
              ndx:["viewN","tabN","subN","纳指100 · 什么时候能买"]};
 // 轮动页签里有两个子页：创业板 / 科创板
 const GROUPS={rotation:[["rotation","创业板50"],["kc","科创50"]]};
 GROUPS.kc=GROUPS.rotation;
-const LOADERS={overview:loadOverview,temp:loadTemp,rotation:rotView.load,kc:kcView.load,dividend:loadDiv,ndx:nView.load,gold:loadGold,bond:bView.load},LOADED={};
+const LOADERS={overview:loadOverview,temp:loadTemp,rotation:rotView.load,kc:kcView.load,dividend:loadDiv,ndx:nView.load,gold:loadGold,bond:()=>{bView.load();loadBank()}},LOADED={};
 // A500 / 沪深300 合并成一个页签；旧链接 #a500、#hs300 仍然能打开对应的那一个
 let BROAD="a500";const BLOADED={};
 function setBroad(b){

@@ -227,3 +227,6 @@ details.sub{margin-top:10px}details.sub>summary{cursor:pointer;font-size:13px;co
 .ki .s{text-align:right}.ki .s .lv{white-space:normal;display:inline-block;text-align:left}.ki .x{grid-column:1/-1;font-size:12px;color:var(--muted);line-height:1.45}
 .kig{margin:12px 0 2px;font-size:13px;font-weight:700;display:flex;gap:8px;align-items:baseline;border-bottom:2px solid var(--ink);padding-bottom:3px}.kig small{font-weight:400;color:var(--muted)}
 .exptag{display:inline-block;font-size:11px;font-weight:700;padding:0 6px;border-radius:4px;background:var(--div-soft);color:var(--div);border:1px dashed var(--div);vertical-align:1px}
+
+/* 债基 · 银行：银行部分的小标题 */
+.bankh{margin:26px 2px 10px;font-size:20px}.bankh small{font-weight:400;color:var(--muted);font-size:13px}.bankh .expv{font-size:12px;border:1px dashed var(--div)}
