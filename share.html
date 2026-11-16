@@ -76,8 +76,9 @@ function divCard(d){
   $("card").innerHTML=`<div class="band"><b>红利低波 · 定投日记</b><span>${L.date} · ${WD(L.date)}</span></div>
     <div class="big" style="--hl:${head.endsWith("一起买")?"#cfe9d8":head==="到减仓线"?"#f3c8c3":"#f8e39a"}"><span class="hl">${head}</span></div>
     <div class="sub">${why}</div>
+    ${d.live?`<div class="lbl" style="color:var(--div);margin-top:-4px">按 ${d.live.time} 盘中价格估算，收盘后以正式评分为准</div>`:""}
     <div class="box"><div class="row"><div class="score">${L.score.toFixed(2)}<small> / 20</small></div><div><span class="pill ${t[3]}">${t[2]}${t[1]?` · ${t[1]} 倍`:""}</span><div class="lbl" style="margin-top:4px">分越高越便宜、买越多</div></div></div></div>
-    <div class="stats"><div><span class="lbl">今天指数</span><b style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</b></div><div><span class="lbl">近 5 日</span><b style="color:${c5>0?"var(--mark)":"var(--grow)"}">${sg(c5)}</b></div><div><span class="lbl">已攒的钱</span><b>${L.owed||0} 元</b></div></div>
+    <div class="stats"><div><span class="lbl">${d.live?"盘中 "+d.live.time:"今天指数"}</span><b style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</b></div><div><span class="lbl">近 5 日</span><b style="color:${c5>0?"var(--mark)":"var(--grow)"}">${sg(c5)}</b></div><div><span class="lbl">已攒的钱</span><b>${L.owed||0} 元</b></div></div>
     <div class="box chartbox" style="padding:6px 8px"><div class="lbl">近一年：评分（黑）和指数（红）几乎反着走 → 越跌越买（每天 200 元为 1 倍）</div><svg id="c" viewBox="0 0 480 140"></svg></div>
     ${FT}`;
   const X=S.slice(-250);
@@ -87,9 +88,9 @@ function divCard(d){
 }
 function divCap(d){
   const {L,t,c,head,why}=divInfo(d);
-  return `红利低波定投日记｜${L.date.slice(5)} ${head}
+  return `红利低波定投日记｜${L.date.slice(5)} ${head}${d.live?`（盘中 ${d.live.time}）`:""}
 
-今天红利低波100 ${sg(c)}，打分 ${L.score.toFixed(2)} / 20（${t[2]}）。
+${d.live?`截至 ${d.live.time}，`:"今天"}红利低波100 ${sg(c)}，打分 ${L.score.toFixed(2)} / 20（${t[2]}${d.live?"，盘中估算，收盘后可能变":""}）。
 ${why}。
 
 我的规则：
@@ -220,7 +221,7 @@ ${TAGS} #A股 #创业板`;
 }
 
 (async()=>{
-  if(K==="div"||K==="cap_div"){const d=await J("dividend.json");if(K==="div")divCard(d);else{$("card").outerHTML=`<pre id="cap">${divCap(d)}</pre>`};document.body.dataset.date=d.latest.date}
+  if(K==="div"||K==="cap_div"){const [d0,dl]=await Promise.all([J("dividend.json"),J("dividend_live.json")]),d=dl&&dl.latest.date>d0.latest.date?dl:d0;if(d.live)document.body.dataset.live=d.live.time;if(K==="div")divCard(d);else{$("card").outerHTML=`<pre id="cap">${divCap(d)}</pre>`};document.body.dataset.date=d.latest.date}
   else if(K==="wdiv"){const d=await J("dividend.json");wdiv(d);document.body.dataset.date=d.latest.date}
   else if(K==="wrot"){const [R,Kc]=await Promise.all([J("ratio.json"),J("kc.json")]);wrot(R,Kc);document.body.dataset.date=R.latest.date}
   else{const D=await weekData();({week:w3,week1:w1,week2:w2,week3:w3})[K]?.(D);if(K==="cap_week")$("card").outerHTML=`<pre id="cap">${weekCap(D)}</pre>`;document.body.dataset.date=D.date}

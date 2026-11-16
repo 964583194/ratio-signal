@@ -11,7 +11,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "data", "share")
 
 
-def run():
+def run(only=None):
     from playwright.sync_api import sync_playwright  # noqa: PLC0415
     os.makedirs(OUT, exist_ok=True)
     class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -22,15 +22,23 @@ def run():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     port = srv.server_address[1]
     info = {}
+    if only:                                  # 盘中估算只重画每日图，其余沿用
+        try:
+            with open(os.path.join(OUT, "info.json"), encoding="utf-8") as fh:
+                info = json.load(fh)
+        except Exception:  # noqa: BLE001
+            info = {}
     with sync_playwright() as p:
         b = p.chromium.launch()
         pg = b.new_page(viewport={"width": 360, "height": 480}, device_scale_factor=3)
-        for k in ("div", "week", "wdiv", "wrot"):
+        for k in (only or ("div", "week", "wdiv", "wrot")):
             pg.goto(f"http://127.0.0.1:{port}/share.html?card={k}")
             pg.wait_for_selector("body[data-ready]", timeout=20000)
             pg.wait_for_timeout(300)
             pg.screenshot(path=os.path.join(OUT, f"{k}.png"), clip={"x": 0, "y": 0, "width": 360, "height": 480})
             info[k] = pg.evaluate("document.body.dataset.date || ''")
+            if k == "div":
+                info["div_live"] = pg.evaluate("document.body.dataset.live || ''")   # 盘中估算的时间，正式版为空
             if k not in ("div", "week"):                                   # 周记 3 张图共用一段文案
                 continue
             pg.goto(f"http://127.0.0.1:{port}/share.html?card=cap_{k}")      # 配套小红书文案
@@ -44,4 +52,5 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    import sys
+    run(("div",) if "--live" in sys.argv else None)
