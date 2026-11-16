@@ -810,6 +810,22 @@ _MEMO = {}
 
 
 def get_series(key, min_days=None):
+    """同 _get_series；红利全收益指数中间缺的日子（中证官网漏发某天）按价格涨跌补上，
+    不然那天会从红利打分和两个轮动里掉出去（2026-11-12 就掉过）。"""
+    data, label = _get_series(key, min_days)
+    if key == "hl100_tr" and data:
+        close = _get_series("hl100")[0]
+        data, prev = dict(data), None
+        for d in sorted(x for x in close if x >= min(data)):
+            if d in data:
+                prev = d
+            elif prev is not None and d < max(data):      # 只补中间的缺口；最新几天由各自脚本按需要补
+                data[d] = data[prev] * close[d] / close[prev]
+                prev = d
+    return data, label
+
+
+def _get_series(key, min_days=None):
     """返回 (数据 dict, 来源说明)。同一次运行里每项数据只请求一次。"""
     if key in _MEMO:
         return _MEMO[key]
