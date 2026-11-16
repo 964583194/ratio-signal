@@ -68,7 +68,7 @@ function divInfo(d){
   const L=d.latest,S=d.series,ES=L.eff??L.score,t=tier(ES),p=S[S.length-2],c=L.close/p[2]-1,p5=S[Math.max(0,S.length-6)],c5=L.close/p5[2]-1;
   const NX=L.next_label||"明天",head=ES<=6?"到减仓线":L.buy_next&&L.buy_amt?NX+"一起买":L.amount>0?"先攒着":"今天不买";
   const why=ES<=6?"评分跌到减仓线，分批卖出":L.buy_next&&L.buy_amt?`连跌 2 天了，${NX}把攒的 ${L.buy_amt} 元一起买`
-    :L.amount>0?`评分 ${L.score.toFixed(1)}，${t[2]}；等指数连跌 2 天再一起买`:`评分 ${L.score.toFixed(1)} 偏低（偏贵），暂停，钱先存着`;
+    :L.pending?`评分 ${L.score.toFixed(1)} 到「${tier(L.score)[2]}」档，连续 2 天才换，今天仍按${t[2]}记`:L.amount>0?`评分 ${L.score.toFixed(1)}，${t[2]}；等指数连跌 2 天再一起买`:`评分 ${L.score.toFixed(1)} 偏低（偏贵），暂停，钱先存着`;
   return {L,S,t,c,c5,head,why,ES};
 }
 function divCard(d){
