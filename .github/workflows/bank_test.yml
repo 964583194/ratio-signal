@@ -1,0 +1,35 @@
+# 临时：只在 bank-exp 测试分支上跑银行回测，结果提交回这个分支。合并到 main 前删掉。
+name: 银行回测（测试分支）
+
+on:
+  push:
+    branches: [bank-exp]
+
+permissions:
+  contents: write
+
+jobs:
+  bank:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: 安装 AKShare
+        run: pip install -q akshare || true
+
+      - name: 银行数据与回测
+        run: |
+          cd scripts
+          python bank.py 2>&1 | tee ../data/bank_log.txt || true
+
+      - name: 提交结果到测试分支
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -A data
+          git commit -m "银行回测结果 [skip ci]" || exit 0
+          git push origin HEAD:bank-exp
