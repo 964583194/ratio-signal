@@ -245,6 +245,7 @@ def main():
                                      os.path.join(ROOT, "data", "kc.json"), KC_LO, KC_HI, KC_SELLS, DIV_KC,
                                      "2021-01-01", "科创50", tr(), div_score())),
         ("中证A500 / 沪深300 / 纳指100 / 黄金", lambda: __import__("value").run()),
+        ("银行（实验）", lambda: __import__("bank").run()),
         ("海外小仓位", lambda: __import__("overseas").run()),   # 要读 ndx.json，放在后面
         ("黄金分析", lambda: __import__("goldmodel").run()),   # 要读 gold.json
         ("我的基金", lambda: __import__("myfunds").run()),     # 要读 temp.json 和各页签结果，放最后
