@@ -343,6 +343,18 @@ def run(cyb_raw):
             owed = 0.0
         else:
             ledger.append((0, round(owed)))
+    # 减仓：和回测一样，第 k 天按前一天评分卖；每条线（6 / 4 / 2）一段行情只卖一次，评分回到 12 以上重新计
+    def sell_step(sc, hit):
+        out = [frac for th, frac in SELLS if sc <= th and th not in hit]
+        hit.update(th for th, frac in SELLS if sc <= th)
+        if sc >= 12:
+            hit.clear()
+        return out
+    hit, sells = set(), [0]
+    for k in range(1, len(eff)):
+        fr = sell_step(eff[k - 1], hit)
+        sells.append(round(fr[-1], 4) if fr else 0)      # 一天跨过几条线时按最深那条
+    nxt_sell = sell_step(eff[-1], set(hit))
     # 明天是不是下单日：今天、昨天都收跌
     nxt = len(bt_px) >= 3 and all(bt_px[-j] < bt_px[-j - 1] for j in range(1, DOWN + 1))
     owed_now = ledger[-1][1] + BASE * tier(eff[-1])[0]     # 下个交易日下单要买的：攒着的 + 下个交易日自己的（按今天收盘的评分）
@@ -367,6 +379,7 @@ def run(cyb_raw):
             "score": round(last["score"], 2), "tier": name, "amount": BASE * mult,
             "eff": round(eff[-1], 2), "pending": tier(last["score"])[0] != tier(eff[-1])[0],   # 新档位还没连续 2 天，先按上一档
             "owed": ledger[-1][1], "buy_next": nxt, "buy_amt": round(owed_now) if nxt else 0, "next_label": next_label,     # 攒着一起买
+            "sell_next": round(nxt_sell[-1], 4) if nxt_sell else 0,      # 下个交易日要减仓的比例（0 = 不减）
             "sub": {"val": r1(last["val"]), "tech": r1(last["tech"]),
                     "spread": r1(last["spread"]), "style": r1(last["style"])},
             "rsi": round(last["rsi"], 1), "pb": round(last["pb"], 2),
@@ -384,7 +397,7 @@ def run(cyb_raw):
         },
         "lines": lines,
         "forward": fwd_stats,
-        "series": [[r["date"], round(r["score"], 2), round(close[r["i"]], 2), round(e, 2), b, o] for r, e, (b, o) in zip(rows, eff, ledger)],   # 日期、评分、红利低波100、执行用分数、当天买、攒着
+        "series": [[r["date"], round(r["score"], 2), round(close[r["i"]], 2), round(e, 2), b, o, sl] for r, e, (b, o), sl in zip(rows, eff, ledger, sells)],   # 日期、评分、红利低波100、执行用分数、当天买、攒着、当天减仓比例
     }
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as fh:

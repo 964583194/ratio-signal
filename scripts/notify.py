@@ -63,8 +63,11 @@ def dividend(d):
     es = L.get("eff", L["score"])
     wait = "（新档位还没连续 2 天，先按上一档）" if L.get("pending") else ""
     buy = bool(L.get("buy_next") and L.get("buy_amt"))
-    if es <= 6:
-        act = f"{L['tier']} · 分批卖出"
+    sl = L.get("sell_next", 1 if es <= 6 else 0)     # 旧数据没有 sell_next 时按原来的判断
+    if sl:
+        act = f"评分到减仓线，{L.get('next_label', '明天')}卖出红利仓位的 {sl:.0%}" if sl != 1 else f"{L['tier']} · 分批卖出"
+    elif es <= 6:
+        act = f"{L['tier']} · 这条线已经卖过，先不动"
     elif buy:
         act = f"红利低波100 已连跌 2 天，{L.get('next_label', '明天')}下单 {L['buy_amt']} 元（攒着的一起买）"
     elif L["amount"]:
@@ -73,7 +76,7 @@ def dividend(d):
     else:
         act = f"{L['tier']} · 暂停定投"
     # 只在“要下单 / 要减仓”时提醒；攒钱的日子（档位在少买、空仓之间变）不发
-    return ("下单" if buy else "减仓" if es <= 6 else "攒着"), f"评分 {L['score']:.2f} / 20（{L['tier']}）{wait}", act, "dividend"
+    return ("下单" if buy else f"减仓{sl}" if sl else "攒着"), f"评分 {L['score']:.2f} / 20（{L['tier']}）{wait}", act, "dividend"
 
 
 def a500(d):
@@ -371,10 +374,10 @@ def group_of(n, b, cur, report):
     """今天就做：卖出类、红利打分（按日买）；周五再定：其他定投板块（周五按周四收盘下单）"""
     if n == "数据源":
         return "数据源"
-    if n == "红利打分" and b not in ("下单", "减仓"):
+    if n == "红利打分" and not b.startswith(("下单", "减仓")):
         return "提醒"
     if n in OPS or (n == "国家队流向" and b.startswith("加仓")):
-        if SELL.search(re.split(r"；距|（阈值", cur[n]["act"])[0]) or (n == "红利打分" and b in ("下单", "减仓")):
+        if SELL.search(re.split(r"；距|（阈值", cur[n]["act"])[0]) or (n == "红利打分" and b.startswith(("下单", "减仓"))):
             return "今天就做"
         return "本周下单" if report else "周五再定"
     return "提醒"

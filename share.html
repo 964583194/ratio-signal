@@ -67,9 +67,9 @@ const TAGS="#指数定投 #红利低波 #基金定投 #理财日记 #长期投�
 function divInfo(d){
   // 图上只说买不买，不讲规则：今天的操作（前一晚就定了）+ 明天的操作
   const L=d.latest,S=d.series,p=S[S.length-2],c=L.close/p[2]-1,p5=S[Math.max(0,S.length-6)],c5=L.close/p5[2]-1;
-  const buy=S[S.length-1][4]||0,sell=(p[3]??p[1])<=6,NX=L.next_label||"明天";
-  const head=sell?"今天减仓":buy>0?`今天买 ${buy} 元`:"今天不买";
-  const next=(L.eff??L.score)<=6?"减仓":L.buy_next&&L.buy_amt?`买 ${L.buy_amt} 元`:"不买";
+  const buy=S[S.length-1][4]||0,sell=S[S.length-1][6]||0,NX=L.next_label||"明天",fr=x=>Math.round(x*100)+"%";
+  const head=sell?`今天减仓 ${fr(sell)}`:buy>0?`今天买 ${buy} 元`:"今天不买";
+  const next=L.sell_next?`减仓 ${fr(L.sell_next)}`:L.buy_next&&L.buy_amt?`买 ${L.buy_amt} 元`:"不买";
   return {L,S,c,c5,head,buy,sell,next,NX};
 }
 function divCard(d){
@@ -144,22 +144,27 @@ function w2(D){
     ${FT}`;
 }
 // 周记都只说买 / 不买，不讲规则
-const amtTag=a=>/翻倍|加大|[23]\s*倍|1\.5\s*倍/.test(a)?"多买":/0\.[356]\s*倍|少买/.test(a)?"少买":"";
+const amtTag=a=>/翻倍|加大|[23]\s*倍|1\.5\s*倍|多加|加码/.test(a)?"多买":/0\.[356]\s*倍|少买/.test(a)?"少买":"";
 function weekLists(st){
-  const buy=[],stop=[];
-  NM.forEach(([k,n])=>{if(!st[k]||k==="黄金")return;const a=st[k].act;
-    if(/暂停|空仓|不买/.test(a)&&k!=="红利打分")stop.push(n);else{const t=amtTag(a);buy.push(t?`${n}（${t}）`:n)}});
-  return {buy,stop};
+  // 只看每个板块"该做的事"那一句（去掉后面的距离、阈值说明）；红利低波：其他板块暂停的钱也每周买它，所以只要有钱进来就算买
+  const buy=[],stop=[],sell=[],head=a=>a.split(/；距|（阈值|；场内/)[0];
+  const paused=["创业板轮动","科创板轮动"].some(k=>st[k]&&/暂停/.test(head(st[k].act)));
+  NM.forEach(([k,n])=>{if(!st[k]||k==="黄金")return;const a=head(st[k].act);
+    if(/^卖|卖出|减仓 ?\d|止盈：卖/.test(a))sell.push(n);
+    else if(k==="红利打分"){const t=amtTag(a);/空仓|暂停/.test(a)&&!paused?stop.push(n):buy.push(t&&!paused?`${n}（${t}）`:n)}
+    else if(/暂停|空仓|不买|不加|不动/.test(a))stop.push(n);
+    else{const t=amtTag(a);buy.push(t?`${n}（${t}）`:n)}});
+  return {buy,stop,sell};
 }
 function w3(D){
-  const {st,T,ret,date}=D,m=Math.max(...ret.map(y=>Math.abs(y.r)),.02),L=T.latest,{buy,stop}=weekLists(st);
+  const {st,T,ret,date}=D,m=Math.max(...ret.map(y=>Math.abs(y.r)),.02),L=T.latest,{buy,stop,sell}=weekLists(st);
   const head=stop.length?`${stop.join("、")}不买`:"全部照常买";
   $("card").innerHTML=`<div class="band"><b>指数定投 · 周记</b><span>${date} · 第 ${WK(date)} 周</span></div>
     <div class="big" style="font-size:30px"><span class="hl">${head}</span></div>
     <div class="sub" style="font-size:14px">市场：<b style="color:var(--ink)">${L.zone}</b></div>
     <div class="box bars" style="padding:6px 12px"><div class="lbl" style="margin-bottom:2px">本周涨跌</div>${ret.map(x=>barRow(x,m)).join("")}</div>
     <div class="box" style="padding:9px 12px"><div class="kv2" style="font-size:14px;gap:7px 12px"><span class="k">买</span><span><b style="color:var(--grow)">${buy.join("、")||"—"}</b></span>
-      <span class="k">不买</span><span>${stop.join("、")||"—"}</span>
+      <span class="k">不买</span><span>${stop.join("、")||"—"}</span>${sell.length?`<span class="k">卖</span><span><b style="color:var(--mark)">${sell.join("、")}</b></span>`:""}
       <span class="k">黄金</span><span style="color:var(--muted)">暂不给建议</span></div></div>
     ${FT}`;
 }
@@ -168,8 +173,8 @@ function wdiv(d){
   const S=d.series,L=d.latest,wk=WK(L.date);let i=S.length-1;while(i>0&&WK(S[i-1][0])===wk)i--;
   const W=S.slice(i),orders=W.filter(x=>x[4]>0),tot=orders.reduce((a,x)=>a+x[4],0),wr=L.close/S[Math.max(0,i-1)][2]-1;
   const rows=W.map((x,j)=>{const pv=S[i+j-1],c=pv?x[2]/pv[2]-1:0;
-    return `<tr><td>${WD(x[0])}<span class="lbl"> ${x[0].slice(5)}</span></td><td style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</td><td>${x[4]>0?`<span class="pill g">买 ${x[4]} 元</span>`:`<span class="lbl">不买</span>`}</td></tr>`}).join("");
-  const nx=(L.eff??L.score)<=6?"减仓":L.buy_next&&L.buy_amt?`买 ${L.buy_amt} 元`:"不买";
+    return `<tr><td>${WD(x[0])}<span class="lbl"> ${x[0].slice(5)}</span></td><td style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</td><td>${x[6]?`<span class="pill r">减仓 ${Math.round(x[6]*100)}%</span>`:x[4]>0?`<span class="pill g">买 ${x[4]} 元</span>`:`<span class="lbl">不买</span>`}</td></tr>`}).join("");
+  const nx=L.sell_next?`减仓 ${Math.round(L.sell_next*100)}%`:L.buy_next&&L.buy_amt?`买 ${L.buy_amt} 元`:"不买";
   $("card").innerHTML=`<div class="band"><b>红利低波 · 本周日记</b><span>${L.date} · 第 ${wk} 周</span></div>
     <div class="big" style="font-size:30px"><span class="hl">${orders.length?`本周买了 ${orders.length} 次`:"本周没买"}</span></div>
     <div class="sub" style="font-size:14px">${orders.length?`共 ${tot} 元 · `:""}本周指数 ${sg(wr)}</div>
@@ -182,7 +187,7 @@ function wrot(R,Kc){
   const scale=(nm,d)=>{const th=d.params.th,v=d.latest.ratio,S=d.series,wk=WK(d.latest.date);let i=S.length-1;while(i>0&&WK(S[i-1][0])===wk)i--;
     const pv=S[Math.max(0,i-1)][1],lo=th.dbl-(th.mid-th.dbl)*.6,hi=th.s1+(th.s1-th.mid)*.25,X=x=>Math.max(0,Math.min(100,(x-lo)/(hi-lo)*100));
     const seg=[[lo,th.day,"多买","var(--grow)"],[th.day,th.mid,"买","#8cc7a2"],[th.mid,th.s1,"不买","#c9c2b5"],[th.s1,hi,"卖","var(--mark)"]];
-    const gap=v>th.mid?1-th.mid/v:0,z=(d.plan&&d.plan.zone_name)||"",st=/暂停/.test(z)?"不买":/卖/.test(z)?"卖":/加大|翻倍/.test(z)?"多买":"买";
+    const gap=v>th.mid?1-th.mid/v:0,z=(d.plan&&d.plan.zone_name)||"",st=z==="卖出"?"卖":/暂停|预警/.test(z)?"不买":/加大|翻倍/.test(z)?"多买":"买";
     return {gap,nm,st,html:`<div class="box" style="padding:9px 12px 7px"><div class="row" style="justify-content:space-between"><b style="font-size:16px">${nm}</b><span class="pill ${st==="不买"?"c":st==="卖"?"r":"g"}" style="font-size:14px">${st}</span></div>
       <div class="sc">${seg.map(s=>`<i style="left:${X(s[0])}%;width:${X(s[1])-X(s[0])}%;background:${s[3]}"></i>`).join("")}
         <em class="pv" style="left:${X(pv)}%"></em><em style="left:${X(v)}%"></em></div>
@@ -197,14 +202,14 @@ function wrot(R,Kc){
     ${FT}`;
 }
 function weekCap(D){
-  const {st,ret,date,T}=D,{buy,stop}=weekLists(st);
+  const {st,ret,date,T}=D,{buy,stop,sell}=weekLists(st);
   return `第 ${WK(date)} 周定投记录｜${stop.length?stop.join("、")+"不买":"全部照常买"}
 
 本周涨跌：${ret.map(x=>`${x.n} ${sg(x.r)}`).join("，")}。
 市场：${T.latest.zone}。
 
 买：${buy.join("、")||"—"}
-不买：${stop.join("、")||"—"}
+不买：${stop.join("、")||"—"}${sell.length?`\n卖：${sell.join("、")}`:""}
 黄金：暂不给建议
 
 按事先定好的规则定投，不猜涨跌。个人记录，不构成投资建议。
