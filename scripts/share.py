@@ -12,8 +12,9 @@ OUT = os.path.join(ROOT, "data", "share")
 
 
 def run(only=None):
+    out = os.path.join(OUT, "live") if only else OUT     # 快速版单独放，不和完整更新抢同一个文件
     from playwright.sync_api import sync_playwright  # noqa: PLC0415
-    os.makedirs(OUT, exist_ok=True)
+    os.makedirs(out, exist_ok=True)
     class Quiet(http.server.SimpleHTTPRequestHandler):
         def log_message(self, *a):
             pass
@@ -24,7 +25,7 @@ def run(only=None):
     info = {}
     if only:                                  # 盘中估算只重画每日图，其余沿用
         try:
-            with open(os.path.join(OUT, "info.json"), encoding="utf-8") as fh:
+            with open(os.path.join(out, "info.json"), encoding="utf-8") as fh:
                 info = json.load(fh)
         except Exception:  # noqa: BLE001
             info = {}
@@ -35,7 +36,7 @@ def run(only=None):
             pg.goto(f"http://127.0.0.1:{port}/share.html?card={k}")
             pg.wait_for_selector("body[data-ready]", timeout=20000)
             pg.wait_for_timeout(300)
-            pg.screenshot(path=os.path.join(OUT, f"{k}.png"), clip={"x": 0, "y": 0, "width": 360, "height": 480})
+            pg.screenshot(path=os.path.join(out, f"{k}.png"), clip={"x": 0, "y": 0, "width": 360, "height": 480})
             info[k] = pg.evaluate("document.body.dataset.date || ''")
             if k == "div":
                 info["div_live"] = pg.evaluate("document.body.dataset.live || ''")   # 盘中估算的时间，正式版为空
@@ -46,7 +47,7 @@ def run(only=None):
             info["cap_" + k] = pg.eval_on_selector("#cap", "e => e.textContent")
         b.close()
     srv.shutdown()
-    with open(os.path.join(OUT, "info.json"), "w", encoding="utf-8") as fh:
+    with open(os.path.join(out, "info.json"), "w", encoding="utf-8") as fh:
         json.dump(info, fh, ensure_ascii=False)
     print("分享图：", info)
 

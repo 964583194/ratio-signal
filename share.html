@@ -77,9 +77,9 @@ function divCard(d){
   const {L,S,c,c5,head,buy,sell,next,NX}=divInfo(d);
   $("card").innerHTML=`<div class="band"><b>红利低波 · 定投日记</b><span>${L.date} · ${WD(L.date)}</span></div>
     <div class="big" style="font-size:40px;--hl:${buy>0?"#cfe9d8":sell?"#f3c8c3":"#f8e39a"}"><span class="hl">${head}</span></div>
-    <div class="sub" style="font-size:16px;color:var(--ink)">${NX}${d.live?"（预计）":""}：<b>${next}</b></div>
-    ${d.live?`<div class="lbl" style="color:var(--div)">按 ${d.live.time} 盘中价格估算，收盘后自动更新</div>`:""}
-    <div class="stats"><div><span class="lbl">${d.live?"盘中 "+d.live.time:"今天涨跌"}</span><b style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</b></div><div><span class="lbl">近 5 日</span><b style="color:${c5>0?"var(--mark)":"var(--grow)"}">${sg(c5)}</b></div><div><span class="lbl">评分</span><b>${L.score.toFixed(1)}</b></div></div>
+    <div class="sub" style="font-size:16px;color:var(--ink)">${NX}${d.live&&d.live.time<"15:00"?"（预计）":""}：<b>${next}</b></div>
+    ${d.live&&d.live.time<"15:00"?`<div class="lbl" style="color:var(--div)">按 ${d.live.time} 盘中价格估算，收盘后自动更新</div>`:""}
+    <div class="stats"><div><span class="lbl">${d.live&&d.live.time<"15:00"?"盘中 "+d.live.time:"今天涨跌"}</span><b style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</b></div><div><span class="lbl">近 5 日</span><b style="color:${c5>0?"var(--mark)":"var(--grow)"}">${sg(c5)}</b></div><div><span class="lbl">评分</span><b>${L.score.toFixed(1)}</b></div></div>
     <div class="box" style="padding:8px 12px 6px"><div class="lbl">评分区间尺</div>
       <div style="position:relative;margin-top:24px">
         <div style="position:absolute;left:${Math.min(97,Math.max(3,L.score/20*100))}%;top:-23px;transform:translateX(-50%);text-align:center;font-size:12px;line-height:1;white-space:nowrap"><b>现在 ${L.score.toFixed(1)}</b><div style="width:0;height:0;margin:3px auto 0;border:5px solid transparent;border-top-color:var(--ink);border-bottom:0"></div></div>
@@ -98,8 +98,8 @@ function divCap(d){
   const {L,c,head,next,NX}=divInfo(d);
   return `红利低波定投日记｜${L.date.slice(5)} ${head}
 
-${d.live?`截至 ${d.live.time}，`:"今天"}红利低波100 ${sg(c)}，评分 ${L.score.toFixed(1)}${d.live?"（盘中估算）":""}。
-${head}；${NX}${d.live?"预计":""}${next}。
+${d.live&&d.live.time<"15:00"?`截至 ${d.live.time}，`:"今天"}红利低波100 ${sg(c)}，评分 ${L.score.toFixed(1)}${d.live&&d.live.time<"15:00"?"（盘中估算）":""}。
+${head}；${NX}${d.live&&d.live.time<"15:00"?"预计":""}${next}。
 
 按评分定投红利低波，越跌越买，偏贵就停。个人记录，不构成投资建议。
 

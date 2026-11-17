@@ -1,4 +1,4 @@
-name: 红利盘中估算
+name: 红利快速出图（盘中估算 / 收盘后先出）
 
 # 交易日下午先用实时价算出红利低波100 今天的评分，重画每日分享图（盘中版）；晚上收盘后正式更新会盖过它。
 # GitHub 定时常晚几个小时，所以设三次，哪次先在北京时间 13:00~15:00 跑到就用哪次（脚本里判断时间，不在时间段直接跳过）。
@@ -18,7 +18,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: update-data
+  group: intraday            # 单独一组：不用排在完整更新后面，几分钟就出图
   cancel-in-progress: false
 
 jobs:
@@ -53,7 +53,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/dividend_live.json data/share/
+          git add data/dividend_live.json data/share/live/
           git commit -m "红利盘中估算 $(TZ=Asia/Shanghai date '+%F %H:%M')" || exit 0
           git pull --rebase origin ${{ github.ref_name }}
           git push

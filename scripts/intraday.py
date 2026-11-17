@@ -40,7 +40,7 @@ def main():
         return 3
     today = now.date().isoformat()
     base = {k: S.load_cache(k) for k in ("hl100", "hl100_pe", "hl100_tr", "cn10y", "cyb50")}
-    if today in base["hl100"]:
+    if today in base["hl100"] and os.environ.get("FORCE") != "1":
         print("今天已有收盘数据，不用估算")
         return 3
     t_hl, p_hl = quote("2.930955")
