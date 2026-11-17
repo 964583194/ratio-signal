@@ -48,12 +48,18 @@ if __name__ == "__main__":
     cs = codes()
     print("股票总数", len(cs))
     cs = cs[i::n]
-    agg, ok, fail = {}, 0, 0
-    with ThreadPoolExecutor(8) as ex:
+    import os
+    prev = json.load(open(out)) if os.path.exists(out) else {"agg": {}, "done": []}
+    agg, done = prev["agg"], set(prev["done"])
+    cs = [c for c in cs if c not in done]
+    print("这次要抓", len(cs))
+    ok, fail = 0, 0
+    with ThreadPoolExecutor(3) as ex:
         for sec, r in ex.map(one, cs):
-            if r and len(r) > 1:
-                add(agg, r); ok += 1
+            if r is not None:
+                done.add(sec); ok += 1
+                if len(r) > 1: add(agg, r)
             elif r is None:
                 fail += 1
     print(f"分片 {i}/{n}：{len(cs)} 只，成功 {ok}，失败 {fail}")
-    json.dump(agg, open(out, "w"))
+    json.dump({"agg": agg, "done": sorted(done)}, open(out, "w"))

@@ -1,7 +1,8 @@
 import glob, json, sys, csv
 tot = {}
-for f in glob.glob(sys.argv[1] + "/**/*.json", recursive=True):
-    for d, a in json.load(open(f)).items():
+for f in glob.glob(sys.argv[1] + "/*.json"):
+    j = json.load(open(f)); print(f, len(j["done"]))
+    for d, a in j["agg"].items():
         t = tot.setdefault(d, [0] * 11)
         for k in range(11): t[k] += a[k]
 with open("data/raw/breadth_daily.csv", "w", newline="") as fh:
