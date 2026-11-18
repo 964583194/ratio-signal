@@ -1,5 +1,5 @@
 """小红书分享图：用 share.html 渲染两张 3:4 竖图（1080×1440），放在 data/share/。
-div.png 红利每日（定投日记）；week.png / wsum.png / wdiv.png / wrot.png 每周四张（本周这么做、周记总结、红利本周日记、创业板科创板离买点多远）。
+div.png / div2.png 红利每日两张（今天买不买、近半个月怎么买）；week.png / wsum.png / wdiv.png / wrot.png 每周四张（本周这么做、周记总结、红利本周日记、创业板科创板离买点多远）。
 info.json 里还有配套文案 cap_div / cap_week。网页上的“生成分享图”按钮打开图，长按保存，下面一键复制文案。"""
 import functools
 import http.server
@@ -32,7 +32,7 @@ def run(only=None):
     with sync_playwright() as p:
         b = p.chromium.launch()
         pg = b.new_page(viewport={"width": 360, "height": 480}, device_scale_factor=3)
-        for k in (only or ("div", "week", "wsum", "wdiv", "wrot")):
+        for k in (only or ("div", "div2", "week", "wsum", "wdiv", "wrot")):
             pg.goto(f"http://127.0.0.1:{port}/share.html?card={k}")
             pg.wait_for_selector("body[data-ready]", timeout=20000)
             pg.wait_for_timeout(300)
@@ -54,4 +54,4 @@ def run(only=None):
 
 if __name__ == "__main__":
     import sys
-    run(("div",) if "--live" in sys.argv else None)
+    run(("div", "div2") if "--live" in sys.argv else None)
