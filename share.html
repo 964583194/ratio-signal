@@ -42,7 +42,7 @@ html,body{margin:0;padding:0;background:var(--bg)}
 .wt{width:100%;border-collapse:collapse;font-size:12.5px;font-family:var(--f-num)}.wt th{font-size:11px;color:var(--muted);font-weight:400;text-align:left;padding:4px 2px}
 .sr .seg{white-space:nowrap;padding:0;font-size:11.5px}
 .ovr{display:grid;grid-template-columns:7.4em 1fr;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.45}.ovr:first-child{border-top:0}.ovr .pill{font-size:12px;padding:1px 8px;margin-right:2px}
-.wt.d2{font-size:12.5px}.wt.d2 td{padding:4.5px 2px}.wt.d2 .pill{font-size:11.5px}
+.wt.d2{font-size:12.5px}.wt.d2 td{padding:3px 2px}.wt.d2 .pill{font-size:11.5px}
 .wt.big3{font-size:14.5px}.wt.big3 td{padding:9px 2px}.wt td{padding:5px 2px;border-top:1px solid var(--line);white-space:nowrap}.wt .pill{font-size:11.5px;padding:1px 7px}
 .sc{position:relative;height:12px;margin:12px 0 2px;border-radius:3px;overflow:visible}.sc i{position:absolute;top:0;bottom:0}
 .sc em{position:absolute;top:-5px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--ink);border:2px solid #fff;box-sizing:border-box}
@@ -102,11 +102,12 @@ function div2Card(d){
   const buys=W.filter(x=>x[4]>0),tot=buys.reduce((a,x)=>a+x[4],0),sells=W.filter(x=>x[6]);
   const rows=W.map((x,j)=>{const pv=S[off+j-1],c=pv?x[2]/pv[2]-1:0,t=tier(x[3]??x[1]);
     const op=x[6]?`<span class="pill r">减仓 ${Math.round(x[6]*100)}%</span>`:x[4]>0?`<span class="pill g">买 ${x[4]} 元</span>`:`<span class="lbl" style="font-size:12.5px">不买</span>`;
-    return `<tr><td>${WD(x[0])}<span class="lbl"> ${x[0].slice(5)}</span></td><td style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</td><td><b>${x[1].toFixed(1)}</b></td><td>${op}</td><td class="lbl" style="font-size:12px">${x[5]>0?x[5]:""}</td></tr>`}).join("");
+    return `<tr><td>${WD(x[0])}<span class="lbl"> ${x[0].slice(5)}</span></td><td style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</td><td><b>${x[1].toFixed(1)}</b></td><td class="lbl" style="font-size:12px">${(()=>{const r=pv?x[5]-pv[5]+x[4]:0;return r>0?"+"+r:"—"})()}</td><td>${op}</td><td class="lbl" style="font-size:12px">${x[5]>0?x[5]:""}</td></tr>`}).join("");
   $("card").innerHTML=`<div class="band"><b>红利低波 · 近半个月怎么买</b><span>${L.date} · ${WD(L.date)}</span></div>
-    <div class="big" style="font-size:28px"><span class="hl">${sells.length?`减仓 ${sells.length} 次`:buys.length?`买了 ${buys.length} 次，共 ${tot} 元`:"近半个月没买"}</span></div>
+    <div class="big" style="font-size:24px"><span class="hl">${sells.length?`减仓 ${sells.length} 次`:buys.length?`买了 ${buys.length} 次，共 ${tot} 元`:"近半个月没买"}</span></div>
     <div class="sub" style="font-size:13px">最近 10 个交易日${live?` · 今天按 ${d.live.time} 盘中价格估算`:""}${L.owed?` · 现在已攒 ${L.owed} 元`:""}</div>
-    <div class="box" style="padding:2px 10px"><table class="wt d2"><tr><th>日期</th><th>涨跌</th><th>评分</th><th>操作</th><th>已攒</th></tr>${rows}</table></div>
+    <div class="box" style="padding:2px 10px"><table class="wt d2"><tr><th>日期</th><th>涨跌</th><th>评分</th><th>记下</th><th>操作</th><th>已攒</th></tr>${rows}</table></div>
+    <div class="lbl">记下 = 按前一天评分记的钱；连跌 2 天后一起买，不固定星期几</div>
     ${FT}`;
 }
 function divCap(d){
