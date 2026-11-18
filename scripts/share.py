@@ -33,16 +33,6 @@ def run(only=None):
         b = p.chromium.launch()
         pg = b.new_page(viewport={"width": 360, "height": 480}, device_scale_factor=3)
         for k in (only or ("div", "week", "wdiv", "wrot")):
-            if k == "week":                   # 周记第 1 张：直接用网页总览"本周这么做"卡片，风格和总览一致
-                pg.goto(f"http://127.0.0.1:{port}/index.html")
-                with open(os.path.join(ROOT, "scripts", "share_ov.js"), encoding="utf-8") as fh:
-                    info[k] = pg.evaluate(fh.read())
-                pg.wait_for_timeout(300)
-                pg.screenshot(path=os.path.join(out, f"{k}.png"), clip={"x": 0, "y": 0, "width": 360, "height": 480})
-                pg.goto(f"http://127.0.0.1:{port}/share.html?card=cap_{k}")
-                pg.wait_for_selector("body[data-ready]", timeout=20000)
-                info["cap_" + k] = pg.eval_on_selector("#cap", "e => e.textContent")
-                continue
             pg.goto(f"http://127.0.0.1:{port}/share.html?card={k}")
             pg.wait_for_selector("body[data-ready]", timeout=20000)
             pg.wait_for_timeout(300)

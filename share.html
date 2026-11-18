@@ -41,6 +41,7 @@ html,body{margin:0;padding:0;background:var(--bg)}
 .tipx{font-size:12px;line-height:1.5}
 .wt{width:100%;border-collapse:collapse;font-size:12.5px;font-family:var(--f-num)}.wt th{font-size:11px;color:var(--muted);font-weight:400;text-align:left;padding:4px 2px}
 .sr .seg{white-space:nowrap;padding:0;font-size:11.5px}
+.ovr{display:grid;grid-template-columns:7.4em 1fr;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.45}.ovr:first-child{border-top:0}.ovr .pill{font-size:12px;padding:1px 8px;margin-right:2px}
 .wt.big3{font-size:14.5px}.wt.big3 td{padding:9px 2px}.wt td{padding:5px 2px;border-top:1px solid var(--line);white-space:nowrap}.wt .pill{font-size:11.5px;padding:1px 7px}
 .sc{position:relative;height:12px;margin:12px 0 2px;border-radius:3px;overflow:visible}.sc i{position:absolute;top:0;bottom:0}
 .sc em{position:absolute;top:-5px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--ink);border:2px solid #fff;box-sizing:border-box}
@@ -209,6 +210,17 @@ function wrot(R,Kc){
     <div class="lbl">● 现在　○ 上周</div>
     ${FT}`;
 }
+// 周记第 1 张：内容和网页总览"本周这么做"一样，每个板块一行
+const OC=s=>/卖出预警|过热|偏贵|利率偏低|先等等|^不动/.test(s)?"y":/卖出|很贵|减仓|异常|卖一部分/.test(s)?"r":/买入区|低区|便宜|加码|多买|深度|大幅|回撤 ≥/.test(s)?"g":"c";
+function wov(D){
+  const {st,T,date}=D,order=["创业板轮动","科创板轮动","红利打分","A500 / 沪深300","黄金","纳指100","债基"];
+  const rows=order.filter(n=>st[n]).map(n=>{const v=st[n],parts=v.act.split("；"),main=parts[0].replace(/^本周定投款/,"").replace(/^买红利低波100（(.+)）$/,"$1"),lv=v.state.split("|")[0];
+    return `<div class="ovr"><b>${n.replace(" / ","/")}</b><div><span class="pill ${OC(lv)}">${lv}</span> ${main}${n==="黄金"?`<span class="lbl" style="font-size:12px">（暂不给建议）</span>`:""}</div></div>`}).join("");
+  $("card").innerHTML=`<div class="band"><b>指数定投 · 本周这么做</b><span>${date} · 第 ${WK(date)} 周</span></div>
+    <div class="sub" style="font-size:13px;margin-top:2px">市场：<b style="color:var(--ink)">${T.latest.zone}</b> · 周四收盘后定，周五 15:00 前下单</div>
+    <div class="box" style="padding:2px 12px">${rows}</div>
+    ${FT}`;
+}
 function weekCap(D){
   const {st,ret,date,T}=D,{buy,stop,sell}=weekLists(st);
   return `第 ${WK(date)} 周定投记录｜${stop.length?stop.join("、")+"不买":"全部照常买"}
@@ -229,7 +241,7 @@ ${TAGS} #A股 #创业板`;
   if(K==="div"||K==="cap_div"){const [d0,dl]=await Promise.all([J("dividend.json"),J("dividend_live.json")]),d=dl&&dl.latest.date>d0.latest.date?dl:d0;if(d.live)document.body.dataset.live=d.live.time;if(K==="div")divCard(d);else{$("card").outerHTML=`<pre id="cap">${divCap(d)}</pre>`};document.body.dataset.date=d.latest.date}
   else if(K==="wdiv"){const d=await J("dividend.json");wdiv(d);document.body.dataset.date=d.latest.date}
   else if(K==="wrot"){const [R,Kc]=await Promise.all([J("ratio.json"),J("kc.json")]);wrot(R,Kc);document.body.dataset.date=R.latest.date}
-  else{const D=await weekData();({week:w3,week1:w1,week2:w2,week3:w3})[K]?.(D);if(K==="cap_week")$("card").outerHTML=`<pre id="cap">${weekCap(D)}</pre>`;document.body.dataset.date=D.date}
+  else{const D=await weekData();({week:wov,week1:w1,week2:w2,week3:w3})[K]?.(D);if(K==="cap_week")$("card").outerHTML=`<pre id="cap">${weekCap(D)}</pre>`;document.body.dataset.date=D.date}
   document.body.dataset.ready=1;
 })();
 </script>
