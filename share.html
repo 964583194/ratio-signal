@@ -201,11 +201,11 @@ function wrot(R,Kc){
       <div class="sc">${seg.map(s=>`<i style="left:${X(s[0])}%;width:${X(s[1])-X(s[0])}%;background:${s[3]}"></i>`).join("")}
         <em class="pv" style="left:${X(pv)}%"></em><em style="left:${X(v)}%"></em></div>
       <div class="sl">${seg.map(s=>`<span style="left:${(X(s[0])+X(s[1]))/2}%">${s[2]}</span>`).join("")}</div>
-      <div class="tipx" style="font-size:13px">${gap>0?`离买点还差 <b style="color:var(--grow)">${pc(gap,0)}</b>`:"已经可以买"}${v<pv?" · 比上周近了":v>pv?" · 比上周远了":""}</div></div>`}};
+      <div class="tipx" style="font-size:13px">${gap>0?`离买点还差 <b style="color:var(--grow)">${pc(gap,0)}</b>`:st==="不买"?"刚到买点，连续 3 天在线下才开始买":"已经可以买"}${v<pv?" · 比上周近了":v>pv?" · 比上周远了":""}</div></div>`}};
   const a=scale("创业板",R),b=scale("科创板",Kc),same=a.st===b.st;
   $("card").innerHTML=`<div class="band"><b>创业板 · 科创板</b><span>${R.latest.date} · 第 ${WK(R.latest.date)} 周</span></div>
     <div class="big" style="font-size:30px"><span class="hl">${same?`都${a.st}`:`创业板${a.st}，科创板${b.st}`}</span></div>
-    <div class="sub" style="font-size:14px">${[a,b].filter(x=>x.gap>0).sort((x,y)=>x.gap-y.gap).map(x=>`${x.nm}离买点还差 ${pc(x.gap,0)}`)[0]||"在买点里"}</div>
+    <div class="sub" style="font-size:14px">${[a,b].filter(x=>x.st==="不买").map(x=>x.gap>0?`${x.nm}离买点还差 ${pc(x.gap,0)}`:`${x.nm}刚到买点，等确认`)[0]||"都在买点里"}</div>
     ${a.html}${b.html}
     <div class="lbl">● 现在　○ 上周</div>
     ${FT}`;
@@ -241,7 +241,7 @@ ${TAGS} #A股 #创业板`;
   if(K==="div"||K==="cap_div"){const [d0,dl]=await Promise.all([J("dividend.json"),J("dividend_live.json")]),d=dl&&dl.latest.date>d0.latest.date?dl:d0;if(d.live)document.body.dataset.live=d.live.time;if(K==="div")divCard(d);else{$("card").outerHTML=`<pre id="cap">${divCap(d)}</pre>`};document.body.dataset.date=d.latest.date}
   else if(K==="wdiv"){const d=await J("dividend.json");wdiv(d);document.body.dataset.date=d.latest.date}
   else if(K==="wrot"){const [R,Kc]=await Promise.all([J("ratio.json"),J("kc.json")]);wrot(R,Kc);document.body.dataset.date=R.latest.date}
-  else{const D=await weekData();({week:wov,week1:w1,week2:w2,week3:w3})[K]?.(D);if(K==="cap_week")$("card").outerHTML=`<pre id="cap">${weekCap(D)}</pre>`;document.body.dataset.date=D.date}
+  else{const D=await weekData();({week:wov,wsum:w3,week1:w1,week2:w2,week3:w3})[K]?.(D);if(K==="cap_week")$("card").outerHTML=`<pre id="cap">${weekCap(D)}</pre>`;document.body.dataset.date=D.date}
   document.body.dataset.ready=1;
 })();
 </script>
