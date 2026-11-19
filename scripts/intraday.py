@@ -18,8 +18,24 @@ def bj_now():
     return dt.datetime.utcnow() + dt.timedelta(hours=8)
 
 
-def quote(secid):
-    """东方财富实时价（指数）；拿不到就用日 K 里今天这根还没收盘的线"""
+# 新浪备用：红利低波100 没有新浪指数行情，用跟踪它的场内 ETF 当天涨跌幅推算；创业板50 直接用指数
+SINA = {"2.930955": "sh515100", "0.399673": "sz399673"}
+
+
+def sina(secid, last_close):
+    """返回 (时间, 推算的指数点位)：昨收 × (1 + 当天涨跌幅)"""
+    code = SINA[secid]
+    t = S.http(f"https://hq.sinajs.cn/list={code}", "https://finance.sina.com.cn/", raw=True).decode("gbk", "replace")
+    f = t.split('"')[1].split(",")
+    prev, now = float(f[2]), float(f[3])
+    if not (prev > 0 and now > 0):
+        raise ValueError(f"{code} 行情为空")
+    ts = dt.datetime.fromisoformat(f"{f[30]}T{f[31]}")
+    return ts, last_close * now / prev
+
+
+def quote(secid, last_close):
+    """东方财富实时价 → 东方财富日 K 今天这根线 → 新浪（ETF / 指数涨跌幅推算）"""
     try:
         j = S.jget(f"https://push2.eastmoney.com/api/qt/stock/get?secid={secid}&fltt=2&fields=f43,f60,f86",
                    "https://quote.eastmoney.com/")["data"]
@@ -27,10 +43,14 @@ def quote(secid):
         if isinstance(p, (int, float)) and p > 0 and ts:
             return dt.datetime.utcfromtimestamp(ts) + dt.timedelta(hours=8), float(p)
     except Exception as e:  # noqa: BLE001
-        print(f"{secid} 实时价失败：{type(e).__name__} {str(e)[:60]}")
-    k = S.em_kline(secid, bj_now().strftime("%Y%m%d"))
-    d = max(k)
-    return dt.datetime.fromisoformat(d + "T15:00:00"), k[d]
+        print(f"{secid} 东方财富实时价失败：{type(e).__name__} {str(e)[:60]}")
+    try:
+        k = S.em_kline(secid, bj_now().strftime("%Y%m%d"))
+        d = max(k)
+        return dt.datetime.fromisoformat(d + "T15:00:00"), k[d]
+    except Exception as e:  # noqa: BLE001
+        print(f"{secid} 东方财富日K失败：{type(e).__name__} {str(e)[:60]}，改用新浪")
+    return sina(secid, last_close)
 
 
 def main():
@@ -43,8 +63,9 @@ def main():
     if today in base["hl100"] and os.environ.get("FORCE") != "1":
         print("今天已有收盘数据，不用估算")
         return 3
-    t_hl, p_hl = quote("2.930955")
-    t_c, p_c = quote("0.399673")
+    last = lambda ser: ser[max(d for d in ser if d < today)]
+    t_hl, p_hl = quote("2.930955", last(base["hl100"]))
+    t_c, p_c = quote("0.399673", last(base["cyb50"]))
     if t_hl.date().isoformat() != today or t_c.date().isoformat() != today:
         print(f"行情时间 {t_hl} / {t_c} 不是今天：今天不是交易日")
         return 3
