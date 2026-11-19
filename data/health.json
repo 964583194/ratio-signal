@@ -1,14 +1,16 @@
 {
- "updated": "2026-11-20 03:36",
+ "updated": "2026-11-20 05:52",
  "ok": true,
  "items": {
   "cyb50": {
    "name": "创业板50 收盘",
-   "source": "东方财富",
+   "source": "国证指数官网",
    "mode": "增量",
    "last": "2026-11-19",
    "days": 4000,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 1,
    "ref": false
   },
@@ -44,31 +46,37 @@
   },
   "kc50": {
    "name": "科创50 收盘",
-   "source": "东方财富",
+   "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-19",
-   "days": 1671,
-   "failed": [],
+   "days": 1672,
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 1,
    "ref": false
   },
   "a500": {
    "name": "中证A500 收盘",
-   "source": "东方财富",
+   "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-19",
-   "days": 4100,
-   "failed": [],
+   "days": 4101,
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 1,
    "ref": false
   },
   "hs300": {
    "name": "沪深300 收盘",
-   "source": "东方财富",
+   "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-19",
-   "days": 5316,
-   "failed": [],
+   "days": 5317,
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 1,
    "ref": false
   },
@@ -198,31 +206,40 @@
   },
   "sh510300": {
    "name": "华泰柏瑞沪深300ETF 份额",
-   "source": "上交所",
-   "mode": "增量",
+   "source": "本地缓存",
+   "mode": "缓存",
    "last": "2026-11-19",
    "days": 2886,
-   "failed": [],
+   "failed": [
+    "上交所：RuntimeError 没有取到",
+    "AKShare：RuntimeError 没有取到"
+   ],
    "stale_days": 1,
    "ref": true
   },
   "sh510310": {
    "name": "易方达沪深300ETF 份额",
-   "source": "上交所",
-   "mode": "增量",
+   "source": "本地缓存",
+   "mode": "缓存",
    "last": "2026-11-19",
    "days": 2886,
-   "failed": [],
+   "failed": [
+    "上交所：RuntimeError 没有取到",
+    "AKShare：RuntimeError 没有取到"
+   ],
    "stale_days": 1,
    "ref": true
   },
   "sh510330": {
    "name": "华夏沪深300ETF 份额",
-   "source": "上交所",
-   "mode": "增量",
+   "source": "本地缓存",
+   "mode": "缓存",
    "last": "2026-11-19",
    "days": 2886,
-   "failed": [],
+   "failed": [
+    "上交所：RuntimeError 没有取到",
+    "AKShare：RuntimeError 没有取到"
+   ],
    "stale_days": 1,
    "ref": true
   },
@@ -323,10 +340,10 @@
    "name": "美国 10 年期实际利率",
    "source": "美国财政部",
    "mode": "增量",
-   "last": "2026-11-18",
-   "days": 4222,
+   "last": "2026-11-19",
+   "days": 4223,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "spdr": {
