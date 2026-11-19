@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-20 02:48",
+ "updated": "2026-11-20 03:36",
  "ok": true,
  "items": {
   "cyb50": {
@@ -17,7 +17,7 @@
    "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-19",
-   "days": 4102,
+   "days": 4103,
    "failed": [],
    "stale_days": 1,
    "ref": false
@@ -27,7 +27,7 @@
    "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-19",
-   "days": 2321,
+   "days": 2322,
    "failed": [],
    "stale_days": 1,
    "ref": false
@@ -37,7 +37,7 @@
    "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-19",
-   "days": 4102,
+   "days": 4103,
    "failed": [],
    "stale_days": 1,
    "ref": false
@@ -77,7 +77,7 @@
    "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-19",
-   "days": 3676,
+   "days": 3677,
    "failed": [],
    "stale_days": 1,
    "ref": false
@@ -87,7 +87,7 @@
    "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-19",
-   "days": 535,
+   "days": 536,
    "failed": [],
    "stale_days": 1,
    "ref": false
@@ -124,11 +124,13 @@
   },
   "gold": {
    "name": "黄金ETF 518880 收盘",
-   "source": "东方财富",
+   "source": "腾讯",
    "mode": "增量",
    "last": "2026-11-19",
    "days": 3236,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 1,
    "ref": false
   },
@@ -376,7 +378,7 @@
    "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-19",
-   "days": 2798,
+   "days": 2799,
    "failed": [
     "东方财富：RemoteDisconnected Remote end closed connection without response"
    ],
@@ -388,7 +390,7 @@
    "source": "中证指数官网",
    "mode": "增量",
    "last": "2026-11-19",
-   "days": 2801,
+   "days": 2802,
    "failed": [],
    "stale_days": 1,
    "ref": true
@@ -398,7 +400,7 @@
    "source": "中证指数官网 H00986",
    "mode": "增量",
    "last": "2026-11-19",
-   "days": 4101,
+   "days": 4102,
    "failed": [],
    "stale_days": 1,
    "ref": true
