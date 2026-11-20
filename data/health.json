@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-21 02:08",
+ "updated": "2026-11-21 05:22",
  "ok": true,
  "items": {
   "cyb50": {
@@ -124,11 +124,13 @@
   },
   "gold": {
    "name": "黄金ETF 518880 收盘",
-   "source": "东方财富",
+   "source": "腾讯",
    "mode": "增量",
    "last": "2026-11-20",
    "days": 3237,
-   "failed": [],
+   "failed": [
+    "东方财富：RemoteDisconnected Remote end closed connection without response"
+   ],
    "stale_days": 1,
    "ref": false
   },
@@ -321,10 +323,10 @@
    "name": "美国 10 年期实际利率",
    "source": "美国财政部",
    "mode": "增量",
-   "last": "2026-11-19",
-   "days": 4223,
+   "last": "2026-11-20",
+   "days": 4224,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "spdr": {
