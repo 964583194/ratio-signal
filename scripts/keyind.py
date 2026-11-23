@@ -90,7 +90,7 @@ def run():
                        "g1" if P_["value"] >= .6 else "h1" if P_["value"] < .4 else "c0",
                        f"→ {P_['advice']}。利差在近 5 年高于 {P_['sp_pct']*100:.0f}% 的日子，股息率高于 {P_['dy_pct']*100:.0f}%。"
                        + (f"历史上这一档之后一年平均 {st_['r12']*100:+.1f}%（{st_['up12']*100:.0f}% 上涨）。" if st_.get("n") else "")
-                       + "只作参考，买卖仍按评分", "dividend", P_["date"]))
+                       + "只作参考，不改买卖（评分空仓时照样不买）", "dividend", P_["date"]))
     if NT and NT["latest"].get("pull"):
         p = NT["latest"]["pull"]
         cls = {"轻度回落": "h1", "明显回落": "r1", "持续流入": "g1"}.get(p["level"], "c0")

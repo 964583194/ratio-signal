@@ -289,8 +289,9 @@ def run(cyb_raw):
     for i in range(len(dates)):
         a_, b_ = _p5(sp_all, i), _p5(dy, i)
         pos.append(None if a_ is None or b_ is None else (a_ + b_) / 2)
-    POSZ = [(.8, "便宜", "可以坚定按规则买，有余钱可以多加"), (.6, "偏便宜", "按规则买，可以放心"),
-            (.4, "中间", "按规则买"), (.2, "偏贵", "按规则买，别额外加钱"), (-1, "贵", "按规则买，别额外加钱")]
+    # 建议只说"规则让买的时候怎么对待"，不和评分冲突（评分空仓时照样不买）
+    POSZ = [(.8, "便宜", "规则让买时坚定买；规则之外有余钱，可以考虑多加"), (.6, "偏便宜", "规则让买时放心买"),
+            (.4, "中间", "照规则"), (.2, "偏贵", "规则让买也别额外加钱"), (-1, "贵", "规则让买也别额外加钱")]
     zone_of = lambda v: next(z for z in POSZ if v >= z[0])
     # 每档之后的表现（全收益指数），随数据自动更新
     pos_stats = []
@@ -301,7 +302,8 @@ def run(cyb_raw):
             pos_stats.append({"zone": nm, "n": 0}); continue
         r6 = [tri[i + 122] / tri[i] - 1 for i in idx]; r12 = [tri[i + 244] / tri[i] - 1 for i in idx]
         dd = [min(tri[i:i + 245]) / tri[i] - 1 for i in idx]
-        pos_stats.append({"zone": nm, "n": len(idx), "r6": round(sum(r6) / len(r6), 4), "r12": round(sum(r12) / len(r12), 4),
+        segs = sum(1 for j, i in enumerate(idx) if j == 0 or i != idx[j - 1] + 1)      # 连续的日子算一段
+        pos_stats.append({"zone": nm, "n": len(idx), "segs": segs, "r6": round(sum(r6) / len(r6), 4), "r12": round(sum(r12) / len(r12), 4),
                           "up12": round(sum(x > 0 for x in r12) / len(r12), 3), "dd": round(sum(dd) / len(dd), 4)})
     pos_week, wk_prev = [], None
     for i, d in enumerate(dates):

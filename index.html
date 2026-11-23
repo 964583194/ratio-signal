@@ -368,7 +368,7 @@
   <div class="chartwrap"><svg class="chart" id="pChart" viewBox="0 0 720 260" role="img" style="touch-action:pan-y" aria-label="红利位置、股息率、利差和全收益指数"></svg><div class="tip" hidden></div></div>
   <div class="legend" id="pLegend"></div>
   <div class="scroll"><table id="posTab"><thead><tr><th>位置</th><th class="r">半年后</th><th class="r">一年后</th><th class="r">涨的概率</th><th class="r">再跌</th></tr></thead><tbody></tbody></table></div>
-  <p class="note">红利位置 = 股息率、股债利差（股息率 − 十年国债）各自在近 5 年里高于多少比例的日子，取平均；越高越便宜。表格是 2012 年底以来每一档之后红利低波100 全收益指数的平均表现（涨的概率 = 一年后上涨的比例；再跌 = 一年内平均最多再跌多少），随数据自动更新。<b>只作参考：买卖仍按上面的评分</b>；便宜时可以坚定按规则买、有余钱多加，偏贵时别额外加钱。</p>
+  <p class="note">红利位置 = 股息率、股债利差（股息率 − 十年国债）各自在近 5 年里高于多少比例的日子，取平均；越高越便宜。表格是 2012 年底以来每一档之后红利低波100 全收益指数的平均表现（涨的概率 = 一年后上涨的比例；再跌 = 一年内平均最多再跌多少），随数据自动更新。<b>只作参考，不改买卖：评分说不买（空仓）时照样不买</b>；它只回答「规则让买的时候，该坚定还是该收着」。两者看的东西不同：评分一半看技术面（最近涨多了没有），位置只看股息和利差，所以有时会不一致（2018 年以来约 14% 的周是评分空仓、位置偏便宜）。历史数据里段数不多、相邻日子高度重叠，表格只看大致方向。</p>
 </section>
 
 <section class="panel">
@@ -1388,7 +1388,7 @@ function renderDiv(d){
       const PW=d.pos_week,pb=document.querySelector('.ranges[data-for="pChart"]');$("posPanel").hidden=false;
       $("posNow").innerHTML=`现在：<b>${L.pos.zone}</b>（${Math.round(L.pos.value*100)}%）→ ${L.pos.advice}。利差在近 5 年高于 ${Math.round(L.pos.sp_pct*100)}% 的日子，股息率高于 ${Math.round(L.pos.dy_pct*100)}%。`;
       const pc_=v=>(v>=0?"+":"")+(v*100).toFixed(1)+"%";
-      $("posTab").tBodies[0].innerHTML=(d.pos_stats||[]).map(x=>`<tr${x.zone===L.pos.zone?' style="font-weight:700"':""}><td>${x.zone}${x.zone===L.pos.zone?" ←":""}</td>`+(x.n?`<td class="r num">${pc_(x.r6)}</td><td class="r num">${pc_(x.r12)}</td><td class="r num">${Math.round(x.up12*100)}%</td><td class="r num">${(x.dd*100).toFixed(1)}%</td>`:`<td colspan="4" class="r">样本不够</td>`)+`</tr>`).join("");
+      $("posTab").tBodies[0].innerHTML=(d.pos_stats||[]).map(x=>`<tr${x.zone===L.pos.zone?' style="font-weight:700"':""}><td>${x.zone}${x.zone===L.pos.zone?" ←":""}${x.n&&(x.segs||9)<3?'<span class="lbl">（样本少）</span>':""}</td>`+(x.n?`<td class="r num">${pc_(x.r6)}</td><td class="r num">${pc_(x.r12)}</td><td class="r num">${Math.round(x.up12*100)}%</td><td class="r num">${(x.dd*100).toFixed(1)}%</td>`:`<td colspan="4" class="r">样本不够</td>`)+`</tr>`).join("");
       const M={pos:{n:"红利位置",i:4,c:"var(--div)",f:v=>Math.round(v*100)+"%",lr:[0,1],lt:[0,.2,.4,.6,.8,1]},
                dy:{n:"股息率",i:2,c:"var(--mark)",f:v=>v.toFixed(1)+"%",lr:[2.5,7],lt:[3,4,5,6,7]},
                sp:{n:"股债利差（股息率 − 十年国债）",i:3,c:"var(--grow)",f:v=>v.toFixed(1),lr:[-2,5],lt:[-2,-1,0,1,2,3,4,5]}};
