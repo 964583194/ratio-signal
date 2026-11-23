@@ -9,6 +9,8 @@ cyb = orig("cyb50")[0]
 
 
 def fetch(code, col):
+  import time
+  for rnd in range(4):
     for name, f in ((f"中证官网", lambda: S.cs_perf(code, col, "20100101")),
                     ("东方财富", lambda: S.em_kline("2." + code, "19900101") if col == "close" else {})):
         try:
@@ -17,7 +19,8 @@ def fetch(code, col):
                 print(code, col, name, min(d), max(d), len(d)); return d
         except Exception as e:  # noqa: BLE001
             print(code, col, name, "失败", type(e).__name__, str(e)[:80])
-    return {}
+    time.sleep(10)
+  return {}
 
 
 def run(close, tr, pe, tag):
