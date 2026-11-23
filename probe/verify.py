@@ -3,7 +3,7 @@ import sys, time, statistics as st
 sys.path.insert(0, "scripts")
 import sources as S
 def get(f, *a):
-    for _ in range(4):
+    for _ in range(3):
         try:
             d = f(*a)
             if d and len(d) > 300: return d
@@ -11,7 +11,8 @@ def get(f, *a):
         time.sleep(8)
     return {}
 D = {"中证红利": get(S.cs_perf, "000922", "close", "20150101"), "中证红利全收益": get(S.cs_perf, "H00922", "close", "20150101"),
-     "创业板指": get(S.em_kline, "0.399006", "20150101"), "科创50": get(S.em_kline, "1.000688", "20150101"),
+     "创业板指": get(S.cs_perf, "399006", "close", "20150101") or get(S.em_kline, "0.399006", "20150101"),
+     "科创50": get(S.cs_perf, "000688", "close", "20150101") or get(S.em_kline, "1.000688", "20150101"),
      "红利低波100全收益": get(S.cs_perf, "H20955", "close", "20150101")}
 for k, v in D.items(): print(k, len(v), min(v) if v else None, max(v) if v else None)
 A = "2020-01-01"
