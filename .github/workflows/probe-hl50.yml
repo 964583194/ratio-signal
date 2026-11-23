@@ -1,0 +1,13 @@
+name: 试验：红利低波50 套红利规则
+on:
+  push:
+    branches: [probe-hl50]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python probe/hl50.py
