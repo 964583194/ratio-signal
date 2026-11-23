@@ -83,6 +83,14 @@ def run():
         L = C["latest"]
         exp.append(row("综合判断", f"多 {L['bull']} · 空 {L['bear']}", L["level"], L["cls"],
                        "只看两头：积极之后半年历史上全部上涨，谨慎之后平均 −13%", "temp", L["date"]))
+    if D and D["latest"].get("pos"):
+        P_ = D["latest"]["pos"]
+        st_ = {x["zone"]: x for x in D.get("pos_stats", [])}.get(P_["zone"], {})
+        exp.append(row("红利位置（股息率 + 利差）", f"{P_['value']*100:.0f}%", P_["zone"],
+                       "g1" if P_["value"] >= .6 else "h1" if P_["value"] < .4 else "c0",
+                       f"→ {P_['advice']}。利差在近 5 年高于 {P_['sp_pct']*100:.0f}% 的日子，股息率高于 {P_['dy_pct']*100:.0f}%。"
+                       + (f"历史上这一档之后一年平均 {st_['r12']*100:+.1f}%（{st_['up12']*100:.0f}% 上涨）。" if st_.get("n") else "")
+                       + "只作参考，买卖仍按评分", "dividend", P_["date"]))
     if NT and NT["latest"].get("pull"):
         p = NT["latest"]["pull"]
         cls = {"轻度回落": "h1", "明显回落": "r1", "持续流入": "g1"}.get(p["level"], "c0")

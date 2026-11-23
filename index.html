@@ -302,6 +302,7 @@
       <span class="action tierpill" id="dAction">加载中</span>
       <p class="note" id="dBatch" style="margin:6px 0 0;font-weight:600"></p>
       <p class="note" id="dPct"></p>
+      <p class="note" id="dPos" style="display:none;margin-top:4px"></p>
     </div>
   </div>
 </section>
@@ -358,6 +359,16 @@
     <span><i style="border-color:var(--grow-soft);border-top-width:8px"></i>≤6 减仓</span>
   </div>
   <p class="concl" id="dChartConcl"></p>
+</section>
+
+<section class="panel" id="posPanel" hidden>
+  <h2>红利位置：便宜还是贵 <span class="exptag">实验</span></h2>
+  <p class="concl" id="posNow"></p>
+  <div class="ranges" role="group" aria-label="看哪个" data-for="pChart"><button type="button" data-m="pos" aria-pressed="true">红利位置</button><button type="button" data-m="dy">股息率</button><button type="button" data-m="sp">股债利差</button></div>
+  <div class="chartwrap"><svg class="chart" id="pChart" viewBox="0 0 720 260" role="img" style="touch-action:pan-y" aria-label="红利位置、股息率、利差和全收益指数"></svg><div class="tip" hidden></div></div>
+  <div class="legend" id="pLegend"></div>
+  <div class="scroll"><table id="posTab"><thead><tr><th>位置</th><th class="r">半年后</th><th class="r">一年后</th><th class="r">涨的概率</th><th class="r">再跌</th></tr></thead><tbody></tbody></table></div>
+  <p class="note">红利位置 = 股息率、股债利差（股息率 − 十年国债）各自在近 5 年里高于多少比例的日子，取平均；越高越便宜。表格是 2012 年底以来每一档之后红利低波100 全收益指数的平均表现（涨的概率 = 一年后上涨的比例；再跌 = 一年内平均最多再跌多少），随数据自动更新。<b>只作参考：买卖仍按上面的评分</b>；便宜时可以坚定按规则买、有余钱多加，偏贵时别额外加钱。</p>
 </section>
 
 <section class="panel">
@@ -1318,6 +1329,7 @@ function renderDiv(d){
   $("dSp").textContent=L.spread.toFixed(2)+"pp";
   $("dAsof").textContent=L.date;
   $("dScoreV").textContent=L.score.toFixed(2);
+  if(L.pos){const r=$("dPos");r.style.display="";r.innerHTML=`<span class="exptag">实验</span> 红利位置 <b>${L.pos.zone}</b>（${Math.round(L.pos.value*100)}%）→ ${L.pos.advice}`}
   {const B=d.backtest||{};if(B.score)$("dBtS").textContent=pc(B.score.xirr,2);if(B.daily)$("dBtD").textContent=pc(B.daily.xirr,2)}
   const ES=L.eff??L.score,t=tierOf(ES);
   const a=$("dAction");a.className="action tierpill "+t[4];
@@ -1371,6 +1383,26 @@ function renderDiv(d){
     if(!bar.__on){bar.__on=1;bar.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
       bar.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));rg=b.dataset.r;drawScore(SS,rg)}));
       addEventListener("resize",()=>drawScore(SS,rg))}
+    // 实验：红利位置
+    if(d.pos_week&&d.pos_week.length&&L.pos){
+      const PW=d.pos_week,pb=document.querySelector('.ranges[data-for="pChart"]');$("posPanel").hidden=false;
+      $("posNow").innerHTML=`现在：<b>${L.pos.zone}</b>（${Math.round(L.pos.value*100)}%）→ ${L.pos.advice}。利差在近 5 年高于 ${Math.round(L.pos.sp_pct*100)}% 的日子，股息率高于 ${Math.round(L.pos.dy_pct*100)}%。`;
+      const pc_=v=>(v>=0?"+":"")+(v*100).toFixed(1)+"%";
+      $("posTab").tBodies[0].innerHTML=(d.pos_stats||[]).map(x=>`<tr${x.zone===L.pos.zone?' style="font-weight:700"':""}><td>${x.zone}${x.zone===L.pos.zone?" ←":""}</td>`+(x.n?`<td class="r num">${pc_(x.r6)}</td><td class="r num">${pc_(x.r12)}</td><td class="r num">${Math.round(x.up12*100)}%</td><td class="r num">${(x.dd*100).toFixed(1)}%</td>`:`<td colspan="4" class="r">样本不够</td>`)+`</tr>`).join("");
+      const M={pos:{n:"红利位置",i:4,c:"var(--div)",f:v=>Math.round(v*100)+"%",lr:[0,1],lt:[0,.2,.4,.6,.8,1]},
+               dy:{n:"股息率",i:2,c:"var(--mark)",f:v=>v.toFixed(1)+"%",lr:[2.5,7],lt:[3,4,5,6,7]},
+               sp:{n:"股债利差（股息率 − 十年国债）",i:3,c:"var(--grow)",f:v=>v.toFixed(1),lr:[-2,5],lt:[-2,-1,0,1,2,3,4,5]}};
+      const draw=m=>{const o=M[m],dates=PW.map(x=>x[0]);
+        DualChart($("pChart"),{W:720,H:260,dates,leftRange:o.lr,leftTicks:o.lt,leftFmt:o.f,
+          bands:m==="pos"?[{from:.8,to:1,fill:"var(--grow-soft)"},{from:0,to:.4,fill:"var(--mark-soft)"}]:[],
+          left:[{v:PW.map(x=>x[o.i]),c:o.c,w:1.6}],right:{v:PW.map(x=>x[1]),c:"#5b8fc9"},
+          tip:i=>`${dates[i]}<br>${o.n} <b>${o.f(PW[i][o.i])}</b>${m==="pos"?"":`<br>红利位置 ${Math.round(PW[i][4]*100)}%`}<br>全收益指数 ${Math.round(PW[i][1]).toLocaleString()}`});
+        $("pLegend").innerHTML=`<span><i style="border-color:${o.c}"></i>${o.n}（左轴）</span><span><i style="border-color:#5b8fc9"></i>红利低波100 全收益（右轴）</span>`+(m==="pos"?`<span><i style="border-color:var(--grow-soft);border-top-width:8px"></i>便宜（≥80%）</span><span><i style="border-color:var(--mark-soft);border-top-width:8px"></i>偏贵 / 贵（<40%）</span>`:"")};
+      let pm=(pb.querySelector('[aria-pressed="true"]')||{}).dataset?.m||"pos";draw(pm);
+      if(!pb.__on){pb.__on=1;pb.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+        pb.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));pm=b.dataset.m;draw(pm)}));
+        addEventListener("resize",()=>draw(pm))}
+    }
     // 近半个月：最近 10 个交易日
     const R=SS.slice(-11),ex=x=>x[3]??x[1],amt=x=>{const v=ex(x),t=tierOf(v);
       if(x[6])return `卖出 ${Math.round(x[6]*100)}%`;if(x[4]>0)return `买 ${x[4]} 元`;if(x[5]>0)return `${t[2]} · 已攒 ${x[5]}`;return t[1]?`${t[2]} · ${P.base*t[1]} 元`:(v>6?t[2]:"空仓")+" · 0 元"};

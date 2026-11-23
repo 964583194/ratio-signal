@@ -278,6 +278,46 @@ def run(cyb_raw):
     if not rows:
         raise RuntimeError("没有算出任何评分")
 
+    # ------------------------------------------------ 红利位置（实验，只作参考，不改买卖）
+    # 股息率、股债利差各自在近 5 年（约 1220 个交易日）里高于多少比例的日子，取平均：越高 = 股息越丰厚 = 越便宜。
+    # 回测（2012-12 起）：便宜（≥80%）之后一年 94% 上涨、一年内平均最多再跌 5.5%；偏贵（20~40%）之后半年平均 −3.1%、最多再跌 15%。
+    def _p5(x, i, win=1220, minn=480):
+        h = [v for v in x[max(0, i - win + 1):i + 1] if v is not None]
+        return None if x[i] is None or len(h) < minn else sum(1 for v in h if v < x[i]) / len(h)
+    sp_all = [None if dy[i] is None or y_on[i] is None else dy[i] * 100 - y_on[i] for i in range(len(dates))]
+    pos = []
+    for i in range(len(dates)):
+        a_, b_ = _p5(sp_all, i), _p5(dy, i)
+        pos.append(None if a_ is None or b_ is None else (a_ + b_) / 2)
+    POSZ = [(.8, "便宜", "可以坚定按规则买，有余钱可以多加"), (.6, "偏便宜", "按规则买，可以放心"),
+            (.4, "中间", "按规则买"), (.2, "偏贵", "按规则买，别额外加钱"), (-1, "贵", "按规则买，别额外加钱")]
+    zone_of = lambda v: next(z for z in POSZ if v >= z[0])
+    # 每档之后的表现（全收益指数），随数据自动更新
+    pos_stats = []
+    for k_, (lo, nm, _) in enumerate(POSZ):
+        hi = POSZ[k_ - 1][0] if k_ else 2
+        idx = [i for i, v in enumerate(pos) if v is not None and lo <= v < hi and i + 244 < len(dates)]
+        if not idx:
+            pos_stats.append({"zone": nm, "n": 0}); continue
+        r6 = [tri[i + 122] / tri[i] - 1 for i in idx]; r12 = [tri[i + 244] / tri[i] - 1 for i in idx]
+        dd = [min(tri[i:i + 245]) / tri[i] - 1 for i in idx]
+        pos_stats.append({"zone": nm, "n": len(idx), "r6": round(sum(r6) / len(r6), 4), "r12": round(sum(r12) / len(r12), 4),
+                          "up12": round(sum(x > 0 for x in r12) / len(r12), 3), "dd": round(sum(dd) / len(dd), 4)})
+    pos_week, wk_prev = [], None
+    for i, d in enumerate(dates):
+        if pos[i] is None:
+            continue
+        wk = dobj[i].isocalendar()[:2]
+        item = [d, round(tri[i], 2), round(dy[i] * 100, 2), round(sp_all[i], 2), round(pos[i], 3)]
+        if pos_week and wk == wk_prev:
+            pos_week[-1] = item
+        else:
+            pos_week.append(item)
+        wk_prev = wk
+    pz = zone_of(pos[-1]) if pos[-1] is not None else None
+    pos_now = None if pz is None else {"value": round(pos[-1], 3), "sp_pct": round(_p5(sp_all, len(dates) - 1), 3),
+                                       "dy_pct": round(_p5(dy, len(dates) - 1), 3), "zone": pz[1], "advice": pz[2], "date": dates[-1]}
+
     # ------------------------------------------------ 关键价位：指数在 20 个交易日内匀速涨/跌到某个点位时，评分会落到哪条线
     pe_hist = sorted(v for v in pe if v is not None)
     sty_hist = sorted(v for v in style_ratio if v is not None)
@@ -380,6 +420,7 @@ def run(cyb_raw):
             "eff": round(eff[-1], 2), "pending": tier(last["score"])[0] != tier(eff[-1])[0],   # 新档位还没连续 2 天，先按上一档
             "owed": ledger[-1][1], "buy_next": nxt, "buy_amt": round(owed_now) if nxt else 0, "next_label": next_label,     # 攒着一起买
             "sell_next": round(nxt_sell[-1], 4) if nxt_sell else 0,      # 下个交易日要减仓的比例（0 = 不减）
+            "pos": pos_now,        # 实验：红利位置（股息率、利差在近 5 年里的位置），只作参考
             "sub": {"val": r1(last["val"]), "tech": r1(last["tech"]),
                     "spread": r1(last["spread"]), "style": r1(last["style"])},
             "rsi": round(last["rsi"], 1), "pb": round(last["pb"], 2),
@@ -397,6 +438,8 @@ def run(cyb_raw):
         },
         "lines": lines,
         "forward": fwd_stats,
+        "pos_week": pos_week,       # [日期, 全收益, 股息率%, 利差(百分点), 位置 0~1]（实验，每周一条）
+        "pos_stats": pos_stats,     # 各档位置之后半年 / 一年的表现
         "series": [[r["date"], round(r["score"], 2), round(close[r["i"]], 2), round(e, 2), b, o, sl] for r, e, (b, o), sl in zip(rows, eff, ledger, sells)],   # 日期、评分、红利低波100、执行用分数、当天买、攒着、当天减仓比例
     }
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
