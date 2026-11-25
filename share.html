@@ -58,7 +58,7 @@ pre{white-space:pre-wrap;font-family:var(--f-body);font-size:14px;padding:12px;m
 const $=id=>document.getElementById(id),Q=new URLSearchParams(location.search),K=Q.get("card")||"div";
 const J=f=>fetch("data/"+f+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null);
 const CSV=f=>fetch("data/raw/"+f+".csv?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>t.trim().split("\n").slice(1).map(l=>l.split(",")).filter(a=>a.length>1&&!isNaN(+a[1])).map(a=>[a[0],+a[1]]));
-const pc=(x,d=1)=>(x*100).toFixed(d)+"%",sg=x=>(x>0?"+":"")+pc(x,Math.abs(x)<.001?2:1),sg2=x=>(x>0?"+":"")+pc(x,2);
+const pc=(x,d=1)=>(x*100).toFixed(d)+"%",sgd=(x,d)=>{const s=pc(Math.abs(x),d);return /^0\.0+%$/.test(s)?s:(x>0?"+":"-")+s},sg=x=>sgd(x,Math.abs(x)<.001?2:1),sg2=x=>sgd(x,2);
 const WD=d=>"周"+"日一二三四五六"[new Date(d+"T00:00:00Z").getUTCDay()];
 const WK=d=>{const t=new Date(d+"T00:00:00Z"),day=(t.getUTCDay()+6)%7;t.setUTCDate(t.getUTCDate()-day+3);const y0=new Date(Date.UTC(t.getUTCFullYear(),0,4));return 1+Math.round(((t-y0)/864e5-3+((y0.getUTCDay()+6)%7))/7)};
 const FT=`<div class="ft"><span>个人指数定投记录，按规则自动计算，不构成投资建议</span><span>交易系统</span></div>`;
