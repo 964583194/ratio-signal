@@ -420,7 +420,7 @@ def run(cyb_raw):
             "dy": round(last["dy"], 4), "y10": last["y10"], "spread": round(last["sp"], 2),
             "score": round(last["score"], 2), "tier": name, "amount": BASE * mult,
             "eff": round(eff[-1], 2), "pending": tier(last["score"])[0] != tier(eff[-1])[0],   # 新档位还没连续 2 天，先按上一档
-            "owed": ledger[-1][1], "buy_next": nxt, "buy_amt": round(owed_now) if nxt else 0, "next_label": next_label,     # 攒着一起买
+            "owed": ledger[-1][1], "buy_next": bool(nxt and round(owed_now) > 0), "buy_amt": round(owed_now) if nxt else 0, "next_label": next_label,     # 攒着一起买
             "sell_next": round(nxt_sell[-1], 4) if nxt_sell else 0,      # 下个交易日要减仓的比例（0 = 不减）
             "pos": pos_now,        # 实验：红利位置（股息率、利差在近 5 年里的位置），只作参考
             "sub": {"val": r1(last["val"]), "tech": r1(last["tech"]),
