@@ -58,7 +58,7 @@ pre{white-space:pre-wrap;font-family:var(--f-body);font-size:14px;padding:12px;m
 const $=id=>document.getElementById(id),Q=new URLSearchParams(location.search),K=Q.get("card")||"div";
 const J=f=>fetch("data/"+f+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null);
 const CSV=f=>fetch("data/raw/"+f+".csv?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>t.trim().split("\n").slice(1).map(l=>l.split(",")).filter(a=>a.length>1&&!isNaN(+a[1])).map(a=>[a[0],+a[1]]));
-const pc=(x,d=1)=>(x*100).toFixed(d)+"%",sg=x=>(x>0?"+":"")+pc(x);
+const pc=(x,d=1)=>(x*100).toFixed(d)+"%",sg=x=>(x>0?"+":"")+pc(x,Math.abs(x)<.001?2:1),sg2=x=>(x>0?"+":"")+pc(x,2);
 const WD=d=>"周"+"日一二三四五六"[new Date(d+"T00:00:00Z").getUTCDay()];
 const WK=d=>{const t=new Date(d+"T00:00:00Z"),day=(t.getUTCDay()+6)%7;t.setUTCDate(t.getUTCDate()-day+3);const y0=new Date(Date.UTC(t.getUTCFullYear(),0,4));return 1+Math.round(((t-y0)/864e5-3+((y0.getUTCDay()+6)%7))/7)};
 const FT=`<div class="ft"><span>个人指数定投记录，按规则自动计算，不构成投资建议</span><span>交易系统</span></div>`;
@@ -81,7 +81,7 @@ function divCard(d){
     <div class="big" style="font-size:40px;--hl:${buy>0?"#cfe9d8":sell?"#f3c8c3":"#f8e39a"}"><span class="hl">${head}</span></div>
     <div class="sub" style="font-size:16px;color:var(--ink)">${NX}${d.live&&d.live.time<"15:00"?"（预计）":""}：<b>${next}</b></div>
     ${d.live&&d.live.time<"15:00"?`<div class="lbl" style="color:var(--div)">按 ${d.live.time} 盘中价格估算，收盘后自动更新</div>`:""}
-    <div class="stats"><div><span class="lbl">${d.live&&d.live.time<"15:00"?"盘中 "+d.live.time:"今天涨跌"}</span><b style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</b></div><div><span class="lbl">近 5 日</span><b style="color:${c5>0?"var(--mark)":"var(--grow)"}">${sg(c5)}</b></div><div><span class="lbl">评分</span><b>${L.score.toFixed(1)}</b></div></div>
+    <div class="stats"><div><span class="lbl">${d.live&&d.live.time<"15:00"?"盘中 "+d.live.time:"今天涨跌"}</span><b style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg2(c)}</b></div><div><span class="lbl">近 5 日</span><b style="color:${c5>0?"var(--mark)":"var(--grow)"}">${sg(c5)}</b></div><div><span class="lbl">评分</span><b>${L.score.toFixed(1)}</b></div></div>
     <div class="box" style="padding:8px 12px 6px"><div class="lbl">评分区间尺</div>
       <div style="position:relative;margin-top:24px">
         <div style="position:absolute;left:${Math.min(97,Math.max(3,L.score/20*100))}%;top:-23px;transform:translateX(-50%);text-align:center;font-size:12px;line-height:1;white-space:nowrap"><b>现在 ${L.score.toFixed(1)}</b><div style="width:0;height:0;margin:3px auto 0;border:5px solid transparent;border-top-color:var(--ink);border-bottom:0"></div></div>
@@ -102,7 +102,7 @@ function div2Card(d){
   const buys=W.filter(x=>x[4]>0),tot=buys.reduce((a,x)=>a+x[4],0),sells=W.filter(x=>x[6]);
   const rows=W.map((x,j)=>{const pv=S[off+j-1],c=pv?x[2]/pv[2]-1:0,t=tier(x[3]??x[1]);
     const op=x[6]?`<span class="pill r">减仓 ${Math.round(x[6]*100)}%</span>`:x[4]>0?`<span class="pill g">买 ${x[4]} 元</span>`:`<span class="lbl" style="font-size:12.5px">不买</span>`;
-    return `<tr><td>${WD(x[0])}<span class="lbl"> ${x[0].slice(5)}</span></td><td style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</td><td><b>${x[1].toFixed(1)}</b></td><td class="lbl" style="font-size:12px">${(()=>{const r=pv?x[5]-pv[5]+x[4]:0;return r>0?"+"+r:"—"})()}</td><td>${op}</td><td class="lbl" style="font-size:12px">${x[5]>0?x[5]:""}</td></tr>`}).join("");
+    return `<tr><td>${WD(x[0])}<span class="lbl"> ${x[0].slice(5)}</span></td><td style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg2(c)}</td><td><b>${x[1].toFixed(1)}</b></td><td class="lbl" style="font-size:12px">${(()=>{const r=pv?x[5]-pv[5]+x[4]:0;return r>0?"+"+r:"—"})()}</td><td>${op}</td><td class="lbl" style="font-size:12px">${x[5]>0?x[5]:""}</td></tr>`}).join("");
   $("card").innerHTML=`<div class="band"><b>红利低波 · 近半个月怎么买</b><span>${L.date} · ${WD(L.date)}</span></div>
     <div class="big" style="font-size:24px"><span class="hl">${sells.length?`减仓 ${sells.length} 次`:buys.length?`买了 ${buys.length} 次，共 ${tot} 元`:"近半个月没买"}</span></div>
     <div class="sub" style="font-size:13px">最近 10 个交易日${live?` · 今天按 ${d.live.time} 盘中价格估算`:""}${L.owed?` · 现在已攒 ${L.owed} 元`:""}</div>
@@ -114,7 +114,7 @@ function divCap(d){
   const {L,c,head,next,NX}=divInfo(d);
   return `红利低波定投日记｜${L.date.slice(5)} ${head}
 
-${d.live&&d.live.time<"15:00"?`截至 ${d.live.time}，`:"今天"}红利低波100 ${sg(c)}，评分 ${L.score.toFixed(1)}${d.live&&d.live.time<"15:00"?"（盘中估算）":""}。
+${d.live&&d.live.time<"15:00"?`截至 ${d.live.time}，`:"今天"}红利低波100 ${sg2(c)}，评分 ${L.score.toFixed(1)}${d.live&&d.live.time<"15:00"?"（盘中估算）":""}。
 ${head}；${NX}${d.live&&d.live.time<"15:00"?"预计":""}${next}。
 
 按评分定投红利低波，越跌越买，偏贵就停。个人记录，不构成投资建议。
@@ -197,7 +197,7 @@ function wdiv(d){
   const S=d.series,L=d.latest,wk=WK(L.date);let i=S.length-1;while(i>0&&WK(S[i-1][0])===wk)i--;
   const W=S.slice(i),orders=W.filter(x=>x[4]>0),tot=orders.reduce((a,x)=>a+x[4],0),wr=L.close/S[Math.max(0,i-1)][2]-1;
   const rows=W.map((x,j)=>{const pv=S[i+j-1],c=pv?x[2]/pv[2]-1:0;
-    return `<tr><td>${WD(x[0])}<span class="lbl"> ${x[0].slice(5)}</span></td><td style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg(c)}</td><td>${x[6]?`<span class="pill r">减仓 ${Math.round(x[6]*100)}%</span>`:x[4]>0?`<span class="pill g">买 ${x[4]} 元</span>`:`<span class="lbl">不买</span>`}</td></tr>`}).join("");
+    return `<tr><td>${WD(x[0])}<span class="lbl"> ${x[0].slice(5)}</span></td><td style="color:${c>0?"var(--mark)":"var(--grow)"}">${sg2(c)}</td><td>${x[6]?`<span class="pill r">减仓 ${Math.round(x[6]*100)}%</span>`:x[4]>0?`<span class="pill g">买 ${x[4]} 元</span>`:`<span class="lbl">不买</span>`}</td></tr>`}).join("");
   const nx=L.sell_next?`减仓 ${Math.round(L.sell_next*100)}%`:L.buy_next&&L.buy_amt?`买 ${L.buy_amt} 元`:"不买";
   $("card").innerHTML=`<div class="band"><b>红利低波 · 本周日记</b><span>${L.date} · 第 ${wk} 周</span></div>
     <div class="big" style="font-size:30px"><span class="hl">${orders.length?`本周买了 ${orders.length} 次`:"本周没买"}</span></div>
