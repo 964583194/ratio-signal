@@ -173,9 +173,10 @@ function weekLists(st){
   // 只看每个板块"该做的事"那一句（去掉后面的距离、阈值说明）；红利低波：其他板块暂停的钱也每周买它，所以只要有钱进来就算买
   const buy=[],stop=[],sell=[],head=a=>a.split(/；距|（阈值|；场内/)[0];
   const paused=["创业板轮动","科创板轮动"].some(k=>st[k]&&/暂停/.test(head(st[k].act)));
+  const inflow=paused||Object.values(st).some(v=>v&&/放红利|买红利/.test(v.act||""));   // 别的板块没买完的钱转进红利，本周也算买红利
   NM.forEach(([k,n])=>{if(!st[k]||k==="黄金")return;const a=head(st[k].act);
     if(/^卖|卖出|减仓 ?\d|止盈：卖/.test(a))sell.push(n);
-    else if(k==="红利打分"){const t=amtTag(a);/空仓|暂停/.test(a)&&!paused?stop.push(n):buy.push(t&&!paused?`${n}（${t}）`:n)}
+    else if(k==="红利打分"){const t=amtTag(a);/空仓|暂停/.test(a)&&!inflow?stop.push(n):buy.push(t&&!paused?`${n}（${t}）`:n)}
     else if(/暂停|空仓|不买|不加|不动/.test(a))stop.push(n);
     else{const t=amtTag(a);buy.push(t?`${n}（${t}）`:n)}});
   return {buy,stop,sell};

@@ -76,7 +76,7 @@ def dividend(d):
     else:
         act = f"{L['tier']} · 暂停定投"
     # 只在“要下单 / 要减仓”时提醒；攒钱的日子（档位在少买、空仓之间变）不发
-    return ("下单" if buy else f"减仓{sl}" if sl else "攒着"), f"评分 {L['score']:.2f} / 20（{L['tier']}）{wait}", act, "dividend"
+    return ("下单" if buy else f"减仓{sl}" if sl else "攒着" if (L["amount"] or L.get("owed")) else "暂停"), f"评分 {L['score']:.2f} / 20（{L['tier']}）{wait}", act, "dividend"
 
 
 def a500(d):
