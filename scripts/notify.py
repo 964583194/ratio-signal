@@ -262,12 +262,7 @@ def post(title, body, prefix):
     if not TOKEN:
         print(f"（本地运行，不发送）\n# {title}\n{body}\n")
         return
-    try:     # 同类旧提醒关掉，只保留最新一条在列表里（邮件不受影响）
-        for it in gh("GET", "/issues?state=open&per_page=50") or []:
-            if it["title"].startswith(prefix) and "pull_request" not in it:
-                gh("PATCH", f"/issues/{it['number']}", {"state": "closed"})
-    except Exception as e:  # noqa: BLE001
-        print(f"关闭旧提醒失败：{e}")
+    # 不再自动关闭旧提醒：机器人关闭时 GitHub 会再发一封"Closed #N"的空邮件
     it = gh("POST", "/issues", {"title": title, "body": body})
     print(f"已发送：{title} → {it.get('html_url')}")
 
