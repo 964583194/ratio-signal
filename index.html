@@ -1350,7 +1350,7 @@ function renderDiv(d){
   const place=(id,v)=>{const p=at(v),el=$(id);el.style.left=p+"%";
     el.style.transform=p<12?"translateX(-12px)":p>88?"translateX(calc(-100% + 12px))":"translateX(-50%)";
     el.style.alignItems=p<12?"flex-start":p>88?"flex-end":"center"};
-  place("sNow",L.score);$("sNowV").textContent=L.score.toFixed(1);
+  place("sNow",L.score);$("sNowV").textContent=L.score.toFixed(2);
   place("sHi",S.max);$("sHiV").textContent=S.max;$("sHiD").textContent="评分高点 "+S.max_date;
   place("sLo",S.min);$("sLoV").textContent=S.min;$("sLoD").textContent="评分低点 "+S.min_date;
 
@@ -1410,7 +1410,7 @@ function renderDiv(d){
       return `<tr${k===0?' class="cur"':''}><td class="num">${x[0].slice(5)}</td><td class="r num">${x[1].toFixed(2)} <small style="color:${ds>0?"var(--grow)":ds<0?"var(--mark)":"inherit"}">${ds>0?"↑":ds<0?"↓":""}</small></td><td><span class="tierpill ${x[4]>0?"t-more":tierOf(ex(x))[4]}" style="font-size:12px;padding:1px 6px">${amt(x)}</span>${tierOf(ex(x))[2]!==tierOf(x[1])[2]?'<br><small class="note">新档未满 2 天</small>':""}</td><td class="r num" style="color:${c>0?"var(--mark)":c<0?"var(--grow)":"inherit"}">${c>0?"+":""}${pc(c,2)}</td></tr>`}).join("");
     // 图下结论：近一年评分和指数的关系
     const Y=SS.slice(-250),lo=Y.reduce((a,x)=>x[1]<a[1]?x:a),hi=Y.reduce((a,x)=>x[1]>a[1]?x:a);
-    $("dChartConcl").innerHTML=`<b>结论：</b>评分和指数几乎反着走（每周变化的相关系数约 −0.9）：指数涨上去评分就降（变贵少买），指数跌下来评分就升（变便宜多买），所以是“越跌越买、越涨越少买”。近一年评分最高 ${hi[1].toFixed(1)}（${hi[0]}），最低 ${lo[1].toFixed(1)}（${lo[0]}）；现在 ${L.score.toFixed(1)} 分，<b>${tierOf(L.eff??L.score)[2]}</b>。`;
+    $("dChartConcl").innerHTML=`<b>结论：</b>评分和指数几乎反着走（每周变化的相关系数约 −0.9）：指数涨上去评分就降（变贵少买），指数跌下来评分就升（变便宜多买），所以是“越跌越买、越涨越少买”。近一年评分最高 ${hi[1].toFixed(1)}（${hi[0]}），最低 ${lo[1].toFixed(1)}（${lo[0]}）；现在 ${L.score.toFixed(2)} 分，<b>${tierOf(L.eff??L.score)[2]}</b>。`;
   }
 
   // 回测
