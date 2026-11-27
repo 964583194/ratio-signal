@@ -921,13 +921,14 @@ function ntf3(S,G){
     $("ntf3c").hidden=false;
     // 每个指数一行：近 20 天净买入、比上一波（20~120 天前最大的一段 20 天）多还是少、近 20 天里有几天在买、每周净买入小柱
     const L=G.v[G.names[0]].length,wk=[];for(let k=L;k>0;k-=5)wk.unshift([Math.max(0,k-5),k]);const W26=wk.slice(-24);
+    const BM=Math.max(1,...G.names.flatMap(g=>W26.map(([a,b])=>Math.abs(G.v[g].slice(a,b).reduce((p,q)=>p+q,0)))));   // 7 行同一个刻度，能直接比高低
     const rows=G.names.map(g=>{const v=G.v[g],s20=k=>v.slice(Math.max(0,k-20),k).reduce((p,q)=>p+q,0);
       const now=s20(L);let prev=-1e9;for(let k=L-20;k>=Math.max(20,L-120);k--)prev=Math.max(prev,s20(k));
-      const days=v.slice(-20).filter(x=>x>1).length,bars=W26.map(([a,b])=>v.slice(a,b).reduce((p,q)=>p+q,0)),bm=Math.max(1,...bars.map(Math.abs));
+      const days=v.slice(-20).filter(x=>x>1).length,bars=W26.map(([a,b])=>v.slice(a,b).reduce((p,q)=>p+q,0)),bm=BM;
       const tag=now<=0?`<span class="lv c0">没在买</span>`:now>=prev*1.1?`<span class="lv g1">比上一波多</span>`:now>=prev*.9?`<span class="lv c0">和上一波差不多</span>`:`<span class="lv h1">比上一波少</span>`;
       const svg=`<svg viewBox="0 0 240 40" style="width:100%;height:34px">${bars.map((b,i)=>{const h=Math.abs(b)/bm*18;return `<rect x="${i*10+1}" width="8" y="${b>=0?20-h:20}" height="${Math.max(.6,h)}" fill="${b>=0?"var(--grow)":"var(--mark)"}"/>`}).join("")}<line x1="0" x2="240" y1="20" y2="20" stroke="var(--line)"/></svg>`;
       return `<div class="nrow"><div class="nn"><b>${g}</b><small>近 20 天 ${y(now)} · ${days}/20 天在买</small></div><div class="nb">${svg}</div><div class="nt">${tag}</div></div>`}).join("");
-    $("ntfIdx").innerHTML=rows+`<p class="note" style="margin:4px 0 0">小柱 = 近半年每周净买入（绿买红卖）。"上一波" = 20~120 天前最大的一段 20 天。这一波比上一波多、而且大多数日子都在买，就是"一次比一次多、集中买入"。</p>`}
+    $("ntfIdx").innerHTML=rows+`<p class="note" style="margin:4px 0 0">小柱 = 近半年每周净买入（绿买红卖），7 行同一个刻度，柱子越高买得越多。"上一波" = 20~120 天前最大的一段 20 天。这一波比上一波多、而且大多数日子都在买，就是"一次比一次多、集中买入"。</p>`}
   if(gb)gb.onclick=e=>{const b=e.target.closest("button");if(!b)return;gm=b.dataset.g;gb.querySelectorAll("button").forEach(z=>z.setAttribute("aria-pressed",z===b));draw()};
   const draw=()=>{
     let R=mode==="ytd"?S.filter(r=>r[0]>=S[S.length-1][0].slice(0,4)+"-01-01"):S.slice(-(+mode));
