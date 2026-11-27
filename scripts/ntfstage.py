@@ -298,6 +298,7 @@ def run():
         "events": events, "stats": stats,
         "short": {"trades": trades, "stats": sstats},
         "rule": {"band": BAND, "big": BIG, "small": SMALL},
+        "days": {"from": D[start], "keys": list(SCEN), "v": [list(SCEN).index(SC[k][0]) for k in range(start, L)]},
     }
     with open(OUT, "w", encoding="utf-8") as fh:
         json.dump(data, fh, ensure_ascii=False, separators=(",", ":"))
