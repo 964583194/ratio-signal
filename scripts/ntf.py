@@ -247,7 +247,7 @@ def run():
         "groups": groups + [total],
         "episodes": eps, "vols": vols, "stats": stats,
         "series": [[days[k], None if acc[k] is None else round(acc[k], 1), None if pct[k] is None else round(pct[k] * 100),
-                    round(sum(f4[max(0, k - 19):k + 1])), hs[hk[max(0, bisect.bisect_right(hk, days[k]) - 1)]]] for k in range(n)],
+                    round(sum(f4[max(0, k - 19):k + 1])), hs[hk[max(0, bisect.bisect_right(hk, days[k]) - 1)]], round(f4[k], 1)] for k in range(n)],
         "rule": {"short": SHORT, "long": LONG, "win": WIN, "hi": HI, "lo": LO, "vol": VOL},
     }
     with open(OUT, "w", encoding="utf-8") as fh:

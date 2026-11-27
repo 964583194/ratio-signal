@@ -24,6 +24,52 @@ def row(name, value, status, cls, note, tab, date=None):
     return {"name": name, "value": value, "status": status, "cls": cls, "note": note, "tab": tab, "date": date}
 
 
+def plain(r):
+    """首页关键指标：一句大白话，说清"现在什么情况、要不要做什么"；原来的说明留在下面小字"""
+    n, s = r["name"], r["status"]
+    has = lambda *k: any(x in s for x in k)  # noqa: E731
+    if "÷ 红利" in n:
+        b = "创业板" if n.startswith("创业板") else "科创板"
+        return (f"{b}涨多了，按规则卖一部分" if has("卖") else f"{b}非常便宜，每周翻倍买" if has("翻倍") else
+                f"{b}很便宜，每周多买" if has("加大") else f"{b}比红利便宜，每周照常买" if has("买入") else
+                f"{b}不够便宜，先不买，这份钱买红利" if has("暂停") else s)
+    if n.startswith("破净率"):
+        return "很多股票跌破净资产，到了历史少见的便宜，轮动更便宜时可以加码" if has("见底") else "还没便宜到见底标准，不加码"
+    if n == "红利评分":
+        return ("红利不便宜，暂时不攒新钱" if has("空仓") else "红利偏贵，明天要卖一部分" if has("减仓") else
+                f"红利{s}档：每天攒钱，红利低波连跌两天后一起买")
+    if n.startswith("A500"):
+        return f"宽基{s.replace(' · ', '，每周买 ')}" if "倍" in s else f"宽基{s}"
+    if n.startswith("黄金"):
+        return "黄金暂不给建议，只看位置"
+    if n.startswith("纳指"):
+        return f"场内纳指 ETF 比实际值贵 {r['value']}，改买场外联接基金" if has("场外") else "场内价格正常，照常买"
+    if n == "国家队加速流入":
+        return "国家队越买越快，宽基额外多买 4 周" if has("加仓") else "国家队在买，但没有越买越快，不额外加仓"
+    if n == "市场温度":
+        return {"底部": "市场很冷、很便宜：分批买，备好钱", "偏冷": "市场偏冷，按规则买", "正常": "市场正常，按规则买",
+                "偏热": "市场偏热，别额外加钱", "顶部": "市场过热，注意卖出信号"}.get(r["value"], s)
+    if n == "见底灯":
+        return f"6 个见底信号亮了 {r['value'].split('/')[0].strip()} 个：" + ("底部区" if has("底部") else "偏冷" if has("偏冷") else "还不算便宜")
+    if n == "方向":
+        return "还没看到好转，可能还要磨一段" if has("走弱") else "开始好转，可以加快买" if has("转暖", "回升") else s
+    if n == "见顶灯":
+        return "没有过热迹象" if has("没亮") else "有过热迹象，别追高"
+    if n == "托底资金":
+        return ("国家队在大举买入托底，跌了有人接，但不代表马上涨" if has("大幅流入") else "国家队在撤出，要谨慎" if has("撤出") else "国家队仓位变化不大")
+    if n == "综合判断":
+        return "看好的指标比看空的多，偏乐观" if has("积极") else "几个指标多数看空，谨慎" if has("谨慎") else "多空不明显"
+    if n.startswith("红利位置"):
+        return f"和近 5 年比，红利现在{s}"
+    if n == "国家队大买后回落":
+        return "国家队还在买，没有撤" if has("持续") else "国家队大买后开始撤一些，短期偏弱" if has("回落") else "没有大买后回落"
+    if n == "国家队急买":
+        return "国家队几天内突然大买：历史上之后多半上涨" if has("急买") else "最近几天没有突然大买"
+    if n.startswith("银行"):
+        return f"银行股估值{s}"
+    return None
+
+
 def run():
     R, K, D, A, G, N, T, E, C, NT, TS = (_load(f) for f in ("ratio.json", "kc.json", "dividend.json", "a500.json", "gold.json",
                                                           "ndx.json", "temp.json", "etf300.json", "combo.json", "ntf.json", "topsig.json"))
@@ -111,6 +157,11 @@ def run():
         cls = {"很便宜": "g1", "偏便宜": "g1", "偏贵": "h1"}.get(L["zone"], "c0")
         exp.append(row("银行便宜指数", f"{L['cheap']:.0f}", L["zone"], cls,
                        f"股息率 − 十年国债 = {L['spread']:.2f} 个百分点（近 10 年 {L['sp_pct'] * 100:.0f}% 分位）；不占比例，只作提醒", "bond", L["date"]))
+    for r in rule + warn + exp:
+        try:
+            r["plain"] = plain(r)
+        except Exception as e:  # noqa: BLE001
+            print(f"大白话生成失败 {r['name']}：{e}")
     data = {"updated": dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M"),
             "groups": [{"key": "rule", "title": "规则", "desc": "直接决定买卖", "rows": rule},
                        {"key": "warn", "title": "提醒", "desc": "已上线，只作提醒，不改倍数", "rows": warn},

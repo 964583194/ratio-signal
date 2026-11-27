@@ -885,11 +885,59 @@ function loadPlan(){
     draw();inp.addEventListener("input",()=>{try{localStorage.setItem("weeklyBudget",inp.value)}catch(e){}draw()});
   });
 }
+// 国家队三层图：沪深300 / 买得快不快（加速度排名）/ 每天净买入（亿元）。S 行：[日期, 加速度, 排名, 20日, 沪深300, 当天净申购]
+function ntf3(S){
+  const svg=$("ntf3"),bar=$("n3r");if(!svg||!S.length)return;
+  let mode="66";
+  const draw=()=>{
+    let R=mode==="ytd"?S.filter(r=>r[0]>=S[S.length-1][0].slice(0,4)+"-01-01"):S.slice(-(+mode));
+    R=R.filter(r=>r[5]!=null);const n=R.length;if(n<2)return;
+    const W=720,L=58,Rr=14,w=W-L-Rr,x=i=>L+w*(i+.5)/n,bw=Math.max(1.5,w/n*.72);
+    const P=[[34,110],[186,100],[330,190]];      // 三层：[顶, 高]
+    const cw=svg.clientWidth||W,fs=Math.min(17,Math.max(10,8.6*W/cw));
+    let s=`<style>#ntf3 text{font-size:${fs}px;fill:var(--muted)}#ntf3 .t{fill:var(--ink);font-weight:700}</style>`;
+    const yx=(v,lo,hi,[t,h])=>t+h-(v-lo)/(hi-lo)*h;
+    // ① 沪深300
+    const px=R.map(r=>r[4]),plo=Math.min(...px),phi=Math.max(...px),pp=(phi-plo)*.1||1;
+    const a=plo-pp,b=phi+pp;
+    s+=`<text class="t" x="4" y="${P[0][0]-10}">① 沪深300</text>`;
+    [a+(b-a)*.15,a+(b-a)*.85].forEach(v=>{const y=yx(v,a,b,P[0]);s+=`<line x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}" stroke="var(--div)" stroke-width=".5"/><text x="${L-4}" y="${y+4}" text-anchor="end">${Math.round(v)}</text>`});
+    s+=`<polyline fill="none" stroke="var(--ink)" stroke-width="1.8" points="${R.map((r,i)=>x(i)+","+yx(r[4],a,b,P[0])).join(" ")}"/>`;
+    s+=`<text x="${x(n-1)}" y="${yx(px[n-1],a,b,P[0])-6}" text-anchor="end" class="t">${Math.round(px[n-1])}</text>`;
+    // ② 买得快不快
+    const T2=P[1];s+=`<text class="t" x="4" y="${T2[0]-10}">② 买得快不快（0~100）</text>`;
+    s+=`<rect x="${L}" width="${w}" y="${yx(100,0,100,T2)}" height="${yx(90,0,100,T2)-yx(100,0,100,T2)}" fill="var(--mark)" opacity=".12"/>`;
+    [0,50,90].forEach(v=>{const y=yx(v,0,100,T2);s+=`<line x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}" stroke="${v===90?"var(--mark)":"var(--div)"}" stroke-width="${v===90?1.2:.5}" ${v===90?'stroke-dasharray="5 4"':""}/><text x="${L-4}" y="${y+4}" text-anchor="end">${v}</text>`});
+    s+=`<text x="${W-Rr}" y="${yx(90,0,100,T2)-4}" text-anchor="end" style="fill:var(--mark)">≥90 越买越快</text>`;
+    const q=R.map((r,i)=>r[2]==null?null:x(i)+","+yx(r[2],0,100,T2)).filter(Boolean);
+    s+=`<polyline fill="none" stroke="#3b6fb6" stroke-width="2" points="${q.join(" ")}"/>`;
+    const lq=R[n-1][2];if(lq!=null)s+=`<text x="${x(n-1)}" y="${yx(lq,0,100,T2)-6}" text-anchor="end" style="fill:#3b6fb6;font-weight:700">${lq}</text>`;
+    // ③ 每天净买入
+    const T3=P[2],fv=R.map(r=>r[5]),m=Math.max(10,...fv.map(Math.abs)),lo=Math.min(0,...fv)-m*.12,hi=Math.max(0,...fv)+m*.22;
+    s+=`<text class="t" x="4" y="${T3[0]-10}">③ 每天净买入（亿元）</text>`;
+    const y0=yx(0,lo,hi,T3);s+=`<line x1="${L}" x2="${W-Rr}" y1="${y0}" y2="${y0}" stroke="var(--muted)" stroke-width=".8"/><text x="${L-4}" y="${y0+4}" text-anchor="end">0</text>`;
+    const tk=niceStep(hi-lo);for(let v=tk;v<hi;v+=tk){const y=yx(v,lo,hi,T3);s+=`<line x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}" stroke="var(--div)" stroke-width=".5"/><text x="${L-4}" y="${y+4}" text-anchor="end">${v}</text>`}
+    const lab=new Set(),gap=fs*2.2;   // 从大到小挑要标金额的柱子，离已标的太近就跳过
+    fv.map((v,i)=>[Math.abs(v),i]).sort((p,q)=>q[0]-p[0]).forEach(([a,i])=>{if(lab.size<8&&a>=Math.max(20,m*.2)&&[...lab].every(j=>Math.abs(x(j)-x(i))>gap))lab.add(i)});
+    fv.forEach((v,i)=>{const y=yx(v,lo,hi,T3);s+=`<rect x="${x(i)-bw/2}" width="${bw}" y="${Math.min(y,y0)}" height="${Math.max(.5,Math.abs(y-y0))}" fill="${v>=0?"var(--grow)":"var(--mark)"}"/>`;
+      if(lab.has(i)){s+=`<text x="${x(i)}" y="${v>=0?y-4:y+fs}" text-anchor="${i===n-1?"end":"middle"}" style="fill:var(--ink)">${v>0?"+":""}${Math.round(v)}</text>`}});
+    // 日期
+    const step=Math.ceil(n/7);R.forEach((r,i)=>{if((n-1-i)%step===0)s+=`<text x="${x(i)}" y="${T3[0]+T3[1]+fs+6}" text-anchor="${i===n-1?"end":"middle"}">${r[0].slice(5)}</text>`});
+    s+=`<line id="n3c" x1="0" x2="0" y1="${P[0][0]}" y2="${T3[0]+T3[1]}" stroke="var(--ink)" stroke-width=".8" stroke-dasharray="3 3" visibility="hidden"/>`;
+    svg.innerHTML=s;
+    const tot=fv.reduce((p,q)=>p+q,0);$("ntf3t").innerHTML=`这段时间合计净买入 <b>${tot>0?"+":""}${Math.round(tot).toLocaleString()} 亿元</b>。点图上任意一天，看当天的数字。`;
+    svg.onclick=e=>{const bx=svg.getBoundingClientRect(),X=(e.clientX-bx.left)/bx.width*W,i=Math.max(0,Math.min(n-1,Math.round((X-L)/w*n-.5))),r=R[i],c=$("n3c");
+      c.setAttribute("x1",x(i));c.setAttribute("x2",x(i));c.setAttribute("visibility","visible");
+      $("ntf3t").innerHTML=`<b>${r[0]}</b>：净买入 <b style="color:${r[5]>=0?"var(--grow)":"var(--mark)"}">${r[5]>0?"+":""}${Math.round(r[5])} 亿元</b>，近 20 日 ${r[3]>0?"+":""}${r[3].toLocaleString()} 亿，买得快不快 ${r[2]??"—"}，沪深300 ${Math.round(r[4])}`};
+  };
+  bar.onclick=e=>{const b=e.target.closest("button");if(!b)return;mode=b.dataset.n;bar.querySelectorAll("button").forEach(z=>z.setAttribute("aria-pressed",z===b));draw()};
+  draw();if(!svg.__rz){svg.__rz=1;addEventListener("resize",()=>svg.__draw&&svg.__draw())}svg.__draw=draw;
+}
 // 关键指标（总览）：data/keyind.json，分 规则 / 提醒 / 实验
 function loadKeyInd(){
   getJ("keyind.json").then(d=>{if(!d){$("kiSec").hidden=true;return}
     $("kiBody").innerHTML=d.groups.map(g=>`<div class="kig">${g.key==="exp"?'<span class="exptag">实验</span>':g.title}<small>${g.desc}</small></div>`+
-      g.rows.map(r=>`<div class="ki"><div class="n"><a href="${r.tab.includes(".html")?r.tab:"#"+r.tab}">${r.name}</a>${g.key==="exp"?' <span class="exptag">实验</span>':""}</div><div class="v">${r.value}</div><div class="s"><span class="lv ${r.cls}">${r.status}</span></div><div class="x">${r.note}</div></div>`).join("")).join("");
+      g.rows.map(r=>`<div class="ki"><div class="n"><a href="${r.tab.includes(".html")?r.tab:"#"+r.tab}">${r.name}</a>${g.key==="exp"?' <span class="exptag">实验</span>':""}</div><div class="v">${r.value}</div><div class="s"><span class="lv ${r.cls}">${r.status}</span></div><div class="x">${r.plain?`<b class="pl">${r.plain}</b><small class="nt">${r.note}</small>`:r.note}</div></div>`).join("")).join("");
   });
 }
 window.loadKeyInd=loadKeyInd;
@@ -1071,14 +1119,14 @@ function loadEtf300(root,HL){
         <div><div class="label">近 252 日分位</div><div class="v">${L.pct==null?"—":pc(L.pct,0)}</div><div class="s">≥80% 重仓 · ≤20% 撤空</div></div>
         <div><div class="label">近 20 日份额</div><div class="v">${sg(L.chg20)}</div><div class="s">≥+15% 大幅流入 · ≤−15% 撤出</div></div></div>
       <div id="ntfbox"></div>
-      <h3 style="font-size:14px;margin:16px 0 4px">占沪深300 流通市值与沪深300<button type="button" class="bigbtn" data-big="etf_c1" data-title="占沪深300 流通市值（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
-      <p class="note" style="margin:0 0 6px"><span style="color:var(--grow);font-weight:700">——</span> 占比（%，左轴）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">大幅流入</span> / <span style="color:var(--div)">撤出</span></p>
+      <h3 style="font-size:14px;margin:16px 0 4px">① 国家队手里有多少（绿线越高 = 拿得越多）<button type="button" class="bigbtn" data-big="etf_c1" data-title="占沪深300 流通市值（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
+      <p class="note" style="margin:0 0 6px">绿线 = 沪深300 ETF 的总规模占整个沪深300 市值的百分比，可以看成国家队通过 ETF 拿了多少沪深300。<br><span style="color:var(--grow);font-weight:700">——</span> 占比（%，左轴）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">大幅流入</span> / <span style="color:var(--div)">撤出</span></p>
       <div class="chartwrap"><svg class="chart" id="etf_c1" viewBox="0 0 720 260" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
       <p class="concl"><b>结论：</b>现在占 ${L.ratio.toFixed(2)}%，${L.ratio>=L.hi*.8?"接近图中最高":L.ratio<=L.lo*2?"接近图中最低":"在图中中间位置"}（${L.lo.toFixed(2)}%~${L.hi.toFixed(2)}%）；近 20 日份额 ${sg(L.chg20)}。<b>→ ${L.chg20==null?"":L.chg20>=.15?"国家队最近一个月在大举加仓":L.chg20<=-.15?"国家队最近一个月在大幅撤出":L.chg20>.03?"国家队最近在回补":L.chg20<-.03?"国家队最近在慢慢减":"最近变化不大"}${L.ratio>=L.hi*.8?"，仓位已经很重":""}。</b></p>
-      <h3 style="font-size:14px;margin:14px 0 4px">占比在近 252 个交易日的分位<button type="button" class="bigbtn" data-big="etf_c2" data-title="占比的 252 日分位（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
-      <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 分位（%，左轴；绿色 ≥80% 重仓，红色 ≤20% 撤空）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）</p>
+      <h3 style="font-size:14px;margin:14px 0 4px">② 和过去一年比算多还是少（白线越高 = 越多）<button type="button" class="bigbtn" data-big="etf_c2" data-title="占比的 252 日分位（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
+      <p class="note" style="margin:0 0 6px">白线 = 上面那个占比在近一年里排第几：100 = 一年里最多，0 = 一年里最少。<br><span style="color:var(--ink);font-weight:700">——</span> 排名（0~100，左轴；绿色 ≥80 重仓，红色 ≤20 撤空）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）</p>
       <div class="chartwrap"><svg class="chart" id="etf_c2" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
-      <p class="concl"><b>结论：</b>${L.pct==null?"分位还算不出来":`分位 ${pc(L.pct,0)}，${L.pct>=.8?"在绿色重仓区：托底资金在场，下跌有人接":L.pct<=.2?"在红色撤空区：下跌时没人接":"在中间：和过去一年比，不算重仓也不算撤空"}`}。分位只和自己过去一年比，看“现在比一年里多数时候多还是少”。</p>
+      <p class="concl"><b>结论：</b>${L.pct==null?"分位还算不出来":`排名 ${Math.round(L.pct*100)}，${L.pct>=.8?"在绿色重仓区：比过去一年绝大多数时候都多，下跌有人接":L.pct<=.2?"在红色撤空区：比过去一年绝大多数时候都少，下跌时没人接":L.pct>=.65?"接近重仓区：比过去一年多数时候多":"在中间：和过去一年比，不多也不少"}`}。</p>
       <h3 class="h3">准不准（${(d.recent_from||"2023").slice(0,4)} 年起）</h3>
       <p class="concl">${evc}</p>
       <details class="sub"><summary>看历次事件和长期数据 ▾</summary>
@@ -1156,9 +1204,15 @@ function loadNtf(){
 </div>
       ${L.pull?`<div style="margin:10px 0 0;padding:8px 10px;border:1px dashed var(--div);border-radius:8px"><span class="exptag">实验</span> <b>大买后回落：${L.pull.level}</b>（近 5 日 ${L.pull.d5>0?"+":""}${L.pull.d5.toLocaleString()} 亿，近 20 日 ${L.pull.d20>0?"+":""}${L.pull.d20.toLocaleString()} 亿）<br><small>${L.pull.note}。2023 年起：轻度回落之后 60 日 ${sg(L.pull.stats["轻度回落"]["60"].avg)}（${L.pull.stats["轻度回落"].n} 天），明显回落 ${sg(L.pull.stats["明显回落"]["60"].avg)}（${L.pull.stats["明显回落"].n} 天），任意一天 ${sg(L.pull.stats["任意一天"]["60"].avg)}。样本少，只作提醒。</small></div>`:""}
       ${L.rush?(()=>{const r=L.rush,s=r.stats["急买第一天"];return `<div style="margin:10px 0 0;padding:8px 10px;border:1px dashed var(--div);border-radius:8px"><span class="exptag">实验</span> <b>国家队急买：${r.on?"急买中（"+r.since+" 起，已 "+r.days+" 天）":"没有"}</b>（近 5 日 ${r.d5>0?"+":""}${r.d5.toLocaleString()} 亿，占两市成交额 ${r.r5==null?"—":(r.r5*100).toFixed(2)+"%"}，≥${(r.th*100).toFixed(0)}% 算急买）<br><small>几天内突然大买，比"加速度"反应快；用占成交额的比例，门槛随市场大小自动变。${s&&s["60"]?`2023 年起 ${s.n} 段${r.last?"（最近一次 "+r.last.date+"）":""}，已满 60 天的 ${s["60"].n} 段之后 60 日沪深300 平均 ${sg(s["60"].avg)}（${(s["60"].up*100).toFixed(0)}% 上涨），任意一天 ${sg(r.stats["任意一天"]["60"].avg)}。`:""}样本少，只作提醒，不改倍数。</small></div>`})():""}
+      <h3 style="font-size:14px;margin:16px 0 4px">国家队每天买了多少（一图看懂）</h3>
+      <p class="note" style="margin:0 0 6px">从上到下：① 沪深300 走势；② 买得快不快（蓝线到红色虚线 90 以上 = 越买越快，宽基会多买 4 周）；③ 每天净买入多少亿（绿 = 买，红 = 卖，柱子上是金额）。点图看当天数字。</p>
+      <div class="ranges" id="n3r" style="margin-bottom:4px"><button type="button" data-n="66" aria-pressed="true">近 3 个月</button><button type="button" data-n="130">近半年</button><button type="button" data-n="ytd">今年</button></div>
+      <svg class="chart" id="ntf3" viewBox="0 0 720 560" role="img" style="touch-action:pan-y;width:100%;height:auto"></svg>
+      <p class="note" id="ntf3t" style="min-height:2.6em;margin:4px 0 0">点图上任意一天，看当天的数字。</p>
+      <details class="sub"><summary>看老图：加速度排名与沪深300（2023 年起） ▾</summary>
       <h3 style="font-size:14px;margin:14px 0 4px">加速度分位与沪深300<button type="button" class="bigbtn" data-big="ntf_c1" data-title="流入加速度的近一年分位（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
       <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 分位（%，左轴；绿色 ≥90% 加速流入，红色 ≤10% 加速流出）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">加速流入第一天</span></p>
-      <div class="chartwrap"><svg class="chart" id="ntf_c1" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+      <div class="chartwrap"><svg class="chart" id="ntf_c1" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div></details>
       <p class="concl"><b>结论：</b>${a60&&b60?`加速流入出现后 60 个交易日，沪深300 平均 ${sg(a60.avg)}（上涨 ${pc(a60.up,0)}），平时是 ${sg(b60.avg)}。`:""}但出现后 20 天内多半还会再跌一点（国家队是在下跌里托底），<b>→ 出现时宽基额外买 4 周的量，分 2~4 周买完，拿着不用卖；同一段只加一次，市场偏热 / 顶部区不加。</b>加速流出之后只是略弱，不提醒。次数只有 ${d.episodes.length} 段，2023 年 7 月那次没托住（60 天后 −10%），所以加的量有上限。</p>
       <h3 style="font-size:14px;margin:14px 0 4px">国家队在买哪个指数（ETF 净申购，亿元）</h3>
       <div class="scroll"><table><thead><tr><th>指数</th><th class="r">近 5 日</th><th class="r">近 20 日</th><th class="r">今年</th></tr></thead><tbody>
@@ -1171,6 +1225,7 @@ function loadNtf(){
       <div class="scroll" style="margin-top:8px"><table><thead><tr><th>日期</th><th>信号</th><th class="r">20 日后</th><th class="r">60 日后</th><th class="r">120 日后</th></tr></thead><tbody>
         ${[...d.episodes.map(e=>({...e,k:"加速流入"})),...d.vols.map(e=>({...e,k:`放量 ${e.x} 倍`}))].sort((a,b)=>a.date<b.date?1:-1).map(e=>`<tr><td class="num">${e.date}</td><td>${e.k}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td><td class="r num">${fr(e.fwd["120"])}</td></tr>`).join("")}</tbody></table></div>
       <p class="note">放量托底日之后 60 天没有优势、半年结果不稳定，暂不使用。2023 年起。净申购 = 份额变化 × 单位净值；加速度只看 4 只沪深300 ETF（换成 20 只宽基 ETF 回测更差）；放量 = 3 只上交所沪深300 ETF 成交额 ≥ 前 20 日均值 ${d.rule.vol} 倍且当天下跌。</p></details>`;
+    ntf3(S);
     const dates=S.map(r=>r[0]),marks=d.episodes.map(e=>({d:e.date,c:"var(--grow)",t:""}));
     DualChart($("ntf_c1"),{W:720,H:220,dates,leftRange:[0,100],leftTicks:[0,10,50,90,100],leftFmt:v=>v,
       bands:[{from:90,to:100,fill:"var(--grow-soft)"},{from:0,to:10,fill:"var(--mark-soft)"}],
