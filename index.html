@@ -902,7 +902,8 @@ function loadPlan(){
   });
 }
 // 国家队三层图：沪深300 / 买得快不快（加速度排名）/ 每天净买入（亿元）。S 行：[日期, 加速度, 排名, 20日, 沪深300, 当天净申购]
-const GCOL={"沪深300":"#2f8f5b","上证50":"#3b6fb6","中证500":"#c98a12","中证1000":"#8e5bb5","科创50":"#d0583f","创业板":"#1f9fb0","A500":"#7a8793"};
+// 7 个指数归成 3 类再叠，颜色少、好看懂；点某一天再看 7 个指数的明细
+const GGRP=[["大盘","#2f8f5b",["沪深300","上证50","A500"]],["成长","#3b6fb6",["创业板","科创50"]],["中小盘","#c98a12",["中证500","中证1000"]]];
 function ntf3(S,G){
   const svg=$("ntf3"),bar=$("n3r");if(!svg||!S.length)return;
   let mode="66",gm="all";
@@ -912,12 +913,21 @@ function ntf3(S,G){
   if(G&&$("ntf3c")){   // 综合判断：近 20 日 7 个指数一起看
     const s=w=>Object.fromEntries(G.names.map(g=>[g,G.v[g].slice(-w).reduce((p,q)=>p+q,0)]));
     const a=s(20),tot=Object.values(a).reduce((p,q)=>p+q,0),npos=G.names.filter(g=>a[g]>0).length,sh=g=>tot?a[g]/Math.abs(tot):0;
-    const big=sh("沪深300")+sh("上证50"),grow=sh("创业板")+sh("科创50"),mid=sh("中证500")+sh("中证1000");
+    const big=sh("沪深300")+sh("上证50")+sh("A500"),grow=sh("创业板")+sh("科创50"),mid=sh("中证500")+sh("中证1000");
     const f=x=>`${Math.round(x*100)}%`,y=x=>`${x>0?"+":""}${Math.round(x).toLocaleString()} 亿`;
     const head=tot>0?(npos>=6?"全面在买":npos>=4?"多数在买":"少数在买"):(npos<=1?"全面在卖":"多数在卖");
-    const lead=big>=.5?"以大盘（沪深300、上证50）为主":grow>=.35?"以成长（创业板、科创50）为主":mid>=.35?"以中小盘（中证500、1000）为主":"各指数比较均匀";
+    const lead=big>=.5?"以大盘（沪深300、上证50、A500）为主":grow>=.35?"以成长（创业板、科创50）为主":mid>=.35?"以中小盘（中证500、1000）为主":"各指数比较均匀";
     $("ntf3c").innerHTML=`<b>综合判断（近 20 日）：</b>7 个指数合计 ${y(tot)}，${npos} / 7 个净买入，<b>${head}，${lead}</b>。大盘 ${f(big)}、成长 ${f(grow)}、中小盘 ${f(mid)}。<br><span class="note" style="margin:0">加仓规则只看沪深300（集中大买），其他指数只作参考：成长板块也有大钱进来时，说明托的是整个市场，不只是权重股。</span>`;
-    $("ntf3c").hidden=false}
+    $("ntf3c").hidden=false;
+    // 每个指数一行：近 20 天净买入、比上一波（20~120 天前最大的一段 20 天）多还是少、近 20 天里有几天在买、每周净买入小柱
+    const L=G.v[G.names[0]].length,wk=[];for(let k=L;k>0;k-=5)wk.unshift([Math.max(0,k-5),k]);const W26=wk.slice(-24);
+    const rows=G.names.map(g=>{const v=G.v[g],s20=k=>v.slice(Math.max(0,k-20),k).reduce((p,q)=>p+q,0);
+      const now=s20(L);let prev=-1e9;for(let k=L-20;k>=Math.max(20,L-120);k--)prev=Math.max(prev,s20(k));
+      const days=v.slice(-20).filter(x=>x>1).length,bars=W26.map(([a,b])=>v.slice(a,b).reduce((p,q)=>p+q,0)),bm=Math.max(1,...bars.map(Math.abs));
+      const tag=now<=0?`<span class="lv c0">没在买</span>`:now>=prev*1.1?`<span class="lv g1">比上一波多</span>`:now>=prev*.9?`<span class="lv c0">和上一波差不多</span>`:`<span class="lv h1">比上一波少</span>`;
+      const svg=`<svg viewBox="0 0 240 40" style="width:100%;height:34px">${bars.map((b,i)=>{const h=Math.abs(b)/bm*18;return `<rect x="${i*10+1}" width="8" y="${b>=0?20-h:20}" height="${Math.max(.6,h)}" fill="${b>=0?"var(--grow)":"var(--mark)"}"/>`}).join("")}<line x1="0" x2="240" y1="20" y2="20" stroke="var(--line)"/></svg>`;
+      return `<div class="nrow"><div class="nn"><b>${g}</b><small>近 20 天 ${y(now)} · ${days}/20 天在买</small></div><div class="nb">${svg}</div><div class="nt">${tag}</div></div>`}).join("");
+    $("ntfIdx").innerHTML=rows+`<p class="note" style="margin:4px 0 0">小柱 = 近半年每周净买入（绿买红卖）。"上一波" = 20~120 天前最大的一段 20 天。这一波比上一波多、而且大多数日子都在买，就是"一次比一次多、集中买入"。</p>`}
   if(gb)gb.onclick=e=>{const b=e.target.closest("button");if(!b)return;gm=b.dataset.g;gb.querySelectorAll("button").forEach(z=>z.setAttribute("aria-pressed",z===b));draw()};
   const draw=()=>{
     let R=mode==="ytd"?S.filter(r=>r[0]>=S[S.length-1][0].slice(0,4)+"-01-01"):S.slice(-(+mode));
@@ -935,27 +945,29 @@ function ntf3(S,G){
     s+=`<polyline fill="none" stroke="var(--ink)" stroke-width="1.8" points="${R.map((r,i)=>x(i)+","+yx(r[4],a,b,P[0])).join(" ")}"/>`;
     s+=`<text x="${x(n-1)}" y="${yx(px[n-1],a,b,P[0])-6}" text-anchor="end" class="t">${Math.round(px[n-1])}</text>`;
     // ② 买得快不快
-    const T2=P[1];s+=`<text class="t" x="4" y="${T2[0]-10}">② 买得快不快（0~100）</text>`;
-    s+=`<rect x="${L}" width="${w}" y="${yx(100,0,100,T2)}" height="${yx(90,0,100,T2)-yx(100,0,100,T2)}" fill="var(--mark)" opacity=".12"/>`;
-    [0,50,90].forEach(v=>{const y=yx(v,0,100,T2);s+=`<line x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}" stroke="${v===90?"var(--mark)":"var(--div)"}" stroke-width="${v===90?1.2:.5}" ${v===90?'stroke-dasharray="5 4"':""}/><text x="${L-4}" y="${y+4}" text-anchor="end">${v}</text>`});
-    s+=`<text x="${W-Rr}" y="${yx(90,0,100,T2)-4}" text-anchor="end" style="fill:var(--mark)">≥90 越买越快</text>`;
-    const q=R.map((r,i)=>r[2]==null?null:x(i)+","+yx(r[2],0,100,T2)).filter(Boolean);
+    // ② 买得多不多：近 20 日净买入 ÷ 沪深300 市值（‰），就是加仓规则"集中大买"用的那个数；短时间集中买入时这条线会冲上去
+    const T2=P[1],mv=R.map(r=>r[6]?r[3]/r[6]*1000:null),mx2=Math.max(3,...mv.filter(v=>v!=null).map(Math.abs))*1.1;
+    s+=`<text class="t" x="4" y="${T2[0]-10}">② 买得多不多：近 20 天净买入占沪深300 市值（‰）</text>`;
+    s+=`<rect x="${L}" width="${w}" y="${yx(mx2,-mx2,mx2,T2)}" height="${yx(2,-mx2,mx2,T2)-yx(mx2,-mx2,mx2,T2)}" fill="var(--grow)" opacity=".1"/>`;
+    [-2,0,2].forEach(v=>{const y=yx(v,-mx2,mx2,T2);s+=`<line x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}" stroke="${v?"var(--grow)":"var(--muted)"}" stroke-width="${v?1.2:.6}" ${v?'stroke-dasharray="5 4"':""}/><text x="${L-4}" y="${y+4}" text-anchor="end">${v>0?"+":""}${v}</text>`});
+    s+=`<text x="${W-Rr}" y="${yx(2,-mx2,mx2,T2)-4}" text-anchor="end" style="fill:var(--grow)">≥2‰ 集中大买（宽基加仓）</text>`;
+    const q=mv.map((v,i)=>v==null?null:x(i)+","+yx(v,-mx2,mx2,T2)).filter(Boolean);
     s+=`<polyline fill="none" stroke="#3b6fb6" stroke-width="2" points="${q.join(" ")}"/>`;
-    const lq=R[n-1][2];if(lq!=null)s+=`<text x="${x(n-1)}" y="${yx(lq,0,100,T2)-6}" text-anchor="end" style="fill:#3b6fb6;font-weight:700">${lq}</text>`;
+    const lq=mv[n-1];if(lq!=null)s+=`<text x="${x(n-1)}" y="${yx(lq,-mx2,mx2,T2)-6}" text-anchor="end" style="fill:#3b6fb6;font-weight:700">${lq.toFixed(1)}‰</text>`;
     // ③ 每天净买入
     const stack=gm==="all"&&G&&R.every(r=>gi[r[0]]!=null);
-    const GV=stack?R.map(r=>G.names.map(g=>G.v[g][gi[r[0]]]||0)):null;
+    const GV=stack?R.map(r=>GGRP.map(([,,ms])=>ms.reduce((p,g)=>p+(G.v[g]?G.v[g][gi[r[0]]]||0:0),0))):null;
     const fv=stack?GV.map(a=>a.reduce((p,q)=>p+q,0)):R.map(r=>r[5]);
     const pos=stack?GV.map(a=>a.filter(x=>x>0).reduce((p,q)=>p+q,0)):fv.map(v=>Math.max(0,v)),neg=stack?GV.map(a=>a.filter(x=>x<0).reduce((p,q)=>p+q,0)):fv.map(v=>Math.min(0,v));
     const T3=P[2],m=Math.max(10,...pos,...neg.map(Math.abs)),lo=Math.min(0,...neg)-m*.12,hi=Math.max(0,...pos)+m*.22;
-    s+=`<text class="t" x="4" y="${T3[0]-10}">③ 每天净买入（亿元）${stack?"：7 个指数叠起来":"：沪深300"}</text>`;
+    s+=`<text class="t" x="4" y="${T3[0]-10}">③ 每天净买入（亿元）${stack?"：大盘 / 成长 / 中小盘":"：沪深300"}</text>`;
     const y0=yx(0,lo,hi,T3);s+=`<line x1="${L}" x2="${W-Rr}" y1="${y0}" y2="${y0}" stroke="var(--muted)" stroke-width=".8"/><text x="${L-4}" y="${y0+4}" text-anchor="end">0</text>`;
     const tk=niceStep(hi-lo);for(let v=tk;v<hi;v+=tk){const y=yx(v,lo,hi,T3);s+=`<line x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}" stroke="var(--div)" stroke-width=".5"/><text x="${L-4}" y="${y+4}" text-anchor="end">${v}</text>`}
     const lab=new Set(),gap=fs*2.2;   // 从大到小挑要标金额的柱子，离已标的太近就跳过
     fv.map((v,i)=>[Math.abs(v),i]).sort((p,q)=>q[0]-p[0]).forEach(([a,i])=>{if(lab.size<8&&a>=Math.max(20,m*.2)&&[...lab].every(j=>Math.abs(x(j)-x(i))>gap))lab.add(i)});
     fv.forEach((v,i)=>{const y=yx(v,lo,hi,T3);
-      if(stack){let up=0,dn=0;G.names.forEach((g,j)=>{const a=GV[i][j];if(!a)return;const b0=a>0?up:dn,b1=b0+a;if(a>0)up=b1;else dn=b1;
-        const ya=yx(b0,lo,hi,T3),yb=yx(b1,lo,hi,T3);s+=`<rect x="${x(i)-bw/2}" width="${bw}" y="${Math.min(ya,yb)}" height="${Math.max(.3,Math.abs(yb-ya))}" fill="${GCOL[g]}"/>`})}
+      if(stack){let up=0,dn=0;GGRP.forEach(([,col],j)=>{const a=GV[i][j];if(!a)return;const b0=a>0?up:dn,b1=b0+a;if(a>0)up=b1;else dn=b1;
+        const ya=yx(b0,lo,hi,T3),yb=yx(b1,lo,hi,T3);s+=`<rect x="${x(i)-bw/2}" width="${bw}" y="${Math.min(ya,yb)}" height="${Math.max(.3,Math.abs(yb-ya))}" fill="${col}"/>`})}
       else s+=`<rect x="${x(i)-bw/2}" width="${bw}" y="${Math.min(y,y0)}" height="${Math.max(.5,Math.abs(y-y0))}" fill="${v>=0?"var(--grow)":"var(--mark)"}"/>`;
       if(lab.has(i)){const yl=stack?(v>=0?yx(pos[i],lo,hi,T3):yx(neg[i],lo,hi,T3)):y;s+=`<text x="${x(i)}" y="${v>=0?yl-4:yl+fs}" text-anchor="${i===n-1?"end":"middle"}" style="fill:var(--ink)">${v>0?"+":""}${Math.round(v)}</text>`}});
     // 日期
@@ -965,8 +977,8 @@ function ntf3(S,G){
     const tot=fv.reduce((p,q)=>p+q,0);$("ntf3t").innerHTML=`这段时间${stack?"7 个指数":"沪深300"}合计净买入 <b>${tot>0?"+":""}${Math.round(tot).toLocaleString()} 亿元</b>。点图上任意一天，看当天的数字。`;
     svg.onclick=e=>{const bx=svg.getBoundingClientRect(),X=(e.clientX-bx.left)/bx.width*W,i=Math.max(0,Math.min(n-1,Math.round((X-L)/w*n-.5))),r=R[i],c=$("n3c");
       c.setAttribute("x1",x(i));c.setAttribute("x2",x(i));c.setAttribute("visibility","visible");
-      const tv=fv[i],br=stack?"<br>"+G.names.map((g,j)=>`<span style="color:${GCOL[g]}">${g}</span> ${GV[i][j]>0?"+":""}${Math.round(GV[i][j])}`).join("　"):"";
-      $("ntf3t").innerHTML=`<b>${r[0]}</b>：${stack?"7 个指数合计":"沪深300"}净买入 <b style="color:${tv>=0?"var(--grow)":"var(--mark)"}">${tv>0?"+":""}${Math.round(tv)} 亿元</b>${br}<br>沪深300 近 20 日 ${r[3]>0?"+":""}${r[3].toLocaleString()} 亿，买得快不快 ${r[2]??"—"}，沪深300 ${Math.round(r[4])}`};
+      const sgn=v=>`${v>0?"+":""}${Math.round(v)}`,tv=fv[i],br=stack?"<br>"+GGRP.map(([nm,col,ms],j)=>`<b style="color:${col}">${nm} ${sgn(GV[i][j])}</b><small>（${ms.map(g=>g+" "+sgn(G.v[g][gi[r[0]]]||0)).join("、")}）</small>`).join("<br>"):"";
+      $("ntf3t").innerHTML=`<b>${r[0]}</b>：${stack?"7 个指数合计":"沪深300"}净买入 <b style="color:${tv>=0?"var(--grow)":"var(--mark)"}">${tv>0?"+":""}${Math.round(tv)} 亿元</b>${br}<br>沪深300 近 20 日 ${r[3]>0?"+":""}${r[3].toLocaleString()} 亿，占市值 ${r[6]?(r[3]/r[6]*1000).toFixed(1)+"‰":"—"}，沪深300 ${Math.round(r[4])}`};
   };
   bar.onclick=e=>{const b=e.target.closest("button");if(!b)return;mode=b.dataset.n;bar.querySelectorAll("button").forEach(z=>z.setAttribute("aria-pressed",z===b));draw()};
   draw();if(!svg.__rz){svg.__rz=1;addEventListener("resize",()=>svg.__draw&&svg.__draw())}svg.__draw=draw;
@@ -1272,13 +1284,15 @@ function loadNtf(){
         <div><div class="label">上一段集中大买</div><div class="v" style="font-size:17px">${L.episode?L.episode.date:"—"}</div><div class="s">${L.episode&&L.episode.fwd["60"]!=null?"之后 60 日 "+sg(L.episode.fwd["60"]):""}</div></div>
 </div>
       <h3 style="font-size:14px;margin:16px 0 4px">国家队每天买了多少（一图看懂）</h3>
-      <p class="note" style="margin:0 0 6px">从上到下：① 沪深300 走势；② 买得快不快（蓝线 = 加速度排名，只作参考；加仓规则看"近 20 日占市值 ≥2‰"）；③ 每天净买入多少亿（可以看 7 个指数叠起来，或只看沪深300；柱子上是当天合计）。点图看当天数字。</p>
+      <p class="note" style="margin:0 0 6px">从上到下：① 沪深300 走势；② 买得多不多（近 20 天净买入占沪深300 市值，过了 2‰ 就是"集中大买"，宽基加仓）；③ 每天净买入多少亿（分大盘 / 成长 / 中小盘三类叠起来，或只看沪深300；柱子上是当天合计）。点图看当天数字。</p>
       <div class="ranges" id="n3r" style="margin-bottom:4px"><button type="button" data-n="66" aria-pressed="true">近 3 个月</button><button type="button" data-n="130">近半年</button><button type="button" data-n="ytd">今年</button></div>
-      <div class="ranges" id="n3g" style="margin-bottom:4px"><button type="button" data-g="all" aria-pressed="true">7 个指数一起看</button><button type="button" data-g="hs">只看沪深300</button></div>
-      <div class="legend" id="n3lg" style="margin:0 0 4px">${Object.entries(GCOL).map(([g,c])=>`<span><i style="border-color:${c};border-top-width:8px"></i>${g}</span>`).join("")}</div>
+      <div class="ranges" id="n3g" style="margin-bottom:4px"><button type="button" data-g="all" aria-pressed="true">分三类看</button><button type="button" data-g="hs">只看沪深300</button></div>
+      <div class="legend" id="n3lg" style="margin:0 0 4px">${GGRP.map(([g,c,ms])=>`<span><i style="border-color:${c};border-top-width:8px"></i>${g}（${ms.join("、")}）</span>`).join("")}</div>
       <svg class="chart" id="ntf3" viewBox="0 0 720 560" role="img" style="touch-action:pan-y;width:100%;height:auto"></svg>
       <p class="note" id="ntf3t" style="min-height:2.6em;margin:4px 0 0">点图上任意一天，看当天的数字。</p>
       <p class="concl" id="ntf3c" hidden></p>
+      <h3 style="font-size:14px;margin:14px 0 4px">各指数：一波比一波多吗，买得勤不勤</h3>
+      <div id="ntfIdx"></div>
       <details class="sub"><summary>看老图：加速度排名与沪深300（2023 年起） ▾</summary>
       <h3 style="font-size:14px;margin:14px 0 4px">加速度分位与沪深300<button type="button" class="bigbtn" data-big="ntf_c1" data-title="流入加速度的近一年分位（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
       <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 分位（%，左轴；绿色 ≥90% 加速流入，红色 ≤10% 加速流出）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">加速流入第一天</span></p>
