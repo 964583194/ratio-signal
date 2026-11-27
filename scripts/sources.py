@@ -325,11 +325,24 @@ def _month(s):
     return f"{m.group(1)}-{int(m.group(2)):02d}-01"
 
 
+def akf(*names):
+    """AKShare 改过很多函数名（1.20.4x 起旧名直接报错）：按顺序找第一个存在的，新旧版本都能用"""
+    import akshare as ak  # noqa: PLC0415
+    for n in names:
+        try:
+            f = getattr(ak, n, None)       # 新版里旧名可能是"会报错的占位"，getattr 本身就会抛 AttributeError
+        except AttributeError:
+            f = None
+        if f is not None:
+            return f
+    raise AttributeError(f"AKShare 里找不到 {' / '.join(names)}")
+
+
 def ak_money(col):
     """M1 同比（%），月度（东方财富，经 AKShare）"""
     def f(since):
         import akshare as ak  # noqa: PLC0415
-        df = ak.macro_china_money_supply()
+        df = akf("macro_china_money_supply_em", "macro_china_money_supply")()
         out = {_month(r["月份"]): float(r[col]) for _, r in df.iterrows() if str(r[col]) not in ("", "nan", "None")}
         if not out:
             raise RuntimeError("没有取到")
@@ -367,7 +380,7 @@ def ust_real10(since):
 def ak_spdr(since):
     """SPDR 黄金 ETF 持仓（吨），经 AKShare"""
     import akshare as ak  # noqa: PLC0415
-    df = ak.macro_cons_gold()
+    df = akf("fund_gold_etf_holding_js", "macro_cons_gold")()
     out = {str(r["日期"])[:10]: float(r["总库存"]) for _, r in df.iterrows() if str(r["总库存"]) not in ("", "nan")}
     if not out:
         raise RuntimeError("没有取到")
@@ -428,7 +441,7 @@ def chinabond_10y(since):
 def ak_cn10y(since):
     """AKShare 中美国债收益率：中国 10 年"""
     import akshare as ak  # noqa: PLC0415
-    df = ak.bond_zh_us_rate(start_date=(since or "2010-01-01").replace("-", ""))
+    df = akf("bond_zh_us_yield_em", "bond_zh_us_rate")(start_date=(since or "2010-01-01").replace("-", ""))
     return {str(r["日期"])[:10]: float(r["中国国债收益率10年"]) for _, r in df.iterrows() if str(r["中国国债收益率10年"]) not in ("", "nan")}
 
 
@@ -483,7 +496,7 @@ def ex_margin(since):
 def ak_m1_b(since):
     """M1 同比（AKShare 另一个货币供应接口）"""
     import akshare as ak  # noqa: PLC0415
-    df = ak.macro_china_supply_of_money()
+    df = akf("macro_china_money_supply_sina", "macro_china_supply_of_money")()
     c = "货币(狭义货币M1)同比增长"
     return {_month(r["统计时间"]): float(r[c]) for _, r in df.iterrows() if str(r[c]) not in ("", "nan", "None")}
 
