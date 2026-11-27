@@ -172,3 +172,18 @@ function openBig(id, title) {
     ov.querySelectorAll(".bigr button").forEach(x => x.setAttribute("aria-pressed", x === b)); draw(+b.dataset.y) }));
   requestAnimationFrame(() => draw(0));
 }
+// 规矩：每张图都要能横屏看大图。没有按钮的图自动在它上面最近的标题里补一个（以后新加的图也自动有）
+function autoBig() {
+  document.querySelectorAll("svg.chart[id]").forEach(sv => {
+    if (sv.closest(".bigov") || sv.id === "ntf3" || document.querySelector(`.bigbtn[data-big="${sv.id}"]`)) return;
+    const sec = sv.closest("section,.panel,details") || sv.parentElement;
+    const h = [...sec.querySelectorAll("h2,h3")].filter(x => x.compareDocumentPosition(sv) & Node.DOCUMENT_POSITION_FOLLOWING).pop();
+    if (!h) return;
+    const b = document.createElement("button"); b.type = "button"; b.className = "bigbtn"; b.dataset.big = sv.id;
+    b.dataset.title = h.textContent.replace(/⤢.*$/, "").trim(); b.textContent = "⤢ 横屏看大图";
+    b.addEventListener("click", () => openBig(sv.id, b.dataset.title)); h.appendChild(b);
+  });
+}
+(() => { let t = 0; const run = () => { clearTimeout(t); t = setTimeout(autoBig, 300) };
+  if (document.readyState === "loading") addEventListener("DOMContentLoaded", run); else run();
+  new MutationObserver(run).observe(document.documentElement, { childList: true, subtree: true }) })();
