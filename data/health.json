@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-27 20:18",
+ "updated": "2026-11-27 21:39",
  "ok": true,
  "items": {
   "cyb50": {
@@ -236,10 +236,10 @@
    "name": "510300 单位净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 3540,
+   "last": "2026-11-27",
+   "days": 3541,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "unav510310": {
@@ -256,20 +256,20 @@
    "name": "510330 单位净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 3382,
+   "last": "2026-11-27",
+   "days": 3383,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "unav159919": {
    "name": "159919 单位净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 3540,
+   "last": "2026-11-27",
+   "days": 3541,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "cap300": {
@@ -291,6 +291,16 @@
    "failed": [],
    "stale_days": 0,
    "ref": true
+  },
+  "mkt_cap": {
+   "name": "A 股总市值",
+   "source": "乐咕乐股",
+   "mode": "全量",
+   "last": "2026-11-27",
+   "days": 5248,
+   "failed": [],
+   "stale_days": 0,
+   "ref": false
   },
   "m1": {
    "name": "M1 同比",
@@ -356,10 +366,10 @@
    "name": "纳指ETF 513100 净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-25",
-   "days": 3261,
+   "last": "2026-11-26",
+   "days": 3262,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": false
   },
   "bank": {
@@ -374,15 +384,12 @@
   },
   "bank_pe": {
    "name": "中证银行 市盈率",
-   "source": "本地缓存",
-   "mode": "缓存",
-   "last": "2026-11-26",
-   "days": 2810,
-   "failed": [
-    "中证指数官网：TimeoutError The read operation timed out",
-    "中证日度指标：与已有数据对不上（19/19 天差异过大）"
-   ],
-   "stale_days": 1,
+   "source": "中证指数官网",
+   "mode": "增量",
+   "last": "2026-11-27",
+   "days": 2811,
+   "failed": [],
+   "stale_days": 0,
    "ref": true
   },
   "bank_tr": {
@@ -419,10 +426,10 @@
    "name": "摩根日本精选 累计净值",
    "source": "天天基金",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 1751,
+   "last": "2026-11-27",
+   "days": 1752,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "nav021189": {
