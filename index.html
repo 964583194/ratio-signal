@@ -43,6 +43,7 @@
   <button type="button" role="tab" id="tabN" data-view="ndx" aria-selected="false">纳指</button>
 </nav></div>
 <div class="ranges grp" role="group" aria-label="切换" id="grpSw" hidden></div>
+<section class="panel topcard" id="topCard" hidden></section>
 
 <div id="viewO">
 <section class="panel" id="vdSec" hidden><h2>组合信号 <span class="exptag">实验</span></h2>
@@ -1000,6 +1001,30 @@ function loadOverview(){
   getJ("health.json").then(h=>{if(h&&h.updated)$("o_data").textContent=h.updated.slice(5).replace("-","月").replace(" ","日 ")});
   getJ("myfunds.json").then(d=>{if(d){const c=d.count,L=d.labels;$("o_my").textContent=`${d.funds.length} 只：`+Object.keys(L).filter(k=>c[k]).map(k=>L[k][0]+" "+c[k]).join("、")}});
 }
+// ---------------- 每个页签最上面："现在怎么做"一张卡（和总览、周报同一份 state.json），下面才是分析和指标
+const TOPMAP={rotation:"创业板轮动",kc:"科创板轮动",dividend:"红利打分",broad:"A500 / 沪深300",gold:"黄金",bond:"债基",ndx:"纳指100"};
+let TOPST=null,TOPVD=null,TOPT=null;
+function renderTop(k){
+  const box=$("topCard");if(!box)return;
+  if(k==="overview"){box.hidden=true;return}
+  const go=()=>{
+    const vd=TOPVD&&TOPVD.latest,C={g2:"var(--grow)",g1:"var(--grow)",c0:"var(--ink)",h1:"var(--div)",r1:"var(--mark)"};
+    const sig=vd?`<div class="note" style="margin:8px 0 0">组合信号：<a href="#overview" style="color:${C[vd.cls]};font-weight:700">${vd.title}</a> · ${vd.act}</div>`:"";
+    if(k==="temp"){const L=TOPT&&TOPT.latest;if(!L){box.hidden=true;return}
+      box.innerHTML=`<div class="label">现在怎么做 · ${L.date}</div><div class="tc-main">${L.action}</div>
+        <div><span class="lv ${L.cls}">${L.zone}</span> <span class="note" style="margin:0">${L.verdict.split("→")[0].trim()}</span></div>${sig}`;
+      box.hidden=false;return}
+    const n=TOPMAP[k],v=TOPST&&TOPST[n];if(!v){box.hidden=true;return}
+    const parts=v.act.split("；"),main=parts[0].replace(/^本周定投款/,"").replace(/（只作提醒.*$/,""),rest=/轮动/.test(n)?"":parts.slice(1).join("；");
+    box.innerHTML=`<div class="label">现在怎么做 · ${v.date}${/轮动|A500|黄金|债基|纳指/.test(n)?" · 周五 15:00 前下单":""}</div>
+      <div class="tc-main">${main}${n==="黄金"?' <small class="note">（暂不给建议，只看位置）</small>':""}</div>
+      <div><span class="lv ${OCLS(v.state)}">${v.state.split("|")[0]}</span> <span class="note" style="margin:0">${v.now}</span></div>
+      ${rest?`<div class="note" style="margin:6px 0 0">${rest}</div>`:""}${sig}
+      <div class="note" style="margin:6px 0 0">下面是原因、指标和回测。<a href="#overview">本周下单清单在总览 ›</a></div>`;
+    box.hidden=false};
+  if(TOPST&&TOPT)return go();
+  Promise.all([getJ("state.json"),getJ("verdict.json"),getJ("temp.json")]).then(([s,v,tt])=>{TOPST=s;TOPVD=v;TOPT=tt;go()});
+}
 // ---------------- 市场温度：五档区间 + 方向（data/temp.json，scripts/temp.py 计算）
 // 取数据；连不上网时 sw.js 会给缓存的旧数据并打上 X-From-Cache，这里在页面顶部提示
 const getJ=f=>fetch("data/"+f+"?t="+Date.now(),{cache:"no-store"}).then(r=>{if(r.headers.get("X-From-Cache"))offlineNote();return r.ok?r.json():null}).catch(()=>null);
@@ -1303,6 +1328,7 @@ function showView(){
   if(hk==="a500"||hk==="hs300"){BROAD=hk;hk="broad"}
   const k=VIEWS[hk]?hk:"overview";
   $("subH").hidden=true;
+  renderTop(k);
   Object.entries(VIEWS).forEach(([key,[v,t,s]])=>{const on=key===k;$(v).hidden=!on;$(s).hidden=!on});
   document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.id===VIEWS[k][1]));
   const g=GROUPS[k],sw=$("grpSw");sw.hidden=!g;
