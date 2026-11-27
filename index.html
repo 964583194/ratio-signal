@@ -1103,7 +1103,8 @@ function loadEtf300(root,HL){
   Promise.all([fetch("data/etf300.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error(r.status===404?"还没有生成数据，下次自动更新后会出现":"HTTP "+r.status);return r.json()}),
     fetch("data/market.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)]).then(([d,mk])=>{
     const cheap=HL&&HL.cheap!=null?HL.cheap:null,judge=etfJudge(d.latest.zone,cheap,mk&&mk.pb_hot);
-    const L=d.latest,S=d.series,sg=x=>x==null?"—":(x>0?"+":"")+pc(x);
+    const L=d.latest,S=d.series.filter(r=>r[0]>=(d.recent_from||"2023-01-01")),sg=x=>x==null?"—":(x>0?"+":"")+pc(x);
+    const lo=Math.min(...S.map(r=>r[1])),hi=Math.max(...S.map(r=>r[1]));   // 2023 年前国家队基本不用 ETF，占比一直贴着底，画进来容易误导，只看之后
     const ev=d.events||[],st=d.stats||{};
     const sx=(k,h)=>st[k]&&st[k][h]?st[k][h]:null,i60=sx("大幅流入·托底","60"),o60=sx("撤出中","60"),a60=sx("全部交易日","60");
     const evc=i60&&o60&&a60?`<b>结论：</b>大幅流入之后 60 个交易日沪深300 平均 ${sg(i60.avg)}（上涨 ${pc(i60.up,0)}），撤出之后平均 ${sg(o60.avg)}（上涨 ${pc(o60.up,0)}），平时是 ${sg(a60.avg)}。<b>→ ${o60.avg<a60.avg?"“撤出”更有用：看到撤出、尤其指数在高位时要谨慎":"撤出之后没有明显更差"}；${i60.avg<=a60.avg+.01?"“大幅流入”不代表马上见底，常出现在下跌途中":"大幅流入之后表现更好"}。</b>次数只有个位数，只作旁证。`:"";
@@ -1115,14 +1116,14 @@ function loadEtf300(root,HL){
       <div><span class="lv ${L.cls}">${L.zone}</span> <span style="margin-left:6px">${L.action}</span></div>
       <p class="concl"><b>现在怎么办：</b>${judge}。<span class="note">（结合沪深300 便宜指数 ${cheap==null?"—":cheap.toFixed(1)}，只作参考，不改规则和倍数）</span></p>
       <div class="kv"><div><div class="label">合计规模</div><div class="v">${L.size.toLocaleString()} 亿</div><div class="s">${L.date} · ${L.shares.toFixed(0)} 亿份</div></div>
-        <div><div class="label">占流通市值</div><div class="v">${L.ratio.toFixed(2)}%</div><div class="s">图中区间 ${L.lo.toFixed(2)}%~${L.hi.toFixed(2)}%</div></div>
+        <div><div class="label">占流通市值</div><div class="v">${L.ratio.toFixed(2)}%</div><div class="s">图中区间 ${lo.toFixed(2)}%~${hi.toFixed(2)}%</div></div>
         <div><div class="label">近 252 日分位</div><div class="v">${L.pct==null?"—":pc(L.pct,0)}</div><div class="s">≥80% 重仓 · ≤20% 撤空</div></div>
         <div><div class="label">近 20 日份额</div><div class="v">${sg(L.chg20)}</div><div class="s">≥+15% 大幅流入 · ≤−15% 撤出</div></div></div>
       <div id="ntfbox"></div>
       <h3 style="font-size:14px;margin:16px 0 4px">① 国家队手里有多少（绿线越高 = 拿得越多）<button type="button" class="bigbtn" data-big="etf_c1" data-title="占沪深300 流通市值（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
-      <p class="note" style="margin:0 0 6px">绿线 = 沪深300 ETF 的总规模占整个沪深300 市值的百分比，可以看成国家队通过 ETF 拿了多少沪深300。<br><span style="color:var(--grow);font-weight:700">——</span> 占比（%，左轴）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">大幅流入</span> / <span style="color:var(--div)">撤出</span></p>
+      <p class="note" style="margin:0 0 6px">绿线 = 沪深300 ETF 的总规模占整个沪深300 市值的百分比，可以看成国家队通过 ETF 拿了多少沪深300。只画 2023 年起：之前国家队基本不用 ETF 托市，线一直贴着底，没有参考意义。<br><span style="color:var(--grow);font-weight:700">——</span> 占比（%，左轴）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">大幅流入</span> / <span style="color:var(--div)">撤出</span></p>
       <div class="chartwrap"><svg class="chart" id="etf_c1" viewBox="0 0 720 260" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
-      <p class="concl"><b>结论：</b>现在占 ${L.ratio.toFixed(2)}%，${L.ratio>=L.hi*.8?"接近图中最高":L.ratio<=L.lo*2?"接近图中最低":"在图中中间位置"}（${L.lo.toFixed(2)}%~${L.hi.toFixed(2)}%）；近 20 日份额 ${sg(L.chg20)}。<b>→ ${L.chg20==null?"":L.chg20>=.15?"国家队最近一个月在大举加仓":L.chg20<=-.15?"国家队最近一个月在大幅撤出":L.chg20>.03?"国家队最近在回补":L.chg20<-.03?"国家队最近在慢慢减":"最近变化不大"}${L.ratio>=L.hi*.8?"，仓位已经很重":""}。</b></p>
+      <p class="concl"><b>结论：</b>现在占 ${L.ratio.toFixed(2)}%，${L.ratio>=hi*.8?"接近图中最高":L.ratio<=lo*2?"接近图中最低":"在图中中间位置"}（${lo.toFixed(2)}%~${hi.toFixed(2)}%）；近 20 日份额 ${sg(L.chg20)}。<b>→ ${L.chg20==null?"":L.chg20>=.15?"国家队最近一个月在大举加仓":L.chg20<=-.15?"国家队最近一个月在大幅撤出":L.chg20>.03?"国家队最近在回补":L.chg20<-.03?"国家队最近在慢慢减":"最近变化不大"}${L.ratio>=hi*.8?"，仓位已经很重":""}。</b></p>
       <h3 style="font-size:14px;margin:14px 0 4px">② 和过去一年比算多还是少（白线越高 = 越多）<button type="button" class="bigbtn" data-big="etf_c2" data-title="占比的 252 日分位（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
       <p class="note" style="margin:0 0 6px">白线 = 上面那个占比在近一年里排第几：100 = 一年里最多，0 = 一年里最少。<br><span style="color:var(--ink);font-weight:700">——</span> 排名（0~100，左轴；绿色 ≥80 重仓，红色 ≤20 撤空）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）</p>
       <div class="chartwrap"><svg class="chart" id="etf_c2" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
