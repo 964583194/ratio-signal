@@ -45,7 +45,7 @@
 <div class="ranges grp" role="group" aria-label="切换" id="grpSw" hidden></div>
 
 <div id="viewO">
-<section class="panel" id="vdSec" hidden><h2>现在怎么做 <span class="exptag">实验</span></h2>
+<section class="panel" id="vdSec" hidden><h2>组合信号 <span class="exptag">实验</span></h2>
   <div id="vdBody"><div class="note">加载中</div></div>
 </section>
 <section class="panel"><h2>本周这么做<button type="button" class="bigbtn" onclick="shareImg('week')">生成分享图</button></h2>
@@ -937,33 +937,26 @@ function ntf3(S){
   draw();if(!svg.__rz){svg.__rz=1;addEventListener("resize",()=>svg.__draw&&svg.__draw())}svg.__draw=draw;
 }
 // 关键指标（总览）：data/keyind.json，分 规则 / 提醒 / 实验
-// 综合信号（实验）：data/verdict.json，一句话"现在怎么做"，点开看原因和回测
+// 组合信号（实验）：data/verdict.json。几个指标同时出现才算的组合，一句话怎么做；点开看原因和回测
 function loadVerdict(){
-  getJ("verdict.json").then(d=>{if(!d)return;$("vdSec").hidden=false;
-    const L=d.latest,C={"大胆买":"var(--grow)","放心买":"var(--grow)","照常买":"var(--ink)","别加钱":"var(--div)","准备卖":"var(--mark)"},
-      BG={"大胆买":"var(--grow-soft)","放心买":"color-mix(in srgb,var(--grow-soft) 45%,transparent)","照常买":"","别加钱":"var(--div-soft)","准备卖":"var(--mark-soft)"},
-      f=x=>x==null?"—":`${x.avg>0?"+":""}${(x.avg*100).toFixed(1)}%<br><small>${Math.round(x.up*100)}% 上涨</small>`;
-    const row=(s,lv)=>{const x=d.stats[s][lv];return `<tr${lv===L.level?' style="font-weight:700;background:var(--mid)"':""}><td style="color:${C[lv]||"inherit"}">${lv}</td><td class="r num">${x.days}</td><td class="r num">${f(x["60"])}</td><td class="r num">${f(x["120"])}</td><td class="r num">${f(x["250"])}</td></tr>`};
-    const tb=s=>`<div class="scroll"><table><thead><tr><th>${s} 年起</th><th class="r">天数</th><th class="r">60 天后</th><th class="r">半年后</th><th class="r">一年后</th></tr></thead><tbody>${[...d.levels,"任意一天"].map(lv=>row(s,lv)).join("")}</tbody></table></div>`;
-    const ladder=d.levels.map(lv=>`<span style="flex:1;text-align:center;padding:6px 2px;border-radius:6px;font-size:13px;${lv===L.level?`background:${C[lv]};color:var(--bg);font-weight:700`:`background:var(--mid);color:var(--muted)`}">${lv}</span>`).join("");
-    $("vdBody").innerHTML=`<div style="font-size:30px;font-weight:800;color:${C[L.level]};line-height:1.2">${L.level}</div>
-      <div style="font-size:16px;margin:4px 0 10px;color:var(--ink)">${L.action}</div>
-      <div style="display:flex;gap:4px;margin-bottom:6px">${ladder}</div>
-      <div class="note" style="margin:0">${L.date} · ${L.since} 起进入这一档 · 只作提醒，不改任何倍数</div>
-      <details class="sub" style="margin-top:8px"><summary>为什么是"${L.level}"、准不准 ▾</summary>
-        <div style="margin:8px 0">${L.why.map(w=>`<div style="padding:5px 0;border-bottom:1px solid var(--line)"><b style="color:${w.ok?"var(--grow)":w.bad?"var(--mark)":"var(--muted)"}">${w.ok?"✓":w.bad?"✗":"·"}</b> <b>${w.name}</b>：${w.text}</div>`).join("")}</div>
-        <p class="note">怎么判断（从上往下，先满足的算）：<b>准备卖</b> 市场温度顶部，或偏热 + 国家队撤出；<b>别加钱</b> 偏热，或国家队撤出，或见顶灯 ≥2；<b>大胆买</b> 底部 / 偏冷，且近 20 天有国家队急买或方向全部回升；<b>放心买</b> 底部 / 偏冷；<b>照常买</b> 其他。</p>
-        <h3 class="h3">各档之后沪深300 怎么走</h3>${tb("2013")}${tb("2023")}
-        <p class="note">"放心买"之后 60 天常常还在跌（便宜了还会更便宜），但一年后大多上涨；"大胆买"是便宜 + 有人大举进场，短期也更好。国家队急买 2023 年才有数据，之前只按方向判断。样本有限，只作参考，2027-05 半年复盘再决定要不要进规则。</p>
-        <h3 class="h3">沪深300 与各档（背景色）</h3>
-        <p class="note" style="margin:0 0 6px">背景：<span style="color:var(--grow)">深绿 大胆买</span> · <span style="color:var(--grow)">浅绿 放心买</span> · <span style="color:var(--div)">黄 别加钱</span> · <span style="color:var(--mark)">红 准备卖</span></p>
-        <div class="chartwrap"><svg class="chart" id="vd_c1" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
-        <p class="note">最近几次变化：${d.changes.slice(-6).reverse().map(c=>`${c[0]} <b style="color:${C[c[1]]}">${c[1]}</b>`).join(" ← ")}</p>
+  getJ("verdict.json").then(d=>{if(!d||!d.signals)return;$("vdSec").hidden=false;
+    const L=d.latest,C={g2:"var(--grow)",g1:"var(--grow)",c0:"var(--ink)",h1:"var(--div)",r1:"var(--mark)"},
+      f=x=>x==null?"—":`${x.avg>0?"+":""}${(x.avg*100).toFixed(1)}%<br><small>${Math.round(x.up*100)}% 涨</small>`;
+    const lit=d.signals.filter(s=>s.on);
+    const rows=d.signals.map(s=>`<tr${s.on?' style="background:var(--mid)"':""}><td><b style="color:${C[s.cls]}">${s.name}</b>${s.on?' <span class="lv g1" style="font-size:11px">现在亮</span>':""}<br><small style="color:var(--muted);white-space:normal;display:block">${s.rule}</small></td><td class="r num">${s.eps.length} 段<br><small>${s.since} 起</small></td><td class="r num">${f(s.stats["60"])}</td><td class="r num">${f(s.stats["250"])}</td></tr>`).join("");
+    const base=s=>`<tr><td style="color:var(--muted);white-space:normal">随便哪天（${s} 起）</td><td></td><td class="r num">${f(d.base[s]["60"])}</td><td class="r num">${f(d.base[s]["250"])}</td></tr>`;
+    $("vdBody").innerHTML=`<div style="font-size:30px;font-weight:800;color:${C[L.cls]};line-height:1.2">${L.title}</div>
+      <div style="font-size:16px;margin:4px 0 8px;color:var(--ink)">${L.act}</div>
+      ${lit.length>1?`<div class="note" style="margin:0 0 4px">同时亮着：${lit.map(s=>`<b style="color:${C[s.cls]}">${s.name}</b>`).join("、")}</div>`:""}
+      <div class="note" style="margin:0">${L.date}${lit[0]&&lit[0].from?` · ${lit[0].from} 起亮`:""} · 只作提醒，不改任何倍数，具体买多少还是看下面"本周这么做"</div>
+      <details class="sub" style="margin-top:8px"><summary>为什么、准不准 ▾</summary>
+        <h3 class="h3">现在各指标</h3>
+        <div style="margin:4px 0 10px">${L.facts.map(x=>`<div style="padding:5px 0;border-bottom:1px solid var(--line)"><b>${x.name}</b> <span class="lv c0" style="font-size:11px">${x.tag}</span> ${x.text}</div>`).join("")}</div>
+        <h3 class="h3">所有组合（亮着时之后沪深300 怎么走）</h3>
+        <div class="scroll"><table style="table-layout:fixed;width:100%"><thead><tr><th style="width:46%">组合 · 条件</th><th class="r">出现</th><th class="r">60 天后</th><th class="r">一年后</th></tr></thead><tbody>${rows}${base("2013")}${base("2023")}</tbody></table></div>
+        <p class="note">同时亮多个时，按表里从上到下取第一个当标题。"跟进买入"会盖过"磨底等待"：同样是便宜还在跌，有国家队急买时之后 60 天平均 +16%，没有时 −2%。国家队急买 2023 年才有数据。每个组合只出现过 3~8 段，样本少，只作参考，2027-05 半年复盘再决定要不要进规则。</p>
+        <p class="note">历次出现：${d.signals.map(s=>`<b>${s.name}</b> ${s.eps.slice(-4).join("、")||"—"}`).join("；")}</p>
       </details>`;
-    const S=d.series.filter(r=>r[0]>="2019-01-01"),dates=S.map(r=>r[0]);
-    const draw=()=>DualChart($("vd_c1"),{W:720,H:220,dates,leftTicks:[],leftFmt:v=>v,left:[],right:{v:S.map(r=>r[2]),c:"var(--ink)"},
-      bg:S.map(r=>BG[d.levels[r[1]]]||""),tip:i=>`${dates[i]}<br><b>${d.levels[S[i][1]]}</b><br>沪深300 ${Math.round(S[i][2])}`});
-    $("vdBody").querySelector("details").addEventListener("toggle",e=>{if(e.target.open)requestAnimationFrame(draw)});
   });
 }
 function loadKeyInd(){
