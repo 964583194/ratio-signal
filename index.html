@@ -916,9 +916,23 @@ function ntfJudgeCalc(S,E,TT){
     act==="加"?["国家队在集中加仓，但市场不在低位","c0","样本少，按规则走"]:["国家队没有明显动作","c0","按规则走"];
   return {J,m,rk,act,pos,loc,date:r[0]};
 }
-function ntfJudge(S,E,TT){
+// 这一段进行到哪了（只作参考，不进规则）：国家队买卖都是一两个月里一波一波做的。
+// 回测 2023 起：买的时候指数常还在跌、买到后半段或停手后才涨；卖的时候指数常还在涨、卖得差不多后才跌
+function ntfStage(S,G){
+  if(!G)return "";const L=G.v[G.names[0]].length,F=[...Array(L)].map((_,k)=>G.names.reduce((p,g)=>p+(G.v[g][k]||0),0)),SS=S.slice(-L);
+  const cap=SS.map(r=>r[6]),r20=F.map((_,k)=>cap[k]?F.slice(Math.max(0,k-19),k+1).reduce((p,q)=>p+q,0)/cap[k]*1000:0);
+  const sgn=r20[L-1]>=2?1:r20[L-1]<=-2?-1:0;if(!sgn)return "";
+  let a=L-1;while(a>0&&(r20[a-1]*sgn>=2||[...Array(10)].some((_,j)=>a-1-j>=0&&r20[a-1-j]*sgn>=2)))a--;   // 往前找这一段的开头（中间断开不到 10 天也算同一段）
+  while(a<L-1&&r20[a]*sgn<2)a++;
+  const s0=Math.max(0,a-19),seg=F.slice(s0),tot=seg.reduce((p,q)=>p+q,0),avg=tot/seg.length,l5=F.slice(-5).reduce((p,q)=>p+q,0)/5;
+  const big=seg.filter(x=>x*sgn>=150).length,days=L-s0,word=sgn>0?"买":"卖";
+  const pace=l5*sgn>=avg*sgn*1.2?`还在加码（近 5 天日均 ${Math.round(Math.abs(l5))} 亿，比这一段平均多）`:l5*sgn>=avg*sgn*0.5?`节奏差不多（近 5 天日均 ${Math.round(Math.abs(l5))} 亿）`:l5*sgn>0?`在放缓（近 5 天日均只有 ${Math.round(Math.abs(l5))} 亿）`:`近 5 天基本停手`;
+  const p0=SS[s0][4],p1=SS[L-1][4];
+  return `<br><b>这一段进行到哪了：</b>${SS[s0][0]} 开始${word}，已 ${days} 个交易日，7 个指数累计 ${tot>0?"+":""}${Math.round(tot).toLocaleString()} 亿，大额（单日 ≥150 亿）${big} 天；${pace}。这段时间沪深300 ${p0.toFixed(0)} → ${p1.toFixed(0)}（${(p1/p0-1)*100>0?"+":""}${((p1/p0-1)*100).toFixed(1)}%）。<span class="note" style="margin:0">${sgn>0?"历史上常常一边买一边跌，买到后半段或停手后才涨":"历史上常常一边卖一边涨，卖得差不多后才跌"}；只作参考。</span>`;
+}
+function ntfJudge(S,E,TT,G){
   const box=$("ntfJ"),R=ntfJudgeCalc(S,E,TT);if(!box||!R)return;const {J,m,rk,act,pos,loc}=R;
-  box.innerHTML=`<b>国家队综合判断：</b><span class="lv ${J[1]}">${J[0]}</span><br>近 20 天买卖 ${m>0?"+":""}${m.toFixed(1)}‰（${act==="加"?"集中大买":act==="减"?"集中大卖":"不多"}）· 手里的量在近一年排 ${rk==null?"—":Math.round(rk)}（${pos==="重"?"重仓":pos==="轻"?"轻仓":"中等"}）· 市场${loc==="低"?"在低位":loc==="高"?"在高位":"在中间"}。<br><span class="note" style="margin:0">${J[2]}。只作提醒，不改倍数；加仓规则只看"集中大买"。</span>`;
+  box.innerHTML=`<b>国家队综合判断：</b><span class="lv ${J[1]}">${J[0]}</span><br>近 20 天买卖 ${m>0?"+":""}${m.toFixed(1)}‰（${act==="加"?"集中大买":act==="减"?"集中大卖":"不多"}）· 手里的量在近一年排 ${rk==null?"—":Math.round(rk)}（${pos==="重"?"重仓":pos==="轻"?"轻仓":"中等"}）· 市场${loc==="低"?"在低位":loc==="高"?"在高位":"在中间"}。<br><span class="note" style="margin:0">${J[2]}。只作提醒，不改倍数；加仓规则只看"集中大买"。</span>${ntfStage(S,G)}`;
   box.hidden=false;
 }
 function ntf3(S,G,E){
@@ -1348,7 +1362,7 @@ function loadNtf(){
       <div class="scroll" style="margin-top:8px"><table><thead><tr><th>日期</th><th>信号</th><th class="r">20 日后</th><th class="r">60 日后</th><th class="r">120 日后</th></tr></thead><tbody>
         ${[...d.episodes.map(e=>({...e,k:"集中大买"}))].sort((a,b)=>a.date<b.date?1:-1).map(e=>`<tr><td class="num">${e.date}</td><td>${e.k}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td><td class="r num">${fr(e.fwd["120"])}</td></tr>`).join("")}</tbody></table></div>
       <p class="note">2023 年起。净申购 = 份额变化 × 单位净值；加速度只看 4 只沪深300 ETF（换成 20 只宽基 ETF 回测更差）；放量 = 3 只上交所沪深300 ETF 成交额 ≥ 前 20 日均值 ${d.rule.vol} 倍且当天下跌。</p></details>`;
-    Promise.all([getJ("etf300.json"),getJ("temp.json")]).then(([E,TT])=>{ntf3(S,d.gflow,E);ntfJudge(S,E,TT)});
+    Promise.all([getJ("etf300.json"),getJ("temp.json")]).then(([E,TT])=>{ntf3(S,d.gflow,E);ntfJudge(S,E,TT,d.gflow)});
     const dates=S.map(r=>r[0]),marks=d.episodes.map(e=>({d:e.date,c:"var(--grow)",t:""}));
     DualChart($("ntf_c1"),{W:720,H:220,dates,leftRange:[0,100],leftTicks:[0,10,50,90,100],leftFmt:v=>v,
       bands:[{from:90,to:100,fill:"var(--grow-soft)"},{from:0,to:10,fill:"var(--mark-soft)"}],
