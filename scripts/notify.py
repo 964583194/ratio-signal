@@ -420,6 +420,34 @@ def change_lines(changes, cur, prev, report=False):
     return groups
 
 
+def ntf_judge():
+    """国家队综合判断（和网页同一套）：买得多不多（近 20 天 ±2‰）× 手里有多少（近一年排名）× 市场高低位"""
+    N, E, T = load("ntf.json"), load("etf300.json"), load("temp.json")
+    if not (N and E and T):
+        return None
+    rows = [x for x in N["series"] if len(x) > 6 and x[6]]
+    if not rows:
+        return None
+    r = rows[-1]
+    m, pct, z = r[3] / r[6] * 1000, E["latest"].get("pct"), T["latest"]["z"]
+    act = "加" if m >= 2 else "减" if m <= -2 else "稳"
+    pos = "中" if pct is None else "重" if pct >= .8 else "轻" if pct <= .2 else "中"
+    loc = "低" if z <= 1 else "高" if z >= 3 else "中"
+    if act == "加" and loc == "低":
+        j = "国家队在低位集中加仓：跟着买"
+    elif act == "减" and loc == "高":
+        j = "国家队在高位撤：别追高，留意卖出"
+    elif act == "稳" and pos == "轻" and loc == "高":
+        j = "高位而国家队不在场：别追高"
+    elif act == "稳" and pos == "重" and loc == "低":
+        j = "国家队重仓托着：跌下来有人接，慢慢买"
+    elif act == "减":
+        j = "国家队在低位降温卖出：短期可能还涨，别追"
+    else:
+        j = "国家队没有明显动作"
+    return f"{j}（近 20 天 {m:+.1f}‰，仓位近一年排 {'—' if pct is None else round(pct * 100)}）"
+
+
 def headline():
     """一句话总结：市场温度 + 黄金 + 我的基金"""
     out = []
@@ -431,6 +459,9 @@ def headline():
     vd = load("verdict.json")
     if vd and vd.get("latest"):
         out.insert(0, f"- **组合信号：{vd['latest']['title']}** → {vd['latest']['act']}（实验，只提醒）")
+    nj = ntf_judge()
+    if nj:
+        out.insert(1, f"- **国家队**：{nj}")
     if mf:
         c = mf["count"]
         add = [short(f["name"]) for f in mf["funds"] if f["tag"] == "add"]
