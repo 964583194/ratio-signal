@@ -1,9 +1,10 @@
 """组合信号（实验）：几个指标同时出现才算的"组合"，每个组合对应一句怎么做。只作提醒，不改任何倍数和买卖规则。
 
 组合（同时亮多个时，按下面顺序取第一个当标题）：
-  跟进买入  低位（市场温度底部 / 偏冷）+ 近 20 天国家队急买（5 日净申购 ≥ 两市成交额 1%）
+  跟进买入  低位（市场温度底部 / 偏冷）+ 近 20 天国家队急买（5 日净申购 ≥ 沪深300 市值 1.5‰）
   见底加码  破净率见底 + 见底灯 ≥4 + 方向（宽度、M1、信贷脉冲）至少 2 个回升
-  高位撤离  高位（偏热 / 顶部）+ 托底资金撤出（20 日份额 ≤ −15%）
+  高位撤离  高位（偏热 / 顶部）+ 近 20 天国家队集中卖出（5 日净赎回 ≥ 市值 1.5‰ 或 20 日 ≥ 2‰；2023 年前没有申赎数据，用 20 日份额 ≤ −15%）
+国家队买卖都用同一把尺子：净申购 ÷ 沪深300 流通市值（相对值）。不用"占成交额"：高位时成交额很大，卖出会被稀释。
   高位护盘  高位 + 托底资金大幅流入（20 日份额 ≥ +15%）：高位救市，往往还要跌
   高位走弱  高位 + 方向 3 个都在走弱
   磨底等待  低位 + 方向 3 个都在走弱 + 没有国家队急买
@@ -15,19 +16,18 @@ import datetime as dt
 import json
 import os
 
-import sources as S
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "data", "verdict.json")
 ZN = ["底部", "偏冷", "正常", "偏热", "顶部"]
-RUSH = 0.01
+RUSH, BIG = 0.0015, 0.002
 SIG = [  # key, 名称, 颜色, 怎么做, 条件说明, 回测从哪年起
     ("follow", "跟进买入", "g2", "跟着买：按规则买，规则让加码时别犹豫，备用金可以用起来",
      "低位（底部 / 偏冷）+ 近 20 天国家队急买", "2023"),
     ("bottom", "见底加码", "g2", "按规则买，加码别犹豫：便宜到极点，而且开始好转",
      "破净率见底 + 见底灯 ≥4 + 方向至少 2 个回升", "2013"),
     ("exit", "高位撤离", "r1", "不追加；各板块到卖出线就卖，宁可早一点",
-     "高位（偏热 / 顶部）+ 国家队撤出", "2013"),
+     "高位（偏热 / 顶部）+ 近 20 天国家队集中卖出", "2013"),
     ("rescue", "高位护盘", "r1", "别被托市迷惑：不追加，按规则卖",
      "高位 + 国家队大幅流入（高位救市）", "2013"),
     ("weak", "高位走弱", "h1", "不追加，留意各板块卖出信号",
@@ -46,11 +46,7 @@ def run():
     T = _load("temp.json")["series"]          # [日期, 区间 0~4, 沪深300, 见底灯, 见顶灯, 各灯, 方向]
     names = _load("temp.json").get("bot_names") or []
     E = {x[0]: x[3] for x in _load("etf300.json")["series"]}
-    NT = {x[0]: x[5] for x in _load("ntf.json")["series"] if len(x) > 5}
-    try:
-        mk = S.get_series("mkt_amt")[0]
-    except Exception:  # noqa: BLE001
-        mk = S.load_cache("mkt_amt")
+    NT = {x[0]: (x[5], x[6]) for x in _load("ntf.json")["series"] if len(x) > 6 and x[6]}
     D, P = [x[0] for x in T], [x[2] for x in T]
     n = len(D)
     ek = sorted(E)
@@ -58,27 +54,30 @@ def run():
     def shares(d):
         j = bisect.bisect_right(ek, d) - 1
         return E[ek[j]] if j >= 0 else None
-    c20, r5 = [None] * n, [None] * n
+    c20, r5, r20 = [None] * n, [None] * n, [None] * n
     for k in range(n):
         if k >= 20:
             a, b = shares(D[k]), shares(D[k - 20])
             c20[k] = a / b - 1 if a and b else None
-        w = D[max(0, k - 4):k + 1]
-        if k >= 4 and all(d in NT for d in w):
-            a = sum(mk.get(d, 0) for d in w)
-            r5[k] = sum(NT[d] for d in w) / a if a else None
+        for w, arr in ((5, r5), (20, r20)):
+            ds = D[max(0, k - w + 1):k + 1]
+            if k >= w - 1 and all(d in NT for d in ds):
+                arr[k] = sum(NT[d][0] for d in ds) / NT[D[k]][1]
     rush = [x is not None and x >= RUSH for x in r5]
     rush20 = [any(rush[max(0, k - 19):k + 1]) for k in range(n)]
+    sell = [((r5[k] is not None and r5[k] <= -RUSH) or (r20[k] is not None and r20[k] <= -BIG)) if r5[k] is not None
+            else (c20[k] is not None and c20[k] <= -0.15) for k in range(n)]
+    sell20 = [any(sell[max(0, k - 19):k + 1]) for k in range(n)]
     pbi = names.index("破净率") if "破净率" in names else 0
     F = {"z": [x[1] for x in T], "bot": [x[3] for x in T], "pb": [x[5][pbi] == "1" for x in T],
          "nup": [x[6].count("1") for x in T], "out": [c is not None and c <= -0.15 for c in c20],
-         "inn": [c is not None and c >= 0.15 for c in c20], "rush": rush20}
+         "inn": [c is not None and c >= 0.15 for c in c20], "rush": rush20, "sell": sell20}
     low = lambda k: F["z"][k] <= 1  # noqa: E731
     high = lambda k: F["z"][k] >= 3  # noqa: E731
     cond = {
         "follow": lambda k: low(k) and F["rush"][k],
         "bottom": lambda k: F["pb"][k] and F["bot"][k] >= 4 and F["nup"][k] >= 2,
-        "exit": lambda k: high(k) and F["out"][k],
+        "exit": lambda k: high(k) and F["sell"][k],
         "rescue": lambda k: high(k) and F["inn"][k],
         "weak": lambda k: high(k) and F["nup"][k] == 0,
         "grind": lambda k: low(k) and F["nup"][k] == 0 and not F["rush"][k],
@@ -120,9 +119,9 @@ def run():
     facts = [
         {"name": "市场温度", "text": f"{ZN[zi]}（见底灯 {T[i][3]} / 6，见顶灯 {T[i][4]} / 7）", "tag": "低位" if zi <= 1 else "高位" if zi >= 3 else "中间"},
         {"name": "国家队急买", "text": ("近 20 天出现过（" + next(D[k] for k in range(max(0, i - 19), i + 1) if rush[k]) + "）") if F["rush"][i]
-         else f"近 20 天没有（近 5 日占成交额 {(r5[i] or r5[i - 1] or 0) * 100:.2f}%，≥1% 算急买）", "tag": "有" if F["rush"][i] else "没有"},
+         else f"近 20 天没有（近 5 日净申购占沪深300 市值 {(r5[i] if r5[i] is not None else (r5[i - 1] or 0)) * 1000:.2f}‰，≥1.5‰ 算急买）", "tag": "有" if F["rush"][i] else "没有"},
         {"name": "托底资金", "text": "近 20 日份额 " + (f"{c20[i] * 100:+.0f}%" if c20[i] is not None else "—")
-         + ("（大幅流入）" if F["inn"][i] else "（撤出）" if F["out"][i] else ""), "tag": "流入" if F["inn"][i] else "撤出" if F["out"][i] else "平稳"},
+         + ("（大幅流入）" if F["inn"][i] else "（集中卖出）" if F["sell"][i] else ""), "tag": "流入" if F["inn"][i] else "卖出" if F["sell"][i] else "平稳"},
         {"name": "方向", "text": f"宽度、M1、信贷脉冲 {F['nup'][i]} / 3 回升", "tag": "回升" if F["nup"][i] >= 2 else "走弱" if F["nup"][i] == 0 else "一般"},
         {"name": "破净率", "text": "已到见底标准" if F["pb"][i] else "没到见底标准", "tag": "见底" if F["pb"][i] else "没到"},
     ]

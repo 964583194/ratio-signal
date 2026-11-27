@@ -146,9 +146,9 @@ def run():
     if NT and NT["latest"].get("rush"):
         r = NT["latest"]["rush"]
         s1 = r["stats"]["急买第一天"]
-        exp.append(row("国家队急买", f"占成交额 {(r['r5'] or 0)*100:.2f}%", "急买中" if r["on"] else "没有", "g1" if r["on"] else "c0",
+        exp.append(row("国家队急买", f"占市值 {(r['r5'] or 0)*1000:.2f}‰", "急买中" if r["on"] else "没有", "g1" if r["on"] else "c0",
                        (f"已连续 {r['days']} 天（{r['since']} 起）。" if r["on"] else "") +
-                       f"4 只沪深300 ETF 近 5 日净申购 {r['d5']:+,} 亿，占两市近 5 日成交额的 1% 以上算急买（门槛随市场大小自动变）。"
+                       f"4 只沪深300 ETF 近 5 日净申购 {r['d5']:+,} 亿，占沪深300 流通市值 1.5‰ 以上算急买（相对值，买卖同一把尺子，市场变大不用改门槛）。"
                        + (f"2023 年起 {s1['n']} 段，已满 60 天的 {s1['60']['n']} 段之后 60 日沪深300 平均 {s1['60']['avg']*100:+.1f}%（{s1['60']['up']*100:.0f}% 上涨）。" if s1.get("60") else "")
                        + "样本少，只作提醒，不改倍数", "temp", NT["latest"]["date"]))
     BK = _load("bank.json")

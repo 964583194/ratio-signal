@@ -128,13 +128,13 @@ def ntf(d):
 
 
 def ntf_rush(d):
-    """国家队急买（实验）：近 5 日净申购 ≥ 两市近 5 日成交额的 1%，第一天发提醒；只作参考，不改倍数"""
+    """国家队急买（实验）：近 5 日净申购 ≥ 沪深300 流通市值的 1.5‰，第一天发提醒；只作参考，不改倍数"""
     r = d["latest"].get("rush") or {}
     if not r:
         return "无", "无数据", "没有急买", "temp"
     on = r.get("on")
     state = f"急买|{r.get('since')}" if on else "无"
-    now = (f"4 只沪深300 ETF 近 5 日净申购 {r.get('d5', 0):+,} 亿，占两市成交额 {pc(r.get('r5') or 0, 2)}（≥{pc(r['th'], 0)} 算急买）"
+    now = (f"4 只沪深300 ETF 近 5 日净申购 {r.get('d5', 0):+,} 亿，占沪深300 市值 {(r.get('r5') or 0) * 1000:.2f}‰（≥{r['th'] * 1000:.1f}‰ 算急买）"
            + (f"，已连续 {r['days']} 天（{r['since']} 起）" if on else ""))
     act = ("国家队几天内突然大买：历史上之后 60 日沪深300 多半上涨。按规则买，不额外加钱【实验】" if on else "没有急买")
     return state, now, act, "temp"

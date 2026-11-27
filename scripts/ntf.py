@@ -33,7 +33,8 @@ FOUR = GROUPS["沪深300"]
 AMT = ("510300", "510310", "510330")
 CODES = [c for v in GROUPS.values() for c in v]
 SHORT, LONG, WIN, HI, LO, VOL = 20, 60, 250, 0.90, 0.10, 2.5
-RUSH = 0.01    # 急买：近 5 日净申购 ≥ 两市近 5 日成交额的 1%
+RUSH = 0.0015  # 急买 / 急卖：近 5 日净申购（赎回）≥ 沪深300 流通市值的 1.5‰
+BIG = 0.002    # 集中大买 / 集中大卖：近 20 日净申购（赎回）≥ 沪深300 流通市值的 2‰
 FRESH = 20     # 新的一段加速流入出现后 20 个交易日内，算“刚出现”
 
 
@@ -189,22 +190,13 @@ def run():
             "note": {"轻度回落": "国家队大买后开始小幅赎回：短期偏弱（之后 60 日沪深300 平均约 −2%），按规则买，不额外加钱",
                      "明显回落": "国家队大买后赎回较多（超过近 20 日流入的 1/4）：短期偏弱（之后 60 日平均约 −5%），按规则买，不额外加钱"}.get(pnow, "没有大买后回落"),
             "stats": pstats}
-    # 国家队急买（实验，只作提醒）：4 只沪深300 ETF 近 5 日净申购 ≥ 两市近 5 日成交额的 1%。用相对成交额，不用固定金额，门槛随市场大小自动变
-    try:
-        mk = S.get_series("mkt_amt")[0]
-    except Exception as e:  # noqa: BLE001
-        print(f"两市成交额读取失败：{e}，用缓存")
-        mk = S.load_cache("mkt_amt")
-    mkk = sorted(mk)
-    def amt5(k):
-        j = bisect.bisect_right(mkk, days[k]) - 1
-        if j < 4 or mkk[j] != days[k]:
-            return None
-        return sum(mk[mkk[x]] for x in range(j - 4, j + 1))
-    r5 = []
-    for k in range(n):
-        a = amt5(k)
-        r5.append(d5[k] / a if a else None)
+    # 国家队急买 / 急卖（实验，只作提醒）：买卖都用同一把尺子 —— 净申购 ÷ 沪深300 流通市值（相对值，市场变大也不用改门槛）。
+    # 不用"占成交额"：高位时成交额很大，卖出的占比会被稀释（2026-06 底 5 天卖了约 1000 亿，只占成交额 0.57%，占市值 1.6‰）
+    E3 = _load(os.path.join(ROOT, "data", "etf300.json"), {}).get("latest") or {}
+    cap0 = E3["size"] / (E3["ratio"] / 100) if E3.get("size") and E3.get("ratio") else None   # 亿元
+    cap = [cap0 * close[k] / close[-1] if cap0 else None for k in range(n)]   # 按 510300 净值涨跌推算每天的流通市值
+    r5 = [d5[k] / cap[k] if cap[k] else None for k in range(n)]
+    r20 = [d20[k] / cap[k] if cap[k] else None for k in range(n)]
     rush_on = [x is not None and x >= RUSH for x in r5]
     reps = [{"date": days[k], "r5": round(r5[k], 4), "d5": round(d5[k]), "fwd": fwd(k)}
             for k in range(1, n) if rush_on[k] and not any(rush_on[max(0, k - 20):k])]
@@ -213,7 +205,10 @@ def run():
         if not rush_on[k]:
             break
         rrun += 1
-    rush = {"on": rush_on[-1], "r5": None if r5[-1] is None else round(r5[-1], 4), "d5": round(d5[-1]), "th": RUSH,
+    rush = {"on": rush_on[-1], "r5": None if r5[-1] is None else round(r5[-1], 5), "d5": round(d5[-1]), "th": RUSH,
+            "r20": None if r20[-1] is None else round(r20[-1], 5), "d20": round(d20[-1]), "th20": BIG,
+            "big": bool(r20[-1] is not None and r20[-1] >= BIG), "sell5": bool(r5[-1] is not None and r5[-1] <= -RUSH),
+            "sell20": bool(r20[-1] is not None and r20[-1] <= -BIG),
             "days": rrun, "since": days[n - rrun] if rrun else None, "last": reps[-1] if reps else None,
             "stats": {"急买第一天": agg([e["fwd"] for e in reps]), "任意一天": pstats["任意一天"]}}
     i = n - 1
@@ -247,7 +242,7 @@ def run():
         "groups": groups + [total],
         "episodes": eps, "vols": vols, "stats": stats,
         "series": [[days[k], None if acc[k] is None else round(acc[k], 1), None if pct[k] is None else round(pct[k] * 100),
-                    round(sum(f4[max(0, k - 19):k + 1])), hs[hk[max(0, bisect.bisect_right(hk, days[k]) - 1)]], round(f4[k], 1)] for k in range(n)],
+                    round(sum(f4[max(0, k - 19):k + 1])), hs[hk[max(0, bisect.bisect_right(hk, days[k]) - 1)]], round(f4[k], 1), None if cap[k] is None else round(cap[k])] for k in range(n)],
         "rule": {"short": SHORT, "long": LONG, "win": WIN, "hi": HI, "lo": LO, "vol": VOL},
     }
     with open(OUT, "w", encoding="utf-8") as fh:
