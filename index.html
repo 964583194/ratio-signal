@@ -369,9 +369,10 @@
 <section class="panel" id="dfPanel" hidden>
   <h2>红利 ETF 资金：有没有人在买 <span class="exptag">实验</span></h2>
   <p class="concl" id="dfNow"></p>
-  <div class="ranges" role="group" aria-label="时间范围" data-for="dfChart"><button type="button" data-r="1">近1年</button><button type="button" data-r="0" aria-pressed="true">全部</button><button type="button" class="bigbtn" data-big="dfChart" data-title="红利 ETF 每周净流入与红利低波100">⤢ 横屏看大图</button></div>
+  <div class="ranges" role="group" aria-label="按周还是按天" data-for="dfG"><button type="button" data-g="w" aria-pressed="true">每周</button><button type="button" data-g="d">每天</button></div>
+  <div class="ranges" role="group" aria-label="时间范围" data-for="dfChart"><button type="button" data-r="60">3个月</button><button type="button" data-r="250">近1年</button><button type="button" data-r="0" aria-pressed="true">全部</button><button type="button" class="bigbtn" data-big="dfChart" data-title="红利 ETF 每周净流入与红利低波100">⤢ 横屏看大图</button></div>
   <div class="chartwrap"><svg class="chart" id="dfChart" viewBox="0 0 720 260" role="img" style="touch-action:pan-y" aria-label="红利ETF每周净流入和红利低波100"></svg><div class="tip" hidden></div></div>
-  <div class="legend"><span><i style="border-color:var(--grow)"></i>每周净流入（亿元，左轴）</span><span><i style="border-color:var(--mark)"></i>净流出</span><span><i style="border-color:var(--div)"></i>红利低波100（右轴）</span></div>
+  <div class="legend"><span><i style="border-color:var(--grow)"></i><b id="dfLg" style="font-weight:400">每周净流入（亿元，左轴）</b></span><span><i style="border-color:var(--mark)"></i>净流出</span><span><i style="border-color:var(--div)"></i>红利低波100（右轴）</span></div>
   <p class="note">A 股红利类 ETF（名字带"红利"，不含港股、海外）每天份额变化 × 当天净值，按周加总。<b>只作参考，不改买卖</b>：2023 年起看是越跌越买、越涨越卖（2026-06 红利见底、科创见顶时一个月净流入约 140 亿，7~8 月反弹时流出），所以流入不是买点，只说明"跌的时候有人在接"。<span id="dfCover"></span></p>
 </section>
 
@@ -1622,12 +1623,17 @@ function renderDiv(d){
       const wk=d=>{const x=new Date(d+"T00:00:00");x.setDate(x.getDate()-((x.getDay()+6)%7));return x.toISOString().slice(0,10)};
       const N=F.dates.length,W=Array(N).fill(null);let acc=0;
       for(let i=0;i<N;i++){acc+=F.flow[i];if(i===N-1||wk(F.dates[i+1])!==wk(F.dates[i])){W[i]=Math.round(acc*10)/10;acc=0}}
-      const bar=document.querySelector('.ranges[data-for="dfChart"]');let rg=0;
-      const draw=()=>{const k=rg?Math.max(0,N-250):0,ds=F.dates.slice(k),wv=W.slice(k),hv=F.hl.slice(k),mx=Math.max(...wv.filter(v=>v!=null).map(Math.abs),10);
+      const bar=document.querySelector('.ranges[data-for="dfChart"]'),gb=document.querySelector('.ranges[data-for="dfG"]');let rg=0,gm="w";
+      const DY=F.flow.map(v=>v?Math.round(v*10)/10:null);
+      const draw=()=>{const k=rg?Math.max(0,N-rg):0,ds=F.dates.slice(k),wv=(gm==="d"?DY:W).slice(k),hv=F.hl.slice(k),mx=Math.max(...wv.filter(v=>v!=null).map(Math.abs),10);
         const st=niceStep(mx*2*.8),lt=[];for(let v=-Math.ceil(mx/st)*st;v<=mx+st/2;v+=st)lt.push(v);
         DualChart($("dfChart"),{W:720,H:260,dates:ds,leftRange:[lt[0],lt[lt.length-1]],leftTicks:lt,leftFmt:v=>Math.round(v),left:[],
-          bars:{v:wv,pos:"var(--grow)",neg:"var(--mark)",w:5},right:{v:hv,c:"var(--div)"},
-          tip:i=>{let j=i;while(j<ds.length-1&&wv[j]==null)j++;return `${ds[i]}<br>红利低波100 ${Math.round(hv[i]).toLocaleString()}<br>这一周净流入 <b>${wv[j]!=null?yi(wv[j]):"—"}</b>`}})};
+          bars:{v:wv,pos:"var(--grow)",neg:"var(--mark)",w:gm==="d"?1:5},right:{v:hv,c:"var(--div)"},
+          tip:i=>{if(gm==="d")return `${ds[i]}<br>红利低波100 ${Math.round(hv[i]).toLocaleString()}<br>当天净流入 <b>${wv[i]!=null?yi(wv[i]):"0 或没数"}</b>`;
+            let j=i;while(j<ds.length-1&&wv[j]==null)j++;return `${ds[i]}<br>红利低波100 ${Math.round(hv[i]).toLocaleString()}<br>这一周净流入 <b>${wv[j]!=null?yi(wv[j]):"—"}</b>`}});
+        $("dfLg").textContent=gm==="d"?"每天净流入（亿元，左轴）":"每周净流入（亿元，左轴）"};
+      if(!gb.__on){gb.__on=1;gb.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{gb.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));gm=b.dataset.g;
+        if(gm==="d"&&!rg){rg=60;bar.querySelectorAll("button[data-r]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.r==="60"?"true":"false"))}draw()}))}
       draw();if(!bar.__on){bar.__on=1;bar.querySelectorAll("button[data-r]").forEach(b=>b.addEventListener("click",()=>{bar.querySelectorAll("button[data-r]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));rg=+b.dataset.r;draw()}));addEventListener("resize",draw)}
     });
     // 近半个月：最近 10 个交易日
