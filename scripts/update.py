@@ -223,6 +223,12 @@ def main():
     if not changed and not missing and os.environ.get("FORCE") != "1":
         print("数据没有变化（非交易日或接口还没更新），跳过计算")
         S.write_health()
+        try:   # 红利 ETF 历史没补齐时，空闲的时候（周末等）也补一批
+            with open(os.path.join(ROOT, "data", "divflow.json"), encoding="utf-8") as fh:
+                if json.load(fh)["latest"].get("cover", 1) < 0.95:
+                    __import__("divflow").run()
+        except Exception as e:  # noqa: BLE001
+            print("红利 ETF 补数失败：", e)
         return
 
     tr = lambda: S.get_series("hl100_tr")[0]  # noqa: E731
