@@ -366,6 +366,15 @@
   <p class="note">红利位置 = 股息率、股债利差（股息率 − 十年国债）各自在近 5 年里高于多少比例的日子，取平均；越高越便宜。表格是 2012 年底以来每一档之后红利低波100 全收益指数的平均表现（涨的概率 = 一年后上涨的比例；再跌 = 一年内平均最多再跌多少），随数据自动更新。<b>只作参考，不改买卖：评分说不买（空仓）时照样不买</b>；它只回答「规则让买的时候，该坚定还是该收着」。两者看的东西不同：评分一半看技术面（最近涨多了没有），位置只看股息和利差，所以有时会不一致（2018 年以来约 14% 的周是评分空仓、位置偏便宜）。历史数据里段数不多、相邻日子高度重叠，表格只看大致方向。</p>
 </section>
 
+<section class="panel" id="dfPanel" hidden>
+  <h2>红利 ETF 资金：有没有人在买 <span class="exptag">实验</span></h2>
+  <p class="concl" id="dfNow"></p>
+  <div class="ranges" role="group" aria-label="时间范围" data-for="dfChart"><button type="button" data-r="1">近1年</button><button type="button" data-r="0" aria-pressed="true">全部</button><button type="button" class="bigbtn" data-big="dfChart" data-title="红利 ETF 每周净流入与红利低波100">⤢ 横屏看大图</button></div>
+  <div class="chartwrap"><svg class="chart" id="dfChart" viewBox="0 0 720 260" role="img" style="touch-action:pan-y" aria-label="红利ETF每周净流入和红利低波100"></svg><div class="tip" hidden></div></div>
+  <div class="legend"><span><i style="border-color:var(--grow)"></i>每周净流入（亿元，左轴）</span><span><i style="border-color:var(--mark)"></i>净流出</span><span><i style="border-color:var(--div)"></i>红利低波100（右轴）</span></div>
+  <p class="note">A 股红利类 ETF（名字带"红利"，不含港股、海外）每天份额变化 × 当天净值，按周加总。<b>只作参考，不改买卖</b>：2023 年起看是越跌越买、越涨越卖（2026-06 红利见底、科创见顶时一个月净流入约 140 亿，7~8 月反弹时流出），所以流入不是买点，只说明"跌的时候有人在接"。<span id="dfCover"></span></p>
+</section>
+
 <details class="panel fold"><summary>规则：每天记多少、什么时候买卖</summary><div class="pbody">
   <h3 class="h3">规则速查</h3>
   <div class="rule"><span class="k">每天记钱</span><span>按前一天收盘的评分记下该买多少（下表），换档要连续 2 天才算</span></div>
@@ -1605,6 +1614,22 @@ function renderDiv(d){
         pb.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));pm=b.dataset.m;draw(pm)}));
         addEventListener("resize",()=>draw(pm))}
     }
+    // 实验：红利 ETF 资金
+    getJ("divflow.json").then(F=>{if(!F||!F.dates)return;const L2=F.latest,yi=v=>`${v>0?"+":""}${Math.round(v).toLocaleString()} 亿`;$("dfPanel").hidden=false;
+      $("dfNow").innerHTML=`近 20 个交易日（到 ${L2.date}）：${L2.n} 只红利 ETF 合计净流入 <b>${yi(L2.f20)}</b>（规模 ${L2.size.toLocaleString()} 亿的 ${L2.pct20>0?"+":""}${L2.pct20}%），红利低波100 ${L2.h20>0?"+":""}${L2.h20}% → <b>${L2.tag}</b>：${L2.text}。`;
+      $("dfCover").textContent=L2.cover<.95?`历史数据还在补（已补 ${Math.round(L2.cover*100)}%，平时每周只有一天的数，每次更新补一批），没补的那几天的进出算在下一个有数的日子里。`:"";
+      // 按周加总：每周最后一个交易日放这一周的合计
+      const wk=d=>{const x=new Date(d+"T00:00:00");x.setDate(x.getDate()-((x.getDay()+6)%7));return x.toISOString().slice(0,10)};
+      const N=F.dates.length,W=Array(N).fill(null);let acc=0;
+      for(let i=0;i<N;i++){acc+=F.flow[i];if(i===N-1||wk(F.dates[i+1])!==wk(F.dates[i])){W[i]=Math.round(acc*10)/10;acc=0}}
+      const bar=document.querySelector('.ranges[data-for="dfChart"]');let rg=0;
+      const draw=()=>{const k=rg?Math.max(0,N-250):0,ds=F.dates.slice(k),wv=W.slice(k),hv=F.hl.slice(k),mx=Math.max(...wv.filter(v=>v!=null).map(Math.abs),10);
+        const st=niceStep(mx*2*.8),lt=[];for(let v=-Math.ceil(mx/st)*st;v<=mx+st/2;v+=st)lt.push(v);
+        DualChart($("dfChart"),{W:720,H:260,dates:ds,leftRange:[lt[0],lt[lt.length-1]],leftTicks:lt,leftFmt:v=>Math.round(v),left:[],
+          bars:{v:wv,pos:"var(--grow)",neg:"var(--mark)",w:5},right:{v:hv,c:"var(--div)"},
+          tip:i=>{let j=i;while(j<ds.length-1&&wv[j]==null)j++;return `${ds[i]}<br>红利低波100 ${Math.round(hv[i]).toLocaleString()}<br>这一周净流入 <b>${wv[j]!=null?yi(wv[j]):"—"}</b>`}})};
+      draw();if(!bar.__on){bar.__on=1;bar.querySelectorAll("button[data-r]").forEach(b=>b.addEventListener("click",()=>{bar.querySelectorAll("button[data-r]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));rg=+b.dataset.r;draw()}));addEventListener("resize",draw)}
+    });
     // 近半个月：最近 10 个交易日
     const R=SS.slice(-11),ex=x=>x[3]??x[1],amt=x=>{const v=ex(x),t=tierOf(v);
       if(x[6])return `卖出 ${Math.round(x[6]*100)}%`;if(x[4]>0)return `买 ${x[4]} 元`;if(x[5]>0)return `${t[2]} · 已攒 ${x[5]}`;return t[1]?`${t[2]} · ${P.base*t[1]} 元`:(v>6?t[2]:"空仓")+" · 0 元"};

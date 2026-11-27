@@ -84,7 +84,7 @@ function DualChart(svg, o) {
   const wrap = svg.parentNode, tip = wrap.querySelector(".tip");
   const D = o.dates, n = D.length;
   // sameAxis：左右用同一个刻度（比如价格和它的均线），刻度只显示在右边
-  const ly = o.left.flatMap(s => s.v.filter(v => v != null)), ry = (o.sameAxis ? o.right.v.concat(ly) : o.right.v).filter(v => v != null);
+  const ly = o.left.flatMap(s => s.v.filter(v => v != null)).concat(o.bars ? o.bars.v.filter(v => v != null).concat([0]) : []), ry = (o.sameAxis ? o.right.v.concat(ly) : o.right.v).filter(v => v != null);
   let [l0, l1] = o.leftRange || [Math.min(...ly), Math.max(...ly)];
   const rpad = (Math.max(...ry) - Math.min(...ry)) * .06, r0 = Math.min(...ry) - rpad, r1 = Math.max(...ry) + rpad;
   if (o.sameAxis) [l0, l1] = [r0, r1];
@@ -111,6 +111,10 @@ function DualChart(svg, o) {
     if (stepM > 12 && +d.slice(0, 4) % (stepM / 12)) return;
     s += `<text x="${X(i)}" y="${H - fs * .4}" text-anchor="middle"${stepM < 3 && m === 1 ? ' style="font-weight:700"' : ""}>${stepM < 3 ? (m === 1 ? d.slice(0, 4) : m + "月") : stepM >= 12 ? d.slice(0, 4) : d.slice(0, 4) + "/" + m}</text>` });
   const path = (v, Y) => { let p = ""; v.forEach((y, i) => { if (y == null) return; p += (p ? "L" : "M") + X(i).toFixed(1) + " " + Y(y).toFixed(1) }); return p };
+  // 柱子（画在左轴上，比如每周净流入）：bars.v 里没值的天跳过；bars.w 是每根柱子占几天宽
+  if (o.bars) { const bw = Math.max(1, (W - pl - pr) / (n - 1) * (o.bars.w || 1) * .8), y0 = YL(0);
+    o.bars.v.forEach((v, i) => { if (v == null || !v) return; const y = YL(v); s += `<rect x="${(X(i) - bw / 2).toFixed(1)}" y="${Math.min(y, y0).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(.5, Math.abs(y - y0)).toFixed(1)}" fill="${v > 0 ? o.bars.pos : o.bars.neg}" opacity=".85"/>` });
+    s += `<line x1="${pl}" x2="${W - pr}" y1="${y0}" y2="${y0}" stroke="var(--muted)" stroke-width=".8"/>` }
   s += `<path d="${path(o.right.v, YR)}" fill="none" stroke="${o.right.c}" stroke-width="${1.3 * lw}" opacity=".9"/>`;
   o.left.forEach(l => { s += `<path d="${path(l.v, YL)}" fill="none" stroke="${l.c}" stroke-width="${(l.w || 1.8) * lw}" stroke-dasharray="${l.dash || ""}"/>` });
   (o.marks || []).forEach(m => { const i = D.indexOf(m.d); if (i < 0) return; s += `<line x1="${X(i)}" x2="${X(i)}" y1="${pt}" y2="${H - pb}" stroke="${m.c}" stroke-dasharray="2 3"/><text x="${X(i) + 3}" y="${pt + fs}" style="fill:${m.c}">${m.t}</text>` });
