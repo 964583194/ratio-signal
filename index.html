@@ -925,10 +925,10 @@ function ntfStage(S,G){
   let a=L-1;while(a>0&&(r20[a-1]*sgn>=2||[...Array(10)].some((_,j)=>a-1-j>=0&&r20[a-1-j]*sgn>=2)))a--;   // 往前找这一段的开头（中间断开不到 10 天也算同一段）
   while(a<L-1&&r20[a]*sgn<2)a++;
   const s0=Math.max(0,a-19),seg=F.slice(s0),tot=seg.reduce((p,q)=>p+q,0),avg=tot/seg.length,l5=F.slice(-5).reduce((p,q)=>p+q,0)/5;
-  const big=seg.filter(x=>x*sgn>=150).length,days=L-s0,word=sgn>0?"买":"卖";
+  const big=seg.filter((x,j)=>cap[s0+j]&&x*sgn/cap[s0+j]*1000>=0.3).length,days=L-s0,word=sgn>0?"买":"卖";
   const pace=l5*sgn>=avg*sgn*1.2?`还在加码（近 5 天日均 ${Math.round(Math.abs(l5))} 亿，比这一段平均多）`:l5*sgn>=avg*sgn*0.5?`节奏差不多（近 5 天日均 ${Math.round(Math.abs(l5))} 亿）`:l5*sgn>0?`在放缓（近 5 天日均只有 ${Math.round(Math.abs(l5))} 亿）`:`近 5 天基本停手`;
   const p0=SS[s0][4],p1=SS[L-1][4];
-  return `<br><b>这一段进行到哪了：</b>${SS[s0][0]} 开始${word}，已 ${days} 个交易日，7 个指数累计 ${tot>0?"+":""}${Math.round(tot).toLocaleString()} 亿，大额（单日 ≥150 亿）${big} 天；${pace}。这段时间沪深300 ${p0.toFixed(0)} → ${p1.toFixed(0)}（${(p1/p0-1)*100>0?"+":""}${((p1/p0-1)*100).toFixed(1)}%）。<span class="note" style="margin:0">${sgn>0?"历史上常常一边买一边跌，买到后半段或停手后才涨":"历史上常常一边卖一边涨，卖得差不多后才跌"}；只作参考。</span>`;
+  return `<br><b>这一段进行到哪了：</b>${SS[s0][0]} 开始${word}，已 ${days} 个交易日，7 个指数累计 ${tot>0?"+":""}${Math.round(tot).toLocaleString()} 亿，大额（单日 ≥ 沪深300 市值 0.3‰，现在约 ${Math.round(cap[L-1]*0.0003)} 亿）${big} 天；${pace}。这段时间沪深300 ${p0.toFixed(0)} → ${p1.toFixed(0)}（${(p1/p0-1)*100>0?"+":""}${((p1/p0-1)*100).toFixed(1)}%）。<span class="note" style="margin:0">${sgn>0?"历史上常常一边买一边跌，买到后半段或停手后才涨":"历史上常常一边卖一边涨，卖得差不多后才跌"}；只作参考。</span>`;
 }
 function ntfJudge(S,E,TT,G){
   const box=$("ntfJ"),R=ntfJudgeCalc(S,E,TT);if(!box||!R)return;const {J,m,rk,act,pos,loc}=R;
