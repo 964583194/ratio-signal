@@ -904,7 +904,9 @@ function loadPlan(){
 // 国家队三层图：沪深300 / 买得快不快（加速度排名）/ 每天净买入（亿元）。S 行：[日期, 加速度, 排名, 20日, 沪深300, 当天净申购]
 // 7 个指数归成 3 类再叠，颜色少、好看懂；点某一天再看 7 个指数的明细
 const GGRP=[["大盘","#2f8f5b",["沪深300","上证50","A500"]],["成长","#3b6fb6",["创业板","科创50"]],["中小盘","#c98a12",["中证500","中证1000"]]];
-function ntf3(S,G){
+function ntf3(S,G,E){
+  const EM={};(E&&E.series||[]).forEach(r=>EM[r[0]]=[r[1],r[2]]);let m2="buy";
+  const mb=$("n3m");if(mb){if(!E)mb.hidden=true;mb.onclick=e=>{const b=e.target.closest("button");if(!b)return;m2=b.dataset.m;mb.querySelectorAll("button").forEach(z=>z.setAttribute("aria-pressed",z===b));draw()}}
   const svg=$("ntf3"),bar=$("n3r");if(!svg||!S.length)return;
   let mode="66",gm="all";
   // 分指数：G.v[指数][k] 对应 S 里最后 len 天
@@ -947,14 +949,21 @@ function ntf3(S,G){
     s+=`<text x="${x(n-1)}" y="${yx(px[n-1],a,b,P[0])-6}" text-anchor="end" class="t">${Math.round(px[n-1])}</text>`;
     // ② 买得快不快
     // ② 买得多不多：近 20 日净买入 ÷ 沪深300 市值（‰），就是加仓规则"集中大买"用的那个数；短时间集中买入时这条线会冲上去
-    const T2=P[1],mv=R.map(r=>r[6]?r[3]/r[6]*1000:null),mx2=Math.max(3,...mv.filter(v=>v!=null).map(Math.abs))*1.1;
-    s+=`<text class="t" x="4" y="${T2[0]-10}">② 买得多不多：近 20 天净买入占沪深300 市值（‰）</text>`;
-    s+=`<rect x="${L}" width="${w}" y="${yx(mx2,-mx2,mx2,T2)}" height="${yx(2,-mx2,mx2,T2)-yx(mx2,-mx2,mx2,T2)}" fill="var(--grow)" opacity=".1"/>`;
-    [-2,0,2].forEach(v=>{const y=yx(v,-mx2,mx2,T2);s+=`<line x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}" stroke="${v?"var(--grow)":"var(--muted)"}" stroke-width="${v?1.2:.6}" ${v?'stroke-dasharray="5 4"':""}/><text x="${L-4}" y="${y+4}" text-anchor="end">${v>0?"+":""}${v}</text>`});
-    s+=`<text x="${W-Rr}" y="${yx(2,-mx2,mx2,T2)-4}" text-anchor="end" style="fill:var(--grow)">≥2‰ 集中大买（宽基加仓）</text>`;
-    const q=mv.map((v,i)=>v==null?null:x(i)+","+yx(v,-mx2,mx2,T2)).filter(Boolean);
-    s+=`<polyline fill="none" stroke="#3b6fb6" stroke-width="2" points="${q.join(" ")}"/>`;
-    const lq=mv[n-1];if(lq!=null)s+=`<text x="${x(n-1)}" y="${yx(lq,-mx2,mx2,T2)-6}" text-anchor="end" style="fill:#3b6fb6;font-weight:700">${lq.toFixed(1)}‰</text>`;
+    // ② 三选一：买得多不多（近 20 天占市值 ‰，加仓规则用这个）/ 手里有多少（ETF 占沪深300 市值 %）/ 和一年比（占比在近一年排第几）
+    const T2=P[1];let mv,lo2,hi2,ticks2,title2,band2=null,unit2,c2="#3b6fb6";
+    if(m2==="pos"){mv=R.map(r=>EM[r[0]]?EM[r[0]][0]:null);const vs=mv.filter(v=>v!=null);lo2=0;hi2=Math.ceil(Math.max(.5,...vs)*2)/2;ticks2=[0,hi2/2,hi2];
+      title2="② 手里有多少：沪深300 ETF 占沪深300 市值（%）";unit2=v=>v.toFixed(2)+"%";c2="var(--grow)"}
+    else if(m2==="rank"){mv=R.map(r=>EM[r[0]]?EM[r[0]][1]:null);lo2=0;hi2=100;ticks2=[0,20,80,100];band2=[[80,100,"var(--grow)"],[0,20,"var(--mark)"]];
+      title2="② 和一年比：手里的量在近一年排第几（100 = 最多）";unit2=v=>Math.round(v)+""}
+    else{mv=R.map(r=>r[6]?r[3]/r[6]*1000:null);const mx2=Math.max(3,...mv.filter(v=>v!=null).map(Math.abs))*1.1;lo2=-mx2;hi2=mx2;ticks2=[-2,0,2];band2=[[2,mx2,"var(--grow)"]];
+      title2="② 买得多不多：近 20 天净买入占沪深300 市值（‰）";unit2=v=>v.toFixed(1)+"‰"}
+    s+=`<text class="t" x="4" y="${T2[0]-10}">${title2}</text>`;
+    (band2||[]).forEach(([f,g,c])=>{s+=`<rect x="${L}" width="${w}" y="${yx(g,lo2,hi2,T2)}" height="${yx(f,lo2,hi2,T2)-yx(g,lo2,hi2,T2)}" fill="${c}" opacity=".1"/>`});
+    ticks2.forEach(v=>{const y=yx(v,lo2,hi2,T2),dash=m2==="buy"&&v!==0;s+=`<line x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}" stroke="${dash?"var(--grow)":"var(--div)"}" stroke-width="${dash?1.2:.5}" ${dash?'stroke-dasharray="5 4"':""}/><text x="${L-4}" y="${y+4}" text-anchor="end">${m2==="buy"&&v>0?"+":""}${+v.toFixed(2)}</text>`});
+    if(m2==="buy")s+=`<text x="${W-Rr}" y="${yx(2,lo2,hi2,T2)-4}" text-anchor="end" style="fill:var(--grow)">≥2‰ 集中大买（宽基加仓）</text>`;
+    const q=mv.map((v,i)=>v==null?null:x(i)+","+yx(v,lo2,hi2,T2)).filter(Boolean);
+    s+=`<polyline fill="none" stroke="${c2}" stroke-width="2" points="${q.join(" ")}"/>`;
+    const lq=mv[n-1];if(lq!=null)s+=`<text x="${x(n-1)}" y="${yx(lq,lo2,hi2,T2)-6}" text-anchor="end" style="fill:${c2};font-weight:700">${unit2(lq)}</text>`;
     // ③ 每天净买入
     const stack=gm==="all"&&G&&R.every(r=>gi[r[0]]!=null);
     const GV=stack?R.map(r=>GGRP.map(([,,ms])=>ms.reduce((p,g)=>p+(G.v[g]?G.v[g][gi[r[0]]]||0:0),0))):null;
@@ -1231,20 +1240,16 @@ function loadEtf300(root,HL){
     sec.innerHTML=`<h2>国家队资金</h2>
       <p class="note" style="margin:-6px 0 10px">看 4 只沪深300 ETF（华泰柏瑞 510300、易方达 510310、华夏 510330、嘉实 159919）的申购赎回，汇金托底主要买这几只。<b>买卖都用同一把尺子：净申购 ÷ 沪深300 流通市值</b>（相对值，市场变大不用改门槛）。</p>
       <div id="ntfbox"></div>
-      <details class="sub" style="margin-top:12px"><summary>仓位：国家队手里有多少（托底资金） ▾</summary>
+      <details class="sub" style="margin-top:12px"><summary>仓位：国家队手里有多少（托底资金，图在上面第②层"手里有多少""和一年比"） ▾</summary>
       <div style="margin-top:8px"><span class="lv ${L.cls}">${L.zone}</span> <span style="margin-left:6px">${L.action}</span></div>
       <p class="concl"><b>现在怎么办：</b>${judge}。<span class="note">（结合沪深300 便宜指数 ${cheap==null?"—":cheap.toFixed(1)}，只作参考，不改规则和倍数）</span></p>
       <div class="kv"><div><div class="label">合计规模</div><div class="v">${L.size.toLocaleString()} 亿</div><div class="s">${L.date} · ${L.shares.toFixed(0)} 亿份</div></div>
         <div><div class="label">占流通市值</div><div class="v">${L.ratio.toFixed(2)}%</div><div class="s">图中区间 ${lo.toFixed(2)}%~${hi.toFixed(2)}%</div></div>
         <div><div class="label">近 252 日分位</div><div class="v">${L.pct==null?"—":pc(L.pct,0)}</div><div class="s">≥80% 重仓 · ≤20% 撤空</div></div>
         <div><div class="label">近 20 日份额</div><div class="v">${sg(L.chg20)}</div><div class="s">≥+15% 大幅流入 · ≤−15% 撤出</div></div></div>
-      <h3 style="font-size:14px;margin:16px 0 4px">① 国家队手里有多少（绿线越高 = 拿得越多）<button type="button" class="bigbtn" data-big="etf_c1" data-title="占沪深300 流通市值（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
-      <p class="note" style="margin:0 0 6px">绿线 = 沪深300 ETF 的总规模占整个沪深300 市值的百分比，可以看成国家队通过 ETF 拿了多少沪深300。只画 2023 年起：之前国家队基本不用 ETF 托市，线一直贴着底，没有参考意义。<br><span style="color:var(--grow);font-weight:700">——</span> 占比（%，左轴）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">大幅流入</span> / <span style="color:var(--div)">撤出</span></p>
-      <div class="chartwrap"><svg class="chart" id="etf_c1" viewBox="0 0 720 260" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+      
       <p class="concl"><b>结论：</b>现在占 ${L.ratio.toFixed(2)}%，${L.ratio>=hi*.8?"接近图中最高":L.ratio<=lo*2?"接近图中最低":"在图中中间位置"}（${lo.toFixed(2)}%~${hi.toFixed(2)}%）；近 20 日份额 ${sg(L.chg20)}。<b>→ ${L.chg20==null?"":L.chg20>=.15?"国家队最近一个月在大举加仓":L.chg20<=-.15?"国家队最近一个月在大幅撤出":L.chg20>.03?"国家队最近在回补":L.chg20<-.03?"国家队最近在慢慢减":"最近变化不大"}${L.ratio>=hi*.8?"，仓位已经很重":""}。</b></p>
-      <h3 style="font-size:14px;margin:14px 0 4px">② 和过去一年比算多还是少（白线越高 = 越多）<button type="button" class="bigbtn" data-big="etf_c2" data-title="占比的 252 日分位（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
-      <p class="note" style="margin:0 0 6px">白线 = 上面那个占比在近一年里排第几：100 = 一年里最多，0 = 一年里最少。<br><span style="color:var(--ink);font-weight:700">——</span> 排名（0~100，左轴；绿色 ≥80 重仓，红色 ≤20 撤空）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）</p>
-      <div class="chartwrap"><svg class="chart" id="etf_c2" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+      
       <p class="concl"><b>结论：</b>${L.pct==null?"分位还算不出来":`排名 ${Math.round(L.pct*100)}，${L.pct>=.8?"在绿色重仓区：比过去一年绝大多数时候都多，下跌有人接":L.pct<=.2?"在红色撤空区：比过去一年绝大多数时候都少，下跌时没人接":L.pct>=.65?"接近重仓区：比过去一年多数时候多":"在中间：和过去一年比，不多也不少"}`}。</p>
       <h3 class="h3">准不准（${(d.recent_from||"2023").slice(0,4)} 年起）</h3>
       <p class="concl">${evc}</p>
@@ -1262,11 +1267,6 @@ function loadEtf300(root,HL){
     const dates=S.map(r=>r[0]),marks=ev.map(e=>({d:e.date,c:e.kind==="撤出中"?"var(--div)":"var(--grow)",t:""}));
     const tip=i=>`${dates[i]}<br>占流通市值 <b>${S[i][1].toFixed(2)}%</b>`+(S[i][2]!=null?`<br>252 日分位 ${S[i][2].toFixed(0)}%`:"")+`<br>合计 ${S[i][3].toFixed(0)} 亿份<br>沪深300 ${S[i][4].toFixed(0)}`;
     const hiR=Math.max(...S.map(r=>r[1])),step=hiR>2?0.5:hiR>1?0.25:0.1,lt=[];for(let v=0;;v+=step){lt.push(+v.toFixed(2));if(v>=hiR)break}
-    DualChart($("etf_c1"),{W:720,H:260,dates,leftRange:[0,lt[lt.length-1]],leftTicks:lt,leftFmt:v=>v.toFixed(step<0.25?1:2),
-      left:[{v:S.map(r=>r[1]),c:"var(--grow)",w:2}],right:{v:S.map(r=>r[4]),c:"var(--mark)"},marks,tip});
-    DualChart($("etf_c2"),{W:720,H:220,dates,leftRange:[0,100],leftTicks:[0,20,50,80,100],leftFmt:v=>v,
-      bands:[{from:80,to:100,fill:"var(--grow-soft)"},{from:0,to:20,fill:"var(--mark-soft)"}],
-      left:[{v:S.map(r=>r[2]),c:"var(--ink)",w:1.8}],right:{v:S.map(r=>r[4]),c:"var(--mark)"},tip});
     loadNtf();
     sec.querySelectorAll(".bigbtn[data-big]").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
     sec.querySelectorAll("details").forEach(x=>x.addEventListener("toggle",()=>dispatchEvent(new Event("resize"))));
@@ -1296,6 +1296,7 @@ function loadNtf(){
       <h3 style="font-size:14px;margin:16px 0 4px">国家队每天买了多少（一图看懂）<button type="button" class="bigbtn" id="n3big">⤢ 横屏看大图</button></h3>
       <p class="note" style="margin:0 0 6px">从上到下：① 沪深300 走势；② 买得多不多（近 20 天净买入占沪深300 市值，过了 2‰ 就是"集中大买"，宽基加仓）；③ 每天净买入多少亿（分大盘 / 成长 / 中小盘三类叠起来，或只看沪深300；柱子上是当天合计）。点图看当天数字。</p>
       <div class="ranges" id="n3r" style="margin-bottom:4px"><button type="button" data-n="66" aria-pressed="true">3个月</button><button type="button" data-n="130">半年</button><button type="button" data-n="ytd">今年</button><button type="button" data-n="250">1年</button><button type="button" data-n="all">全部</button></div>
+      <div class="ranges" id="n3m" style="margin-bottom:4px"><button type="button" data-m="buy" aria-pressed="true">② 买得多不多</button><button type="button" data-m="pos">② 手里有多少</button><button type="button" data-m="rank">② 和一年比</button></div>
       <div class="ranges" id="n3g" style="margin-bottom:4px"><button type="button" data-g="all" aria-pressed="true">分三类看</button><button type="button" data-g="hs">只看沪深300</button></div>
       <div class="legend" id="n3lg" style="margin:0 0 4px">${GGRP.map(([g,c,ms])=>`<span><i style="border-color:${c};border-top-width:8px"></i>${g}（${ms.join("、")}）</span>`).join("")}</div>
       <svg class="chart" id="ntf3" viewBox="0 0 720 560" role="img" style="touch-action:pan-y;width:100%;height:auto"></svg>
@@ -1323,7 +1324,7 @@ function loadNtf(){
       <div class="scroll" style="margin-top:8px"><table><thead><tr><th>日期</th><th>信号</th><th class="r">20 日后</th><th class="r">60 日后</th><th class="r">120 日后</th></tr></thead><tbody>
         ${[...d.episodes.map(e=>({...e,k:"集中大买"}))].sort((a,b)=>a.date<b.date?1:-1).map(e=>`<tr><td class="num">${e.date}</td><td>${e.k}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td><td class="r num">${fr(e.fwd["120"])}</td></tr>`).join("")}</tbody></table></div>
       <p class="note">2023 年起。净申购 = 份额变化 × 单位净值；加速度只看 4 只沪深300 ETF（换成 20 只宽基 ETF 回测更差）；放量 = 3 只上交所沪深300 ETF 成交额 ≥ 前 20 日均值 ${d.rule.vol} 倍且当天下跌。</p></details>`;
-    ntf3(S,d.gflow);
+    getJ("etf300.json").then(E=>ntf3(S,d.gflow,E));
     const dates=S.map(r=>r[0]),marks=d.episodes.map(e=>({d:e.date,c:"var(--grow)",t:""}));
     DualChart($("ntf_c1"),{W:720,H:220,dates,leftRange:[0,100],leftTicks:[0,10,50,90,100],leftFmt:v=>v,
       bands:[{from:90,to:100,fill:"var(--grow-soft)"},{from:0,to:10,fill:"var(--mark-soft)"}],
