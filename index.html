@@ -1220,18 +1220,18 @@ function loadNtf(){
     const row=(k,t)=>st[k]?`<tr><td>${t}</td><td class="r num">${st[k].n}</td><td class="r num">${cell(st[k]["20"])}</td><td class="r num">${cell(st[k]["60"])}</td><td class="r num">${cell(st[k]["120"])}</td></tr>`:"";
     const lv=L.vol_last,fr=x=>x==null?"—":`<span style="color:${x>0?"var(--grow)":"var(--mark)"}">${sg(x)}</span>`;
     const top=d.groups.filter(g=>g.name!=="合计").slice().sort((a,b)=>b.d20-a.d20),tot=d.groups.find(g=>g.name==="合计");
-    const a60=st["加速流入第一天"]&&st["加速流入第一天"]["60"],b60=st["全部交易日"]&&st["全部交易日"]["60"];
-    box.innerHTML=`<h3 class="h3" style="margin-top:16px">流入在加速吗（加仓提醒）</h3>
+    const a60=st["集中大买第一天"]&&st["集中大买第一天"]["60"],b60=st["全部交易日"]&&st["全部交易日"]["60"];
+    box.innerHTML=`<h3 class="h3" style="margin-top:16px">国家队在集中大买吗（加仓规则）</h3>
       <div><span class="lv ${L.cls}">${L.state}</span> <span style="margin-left:6px">${L.action}</span></div>
-      <div class="kv"><div><div class="label">加速度</div><div class="v">${L.acc>0?"+":""}${L.acc} 亿/天</div><div class="s">近 20 日日均 − 近 60 日日均</div></div>
-        <div><div class="label">近一年分位</div><div class="v">${pc(L.pct,0)}</div><div class="s">≥90% 加速流入 · ≤10% 加速流出</div></div>
+      <div class="kv"><div><div class="label">近 20 日占沪深300 市值</div><div class="v">${L.r20==null?"—":(L.r20>0?"+":"")+(L.r20*1000).toFixed(1)+"‰"}</div><div class="s">≥+2‰ 集中大买 · ≤−2‰ 集中大卖</div></div>
         <div><div class="label">近 20 日净申购</div><div class="v">${L.f4_20>0?"+":""}${L.f4_20.toLocaleString()} 亿</div><div class="s">4 只沪深300 ETF</div></div>
-        <div><div class="label">上一段加速流入</div><div class="v" style="font-size:17px">${L.episode?L.episode.date:"—"}</div><div class="s">${L.episode&&L.episode.fwd["60"]!=null?"之后 60 日 "+sg(L.episode.fwd["60"]):""}</div></div>
+        <div><div class="label">近 5 日占沪深300 市值</div><div class="v">${L.rush&&L.rush.r5!=null?(L.rush.r5>0?"+":"")+(L.rush.r5*1000).toFixed(2)+"‰":"—"}</div><div class="s">≥1.5‰ 算急买（只提醒）</div></div>
+        <div><div class="label">上一段集中大买</div><div class="v" style="font-size:17px">${L.episode?L.episode.date:"—"}</div><div class="s">${L.episode&&L.episode.fwd["60"]!=null?"之后 60 日 "+sg(L.episode.fwd["60"]):""}</div></div>
 </div>
       ${L.pull?`<div style="margin:10px 0 0;padding:8px 10px;border:1px dashed var(--div);border-radius:8px"><span class="exptag">实验</span> <b>大买后回落：${L.pull.level}</b>（近 5 日 ${L.pull.d5>0?"+":""}${L.pull.d5.toLocaleString()} 亿，近 20 日 ${L.pull.d20>0?"+":""}${L.pull.d20.toLocaleString()} 亿）<br><small>${L.pull.note}。2023 年起：轻度回落之后 60 日 ${sg(L.pull.stats["轻度回落"]["60"].avg)}（${L.pull.stats["轻度回落"].n} 天），明显回落 ${sg(L.pull.stats["明显回落"]["60"].avg)}（${L.pull.stats["明显回落"].n} 天），任意一天 ${sg(L.pull.stats["任意一天"]["60"].avg)}。样本少，只作提醒。</small></div>`:""}
       ${L.rush?(()=>{const r=L.rush,s=r.stats["急买第一天"];return `<div style="margin:10px 0 0;padding:8px 10px;border:1px dashed var(--div);border-radius:8px"><span class="exptag">实验</span> <b>国家队急买：${r.on?"急买中（"+r.since+" 起，已 "+r.days+" 天）":"没有"}</b>（近 5 日 ${r.d5>0?"+":""}${r.d5.toLocaleString()} 亿，占沪深300 市值 ${r.r5==null?"—":(r.r5*1000).toFixed(2)+"‰"}，≥${(r.th*1000).toFixed(1)}‰ 算急买）<br><small>几天内突然大买，比"加速度"反应快；用占沪深300 市值的比例（相对值，买卖同一把尺子），市场变大不用改门槛。${s&&s["60"]?`2023 年起 ${s.n} 段${r.last?"（最近一次 "+r.last.date+"）":""}，已满 60 天的 ${s["60"].n} 段之后 60 日沪深300 平均 ${sg(s["60"].avg)}（${(s["60"].up*100).toFixed(0)}% 上涨），任意一天 ${sg(r.stats["任意一天"]["60"].avg)}。`:""}样本少，只作提醒，不改倍数。</small></div>`})():""}
       <h3 style="font-size:14px;margin:16px 0 4px">国家队每天买了多少（一图看懂）</h3>
-      <p class="note" style="margin:0 0 6px">从上到下：① 沪深300 走势；② 买得快不快（蓝线到红色虚线 90 以上 = 越买越快，宽基会多买 4 周）；③ 每天净买入多少亿（绿 = 买，红 = 卖，柱子上是金额）。点图看当天数字。</p>
+      <p class="note" style="margin:0 0 6px">从上到下：① 沪深300 走势；② 买得快不快（蓝线 = 加速度排名，只作参考；加仓规则看"近 20 日占市值 ≥2‰"）；③ 每天净买入多少亿（绿 = 买，红 = 卖，柱子上是金额）。点图看当天数字。</p>
       <div class="ranges" id="n3r" style="margin-bottom:4px"><button type="button" data-n="66" aria-pressed="true">近 3 个月</button><button type="button" data-n="130">近半年</button><button type="button" data-n="ytd">今年</button></div>
       <svg class="chart" id="ntf3" viewBox="0 0 720 560" role="img" style="touch-action:pan-y;width:100%;height:auto"></svg>
       <p class="note" id="ntf3t" style="min-height:2.6em;margin:4px 0 0">点图上任意一天，看当天的数字。</p>
@@ -1247,7 +1247,7 @@ function loadNtf(){
       <p class="concl"><b>结论：</b>近 20 日买得最多的是 <b>${top[0].name}</b>（${yi(top[0].d20)} 亿）${top[1]?`，其次 ${top[1].name}（${yi(top[1].d20)} 亿）`:""}；今年合计 ${yi(tot.ytd)} 亿。份额里也有普通资金，大额变化才看得出国家队。</p>
       <details class="sub"><summary>看回测和历次信号 ▾</summary>
       <div class="scroll"><table><thead><tr><th>之后沪深300</th><th class="r">次/天</th><th class="r">20日后</th><th class="r">60日后</th><th class="r">120日后</th></tr></thead><tbody>
-        ${row("加速流入第一天","加速流入第一天")}${row("流入在加速（每天）","流入在加速的每天")}${row("流出在加速（每天）","流出在加速的每天")}${row("放量托底日","放量托底日（测过不用）")}${row("全部交易日","对照：任意一天")}</tbody></table></div>
+        ${row("集中大买第一天","集中大买第一天")}${row("集中大买（每天）","集中大买的每天")}${row("集中大卖（每天）","集中大卖的每天")}${row("放量托底日","放量托底日（测过不用）")}${row("全部交易日","对照：任意一天")}</tbody></table></div>
       <div class="scroll" style="margin-top:8px"><table><thead><tr><th>日期</th><th>信号</th><th class="r">20 日后</th><th class="r">60 日后</th><th class="r">120 日后</th></tr></thead><tbody>
         ${[...d.episodes.map(e=>({...e,k:"加速流入"})),...d.vols.map(e=>({...e,k:`放量 ${e.x} 倍`}))].sort((a,b)=>a.date<b.date?1:-1).map(e=>`<tr><td class="num">${e.date}</td><td>${e.k}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td><td class="r num">${fr(e.fwd["120"])}</td></tr>`).join("")}</tbody></table></div>
       <p class="note">放量托底日之后 60 天没有优势、半年结果不稳定，暂不使用。2023 年起。净申购 = 份额变化 × 单位净值；加速度只看 4 只沪深300 ETF（换成 20 只宽基 ETF 回测更差）；放量 = 3 只上交所沪深300 ETF 成交额 ≥ 前 20 日均值 ${d.rule.vol} 倍且当天下跌。</p></details>`;

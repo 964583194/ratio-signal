@@ -121,9 +121,9 @@ def etf300(d):
 
 
 def ntf(d):
-    """国家队流向：只提醒加速流入新的一段（加仓提醒）"""
+    """国家队流向：只提醒集中大买新的一段（加仓）"""
     L = d["latest"]
-    now = f"4 只沪深300 ETF 流入加速度 {L['acc']:+.1f} 亿/天（近一年 {pc(L['pct'], 0)} 分位），近 20 日净申购 {L['f4_20']:+,} 亿"
+    now = f"4 只沪深300 ETF 近 20 日净申购 {L['f4_20']:+,} 亿，占沪深300 市值 {(L.get('r20') or 0) * 1000:+.1f}‰（≥2‰ 算集中大买）"
     return L["key"], now, L["action"] + "（只作提醒，不改倍数）", "temp"
 
 
@@ -352,7 +352,7 @@ def build_plan(cur):
         k = len(ds) - 1 - ds.index(ep) if ep in ds else 99
         if k < 10:     # 4 周的量分 2 周买完
             rows.append({"name": "国家队加仓", "what": "A500（或沪深300）", "amt": base * WEIGHTS["A500 / 沪深300"] / 100 * 2, "fixed": 0,
-                         "note": f"国家队加速流入（{ep} 开始）：额外 4 周的量分 2 周买，这是第 {1 if k < 5 else 2} / 2 周"})
+                         "note": f"国家队集中大买（{ep} 开始）：额外 4 周的量分 2 周买，这是第 {1 if k < 5 else 2} / 2 周"})
     for r in rows:
         r["amt"] = round(r["amt"])
     data = {"date": TODAY, "base": base, "rows": rows, "side": side,

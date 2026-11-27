@@ -44,8 +44,9 @@ def plain(r):
         return "黄金暂不给建议，只看位置"
     if n.startswith("纳指"):
         return f"场内纳指 ETF 比实际值贵 {r['value']}，改买场外联接基金" if has("场外") else "场内价格正常，照常买"
-    if n == "国家队加速流入":
-        return "国家队越买越快，宽基额外多买 4 周" if has("加仓") else "国家队在买，但没有越买越快，不额外加仓"
+    if n == "国家队集中大买":
+        return ("国家队一段时间持续大买，宽基额外多买 4 周" if r["cls"] == "g1" else
+                "国家队还在集中大买；加仓只在一段开始时，这一段的加仓时机已过" if has("集中大买") else "国家队在集中卖出" if has("集中大卖") else "国家队没有集中大买，不额外加仓")
     if n == "市场温度":
         return {"底部": "市场很冷、很便宜：分批买，备好钱", "偏冷": "市场偏冷，按规则买", "正常": "市场正常，按规则买",
                 "偏热": "市场偏热，别额外加钱", "顶部": "市场过热，注意卖出信号"}.get(r["value"], s)
@@ -106,8 +107,8 @@ def run():
                             "超过 5% 改买场外联接基金", "ndx", N["latest"]["date"]))
     if NT:
         L = NT["latest"]
-        rule.append(row("国家队加速流入", f"{L['pct'] * 100:.0f}% 分位", L["state"], L["cls"],
-                        "≥90% 分位、新的一段 → 宽基额外买 4 周的量", "temp", L["date"]))
+        rule.append(row("国家队集中大买", f"{(L.get('r20') or 0) * 1000:+.1f}‰", L["state"], L["cls"],
+                        "近 20 日净申购 ≥ 沪深300 市值 2‰、新的一段 → 宽基额外买 4 周的量", "temp", L["date"]))
     if T:
         L = T["latest"]
         warn.append(row("市场温度", L["zone"], L["zone"] + "区", L["cls"], "→ " + L["action"].split("；")[0] + "（五档：底部 / 偏冷 / 正常 / 偏热 / 顶部）", "temp", L["date"]))

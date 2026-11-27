@@ -2,10 +2,10 @@
 
 净申购（亿元）= 当天份额变化 × 单位净值。份额来自上交所、深交所，单位净值来自天天基金；缓存 data/raw/ntf.json（2023 年起）。
   加速度 = 4 只沪深300 ETF（510300/510310/510330/159919）近 20 日日均净申购 − 近 60 日日均
-  流入在加速：加速度在近一年（250 个交易日）最高的 10%；流出在加速：最低的 10%；其余平稳
+  集中大买：近 20 日净申购 ≥ 沪深300 流通市值的 2‰；集中大卖：≤ −2‰；其余平稳（2026-11-27 起，原来看加速度排名）
   放量托底日：3 只上交所沪深300 ETF 成交额 ≥ 前 20 日均值的 2.5 倍，且当天下跌（测过不用：之后 60 天没有优势，只留回测）
   加速流出之后只是略弱，不提醒
-加仓提醒：流入在加速刚出现（新的一段）→ 宽基额外买 4 周的量，分 2~4 周买完；同一段只加一次；市场在偏热 / 顶部区不加。
+加仓提醒：集中大买刚出现（新的一段）→ 宽基额外买 4 周的量，分 2~4 周买完；同一段只加一次；市场在偏热 / 顶部区不加。
 分指数：近 5 / 20 日和今年以来各指数 ETF 净申购，看国家队在买哪个指数。
 """
 import bisect
@@ -133,15 +133,24 @@ def run():
             continue
         pct[i] = sum(x <= acc[i] for x in w) / len(w)
         # 2026-11-27：加速流入还要求近 20 日确实净流入。原来只比速度，大卖之后"不卖了"也会被算成加速流入（2026-03 误报过）
-        state[i] = "流入在加速" if pct[i] >= HI and d20[i] > 0 else "流出在加速" if pct[i] <= LO else "平稳"
     close = [px[d] for d in days]
+    # 2026-11-27 改：不再看"加速度"排名（买得越久越稳定，60 日均值也跟着变大，反而显示不在加速；大卖后"不卖了"又会误报），
+    # 改成直接看近 20 日净申购占沪深300 流通市值：≥2‰ 集中大买，≤−2‰ 集中大卖。买卖同一把尺子，相对值不用改门槛。
+    E3 = _load(os.path.join(ROOT, "data", "etf300.json"), {}).get("latest") or {}
+    cap0 = E3["size"] / (E3["ratio"] / 100) if E3.get("size") and E3.get("ratio") else None   # 亿元
+    cap = [cap0 * close[k] / close[-1] if cap0 else None for k in range(n)]   # 按 510300 净值涨跌推算每天的流通市值
+    r20 = [d20[k] / cap[k] if cap[k] else None for k in range(n)]
+    for i in range(n):
+        if r20[i] is None or i < 19:
+            continue
+        state[i] = "集中大买" if r20[i] >= BIG else "集中大卖" if r20[i] <= -BIG else "平稳"
 
     def fwd(i):
         return {str(h): round(close[i + h] / close[i] - 1, 4) if i + h < n else None for h in (20, 60, 120)}
     # 加速流入的每一段：第一天
     # 前 20 个交易日里已经加速过的不算新的一段（加了"近 20 日净流入"条件后，一段里可能断开一两天又接上，不能重复提醒加仓）
     eps = [{"date": days[i], "acc": round(acc[i], 1), "fwd": fwd(i)} for i in range(1, n)
-           if state[i] == "流入在加速" and "流入在加速" not in state[max(0, i - FRESH):i]]
+           if state[i] == "集中大买" and "集中大买" not in state[max(0, i - FRESH):i]]
     # 放量托底日
     A = [sum((amt.get(d) or {}).get(c, 0) for c in AMT) for d in days]
     vols = []
@@ -156,9 +165,9 @@ def run():
             xs = [r[h] for r in rows if r[h] is not None]
             o[h] = {"avg": round(st.mean(xs), 4), "up": round(sum(x > 0 for x in xs) / len(xs), 3), "n": len(xs)} if xs else None
         return o
-    stats = {"流入在加速（每天）": agg([fwd(i) for i in range(n) if state[i] == "流入在加速"]),
-             "流出在加速（每天）": agg([fwd(i) for i in range(n) if state[i] == "流出在加速"]),
-             "加速流入第一天": agg([e["fwd"] for e in eps]),
+    stats = {"集中大买（每天）": agg([fwd(i) for i in range(n) if state[i] == "集中大买"]),
+             "集中大卖（每天）": agg([fwd(i) for i in range(n) if state[i] == "集中大卖"]),
+             "集中大买第一天": agg([e["fwd"] for e in eps]),
              "放量托底日": agg([v["fwd"] for v in vols]),
              "全部交易日": agg([fwd(i) for i in range(n) if state[i]])}
     # 分指数
@@ -192,11 +201,7 @@ def run():
             "stats": pstats}
     # 国家队急买 / 急卖（实验，只作提醒）：买卖都用同一把尺子 —— 净申购 ÷ 沪深300 流通市值（相对值，市场变大也不用改门槛）。
     # 不用"占成交额"：高位时成交额很大，卖出的占比会被稀释（2026-06 底 5 天卖了约 1000 亿，只占成交额 0.57%，占市值 1.6‰）
-    E3 = _load(os.path.join(ROOT, "data", "etf300.json"), {}).get("latest") or {}
-    cap0 = E3["size"] / (E3["ratio"] / 100) if E3.get("size") and E3.get("ratio") else None   # 亿元
-    cap = [cap0 * close[k] / close[-1] if cap0 else None for k in range(n)]   # 按 510300 净值涨跌推算每天的流通市值
     r5 = [d5[k] / cap[k] if cap[k] else None for k in range(n)]
-    r20 = [d20[k] / cap[k] if cap[k] else None for k in range(n)]
     rush_on = [x is not None and x >= RUSH for x in r5]
     reps = [{"date": days[k], "r5": round(r5[k], 4), "d5": round(d5[k]), "fwd": fwd(k)}
             for k in range(1, n) if rush_on[k] and not any(rush_on[max(0, k - 20):k])]
@@ -215,27 +220,27 @@ def run():
     s = state[i]
     last_ep = eps[-1] if eps else None
     since = days.index(last_ep["date"]) if last_ep else None
-    fresh = s == "流入在加速" and since is not None and i - since < FRESH
+    fresh = s == "集中大买" and since is not None and i - since < FRESH
     T = _load(os.path.join(ROOT, "data", "temp.json"), {})
     z = (T.get("latest") or {}).get("z")
     hot = z is not None and z >= 3
     if fresh and not hot:
-        act, cls, key = f"国家队在加速买入（{last_ep['date']} 开始）：可以在宽基（A500 / 沪深300）上额外买 4 周的量，分 2~4 周买完；这一段只加这一次", "g1", "加仓|" + last_ep["date"]
+        act, cls, key = f"国家队集中大买（{last_ep['date']} 开始，近 20 日净申购占沪深300 市值 {r20[i] * 1000:.1f}‰）：可以在宽基（A500 / 沪深300）上额外买 4 周的量，分 2~4 周买完；这一段只加这一次", "g1", "加仓|" + last_ep["date"]
     elif fresh:
-        act, cls, key = "国家队在加速买入，但市场在偏热 / 顶部区，这次不额外加", "c0", "偏热不加|" + last_ep["date"]
-    elif s == "流入在加速":
-        act, cls, key = f"加速还在持续（{last_ep['date']} 开始，已经提醒过加仓），照常", "c0", "持续|" + last_ep["date"]
-    elif s == "流出在加速":
-        act, cls, key = "国家队在加速撤出（之后只是略弱，只作观察），照常", "c0", "平稳"
+        act, cls, key = "国家队集中大买，但市场在偏热 / 顶部区，这次不额外加", "c0", "偏热不加|" + last_ep["date"]
+    elif s == "集中大买":
+        act, cls, key = f"集中大买还在持续（{last_ep['date']} 开始；每一段只在开始时加一次仓），照常", "c0", "持续|" + last_ep["date"]
+    elif s == "集中大卖":
+        act, cls, key = "国家队在集中卖出：在高位时要警惕（见组合信号\"高位撤离\"），照常", "c0", "平稳"
     else:
-        act, cls, key = "流入流出没有明显加速，照常", "c0", "平稳"
+        act, cls, key = f"没有集中大买大卖（近 20 日净申购占市值 {(r20[i] or 0) * 1000:+.1f}‰，±2‰ 才算），照常", "c0", "平稳"
     lv = vols[-1] if vols else None
     vol_recent = bool(lv and days.index(lv["date"]) >= n - 5)
     hs, _ = S.get_series("hs300")
     hk = sorted(hs)
     data = {
         "updated": dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M"),
-        "latest": {"date": days[-1], "state": s, "acc": round(acc[i], 1), "pct": round(pct[i], 3), "f4_20": round(sum(f4[-20:])),
+        "latest": {"date": days[-1], "state": s, "acc": round(acc[i], 1), "pct": round(pct[i], 3), "r20": None if r20[i] is None else round(r20[i], 5), "big": BIG, "f4_20": round(sum(f4[-20:])),
                    "action": act, "cls": cls, "key": key, "episode": last_ep, "fresh": fresh, "hot": hot,
                    "vol_last": lv, "vol_recent": vol_recent, "pull": pull, "rush": rush},
         "rush_eps": reps,
@@ -247,7 +252,7 @@ def run():
     }
     with open(OUT, "w", encoding="utf-8") as fh:
         json.dump(data, fh, ensure_ascii=False, separators=(",", ":"))
-    print(f"写入 {OUT}：{days[-1]} {s}（加速度 {acc[i]:+.1f} 亿/天，近一年 {pct[i]:.0%} 分位），{act}；"
+    print(f"写入 {OUT}：{days[-1]} {s}（近 20 日占市值 {(r20[i] or 0) * 1000:+.1f}‰），{act}；"
           f"放量托底日最近 {lv['date'] if lv else '无'}")
     return data
 
