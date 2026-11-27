@@ -69,11 +69,11 @@
 
 <div id="viewT" hidden>
 <section class="panel"><h2>现在在哪个区间</h2><div id="t_temp"><div class="note">加载中</div></div></section>
+<section class="panel" id="etfh"><h2>国家队资金</h2><p class="note">加载中</p></section>
 <section class="panel" id="t_zone"><h2>区间走势</h2><div id="t_zoneBody"><div class="note">加载中</div></div></section>
 <section class="panel" id="t_m"><h2>见底信号灯</h2><div id="t_bot"><div class="note">加载中</div></div></section>
 <section class="panel" id="tl"><h2>见顶信号灯</h2><p class="note">加载中</p></section>
 <section class="panel" id="t_dir"><h2>方向：底部在不在确认</h2><div id="t_dirBody"><div class="note">加载中</div></div></section>
-<section class="panel" id="etfh"><h2>国家队资金</h2><p class="note">加载中</p></section>
 </div>
 
 <div id="viewRot" hidden>
@@ -1309,23 +1309,23 @@ function loadNtf(){
     const lv=L.vol_last,fr=x=>x==null?"—":`<span style="color:${x>0?"var(--grow)":"var(--mark)"}">${sg(x)}</span>`;
     const top=d.groups.filter(g=>g.name!=="合计").slice().sort((a,b)=>b.d20-a.d20),tot=d.groups.find(g=>g.name==="合计");
     const a60=st["集中大买第一天"]&&st["集中大买第一天"]["60"],b60=st["全部交易日"]&&st["全部交易日"]["60"];
-    box.innerHTML=`<h3 class="h3" style="margin-top:16px">国家队在集中大买吗（加仓规则）</h3>
+    box.innerHTML=`<p class="concl" id="ntfJ" hidden style="margin-top:4px"></p>
+      <h3 style="font-size:14px;margin:16px 0 4px">国家队每天买了多少（一图看懂）<button type="button" class="bigbtn" id="n3big">⤢ 横屏看大图</button></h3>
+      <p class="note" style="margin:0 0 6px">从上到下：① 沪深300 走势；② 买得多不多（近 20 天净买入占沪深300 市值，过了 2‰ 就是"集中大买"，宽基加仓）；③ 每天净买入多少亿（分大盘 / 成长 / 中小盘三类叠起来，或只看沪深300；柱子上是当天合计）。点图看当天数字。</p>
+      <div class="ranges" id="n3r" style="margin-bottom:4px"><button type="button" data-n="66" aria-pressed="true">3个月</button><button type="button" data-n="130">半年</button><button type="button" data-n="ytd">今年</button><button type="button" data-n="250">1年</button><button type="button" data-n="all">全部</button></div>
+      <div class="ranges" id="n3m" style="margin-bottom:4px"><button type="button" data-m="buy" aria-pressed="true">买得多不多</button><button type="button" data-m="pos">手里有多少</button><button type="button" data-m="rank">和一年比</button></div>
+      <div class="ranges" id="n3g" style="margin-bottom:4px"><button type="button" data-g="all" aria-pressed="true">分三类看</button><button type="button" data-g="hs">只看沪深300</button></div>
+      <div class="legend" id="n3lg" style="margin:0 0 4px">${GGRP.map(([g,c,ms])=>`<span><i style="border-color:${c};border-top-width:8px"></i>${g}（${ms.join("、")}）</span>`).join("")}</div>
+      <svg class="chart" id="ntf3" viewBox="0 0 720 560" role="img" style="touch-action:pan-y;width:100%;height:auto"></svg>
+      <p class="note" id="ntf3t" style="min-height:2.6em;margin:4px 0 0">点图上任意一天，看当天的数字。</p>
+      <p class="concl" id="ntf3c" hidden></p>
+      <h3 class="h3" style="margin-top:16px">国家队在集中大买吗（加仓规则）</h3>
       <div><span class="lv ${L.cls}">${L.state}</span> <span style="margin-left:6px">${L.action}</span></div>
       <div class="kv"><div><div class="label">近 20 日占沪深300 市值</div><div class="v">${L.r20==null?"—":(L.r20>0?"+":"")+(L.r20*1000).toFixed(1)+"‰"}</div><div class="s">≥+2‰ 集中大买 · ≤−2‰ 集中大卖</div></div>
         <div><div class="label">近 20 日净申购</div><div class="v">${L.f4_20>0?"+":""}${L.f4_20.toLocaleString()} 亿</div><div class="s">4 只沪深300 ETF</div></div>
         <div><div class="label">近 5 日占沪深300 市值</div><div class="v">${L.rush&&L.rush.r5!=null?(L.rush.r5>0?"+":"")+(L.rush.r5*1000).toFixed(2)+"‰":"—"}</div><div class="s">≥1.5‰ 算急买（只提醒）</div></div>
         <div><div class="label">上一段集中大买</div><div class="v" style="font-size:17px">${L.episode?L.episode.date:"—"}</div><div class="s">${L.episode&&L.episode.fwd["60"]!=null?"之后 60 日 "+sg(L.episode.fwd["60"]):""}</div></div>
 </div>
-      <h3 style="font-size:14px;margin:16px 0 4px">国家队每天买了多少（一图看懂）<button type="button" class="bigbtn" id="n3big">⤢ 横屏看大图</button></h3>
-      <p class="note" style="margin:0 0 6px">从上到下：① 沪深300 走势；② 买得多不多（近 20 天净买入占沪深300 市值，过了 2‰ 就是"集中大买"，宽基加仓）；③ 每天净买入多少亿（分大盘 / 成长 / 中小盘三类叠起来，或只看沪深300；柱子上是当天合计）。点图看当天数字。</p>
-      <div class="ranges" id="n3r" style="margin-bottom:4px"><button type="button" data-n="66" aria-pressed="true">3个月</button><button type="button" data-n="130">半年</button><button type="button" data-n="ytd">今年</button><button type="button" data-n="250">1年</button><button type="button" data-n="all">全部</button></div>
-      <div class="ranges" id="n3m" style="margin-bottom:4px"><button type="button" data-m="buy" aria-pressed="true">② 买得多不多</button><button type="button" data-m="pos">② 手里有多少</button><button type="button" data-m="rank">② 和一年比</button></div>
-      <div class="ranges" id="n3g" style="margin-bottom:4px"><button type="button" data-g="all" aria-pressed="true">分三类看</button><button type="button" data-g="hs">只看沪深300</button></div>
-      <div class="legend" id="n3lg" style="margin:0 0 4px">${GGRP.map(([g,c,ms])=>`<span><i style="border-color:${c};border-top-width:8px"></i>${g}（${ms.join("、")}）</span>`).join("")}</div>
-      <svg class="chart" id="ntf3" viewBox="0 0 720 560" role="img" style="touch-action:pan-y;width:100%;height:auto"></svg>
-      <p class="note" id="ntf3t" style="min-height:2.6em;margin:4px 0 0">点图上任意一天，看当天的数字。</p>
-      <p class="concl" id="ntfJ" hidden></p>
-      <p class="concl" id="ntf3c" hidden></p>
       <h3 style="font-size:14px;margin:14px 0 4px">各指数：一波比一波多吗，买得勤不勤</h3>
       <div id="ntfIdx"></div>
       <details class="sub"><summary>看老图：加速度排名与沪深300（2023 年起） ▾</summary>
