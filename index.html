@@ -904,6 +904,20 @@ function loadPlan(){
 // 国家队三层图：沪深300 / 买得快不快（加速度排名）/ 每天净买入（亿元）。S 行：[日期, 加速度, 排名, 20日, 沪深300, 当天净申购]
 // 7 个指数归成 3 类再叠，颜色少、好看懂；点某一天再看 7 个指数的明细
 const GGRP=[["大盘","#2f8f5b",["沪深300","上证50","A500"]],["成长","#3b6fb6",["创业板","科创50"]],["中小盘","#c98a12",["中证500","中证1000"]]];
+// 国家队综合判断：买得多不多（近 20 天 ±2‰）× 手里有多少（近一年排名 ≥80 重仓、≤20 轻仓）× 市场在高位还是低位。回测 2023 年起，看之后的沪深300
+function ntfJudge(S,E,TT){
+  const box=$("ntfJ");if(!box||!E||!TT)return;
+  const r=S.filter(x=>x.length>6&&x[6]).pop(),e=E.latest,z=TT.latest.z;if(!r||!e)return;
+  const m=r[3]/r[6]*1000,rk=e.pct==null?null:e.pct*100,act=m>=2?"加":m<=-2?"减":"稳",pos=rk==null?"中":rk>=80?"重":rk<=20?"轻":"中",loc=z<=1?"低":z>=3?"高":"中";
+  const J=act==="加"&&loc==="低"?["国家队在低位集中加仓：跟着买","g1","2023 年起这种时候之后 60 天沪深300 平均 +10.7%，96% 上涨"]:
+    act==="减"&&loc==="高"?["国家队在高位撤：别追高，留意卖出","r1","之后 120 天平均 −6.0%，只有 16% 上涨"]:
+    act==="稳"&&pos==="轻"&&loc==="高"?["高位而国家队不在场：别追高","r1","之后 120 天平均 −7.8%，只有 10% 上涨"]:
+    act==="稳"&&pos==="重"&&loc==="低"?["国家队重仓托着：跌下来有人接，慢慢买","g1","之后 60 天常常还在磨（平均 −0.6%），120 天平均 +4.5%，71% 上涨"]:
+    act==="减"&&loc!=="高"?["国家队在低位降温卖出：短期可能还涨，别追","h1","样本少（只有 2024-09 一段），只作参考"]:
+    act==="加"?["国家队在集中加仓，但市场不在低位","c0","样本少，按规则走"]:["国家队没有明显动作","c0","按规则走"];
+  box.innerHTML=`<b>国家队综合判断：</b><span class="lv ${J[1]}">${J[0]}</span><br>近 20 天买卖 ${m>0?"+":""}${m.toFixed(1)}‰（${act==="加"?"集中大买":act==="减"?"集中大卖":"不多"}）· 手里的量在近一年排 ${rk==null?"—":Math.round(rk)}（${pos==="重"?"重仓":pos==="轻"?"轻仓":"中等"}）· 市场${loc==="低"?"在低位":loc==="高"?"在高位":"在中间"}。<br><span class="note" style="margin:0">${J[2]}。只作提醒，不改倍数；加仓规则只看"集中大买"。</span>`;
+  box.hidden=false;
+}
 function ntf3(S,G,E){
   const EM={};(E&&E.series||[]).forEach(r=>EM[r[0]]=[r[1],r[2]]);let m2="buy";
   const mb=$("n3m");if(mb){if(!E)mb.hidden=true;mb.onclick=e=>{const b=e.target.closest("button");if(!b)return;m2=b.dataset.m;mb.querySelectorAll("button").forEach(z=>z.setAttribute("aria-pressed",z===b));draw()}}
@@ -1301,6 +1315,7 @@ function loadNtf(){
       <div class="legend" id="n3lg" style="margin:0 0 4px">${GGRP.map(([g,c,ms])=>`<span><i style="border-color:${c};border-top-width:8px"></i>${g}（${ms.join("、")}）</span>`).join("")}</div>
       <svg class="chart" id="ntf3" viewBox="0 0 720 560" role="img" style="touch-action:pan-y;width:100%;height:auto"></svg>
       <p class="note" id="ntf3t" style="min-height:2.6em;margin:4px 0 0">点图上任意一天，看当天的数字。</p>
+      <p class="concl" id="ntfJ" hidden></p>
       <p class="concl" id="ntf3c" hidden></p>
       <h3 style="font-size:14px;margin:14px 0 4px">各指数：一波比一波多吗，买得勤不勤</h3>
       <div id="ntfIdx"></div>
@@ -1324,7 +1339,7 @@ function loadNtf(){
       <div class="scroll" style="margin-top:8px"><table><thead><tr><th>日期</th><th>信号</th><th class="r">20 日后</th><th class="r">60 日后</th><th class="r">120 日后</th></tr></thead><tbody>
         ${[...d.episodes.map(e=>({...e,k:"集中大买"}))].sort((a,b)=>a.date<b.date?1:-1).map(e=>`<tr><td class="num">${e.date}</td><td>${e.k}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td><td class="r num">${fr(e.fwd["120"])}</td></tr>`).join("")}</tbody></table></div>
       <p class="note">2023 年起。净申购 = 份额变化 × 单位净值；加速度只看 4 只沪深300 ETF（换成 20 只宽基 ETF 回测更差）；放量 = 3 只上交所沪深300 ETF 成交额 ≥ 前 20 日均值 ${d.rule.vol} 倍且当天下跌。</p></details>`;
-    getJ("etf300.json").then(E=>ntf3(S,d.gflow,E));
+    Promise.all([getJ("etf300.json"),getJ("temp.json")]).then(([E,TT])=>{ntf3(S,d.gflow,E);ntfJudge(S,E,TT)});
     const dates=S.map(r=>r[0]),marks=d.episodes.map(e=>({d:e.date,c:"var(--grow)",t:""}));
     DualChart($("ntf_c1"),{W:720,H:220,dates,leftRange:[0,100],leftTicks:[0,10,50,90,100],leftFmt:v=>v,
       bands:[{from:90,to:100,fill:"var(--grow-soft)"},{from:0,to:10,fill:"var(--mark-soft)"}],
