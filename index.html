@@ -57,8 +57,8 @@
   <div class="todo" id="planRows"><div class="note">加载中</div></div>
   <p class="note" id="planNote"></p>
 </div></details>
-<section class="panel" id="kiSec"><h2>关键指标<a class="hmore" href="#temp">市场温度详情 ›</a></h2>
-  <p class="note" style="margin:-6px 0 8px">集中看最重要的几个数。<b>规则</b> = 直接决定买卖；<b>提醒</b> = 只作提醒；<span class="exptag">实验</span> = 还在观察，不改规则。点名字进对应页签。</p>
+<section class="panel" id="kiSec"><h2>规则指标<a class="hmore" href="#temp">市场温度详情 ›</a></h2>
+  <p class="note" style="margin:-6px 0 8px">直接决定买卖的几个数，点名字进对应页签。提醒和实验指标都收进了上面的"组合信号"，点"为什么"能看到。</p>
   <div id="kiBody"><div class="note">加载中</div></div>
 </section>
 <div id="o_temp" hidden></div>
@@ -67,11 +67,10 @@
 
 <div id="viewT" hidden>
 <section class="panel"><h2>现在在哪个区间</h2><div id="t_temp"><div class="note">加载中</div></div></section>
-<section class="panel" id="combo"><h2>综合判断（实验）</h2><p class="note">加载中</p></section>
 <section class="panel" id="t_zone"><h2>区间走势</h2><div id="t_zoneBody"><div class="note">加载中</div></div></section>
-<section class="panel" id="t_dir"><h2>方向：底部在不在确认</h2><div id="t_dirBody"><div class="note">加载中</div></div></section>
 <section class="panel" id="t_m"><h2>见底信号灯</h2><div id="t_bot"><div class="note">加载中</div></div></section>
 <section class="panel" id="tl"><h2>见顶信号灯</h2><p class="note">加载中</p></section>
+<section class="panel" id="t_dir"><h2>方向：底部在不在确认</h2><div id="t_dirBody"><div class="note">加载中</div></div></section>
 <section class="panel" id="etfh"><h2>托底资金（国家队）</h2><p class="note">加载中</p></section>
 </div>
 
@@ -311,6 +310,12 @@
 </section>
 
 <section class="panel">
+  <h2>近半个月每天怎么买</h2>
+  <div class="scroll"><table id="dRecent"><thead><tr><th>日期</th><th class="r">评分</th><th>当天</th><th class="r">指数涨跌</th></tr></thead><tbody></tbody></table></div>
+  <p class="note">指数是红利低波100。每天收盘后按评分记下该买多少（每天 200 元为 1 倍），<b>先攒着；红利低波100 连续跌 2 天后，第二天把攒着的一起买</b>（回测年化 <span id="dBtS">—</span>，每天买是 <span id="dBtD">—</span>，下单次数少到约四分之一）。换档要连续 2 天落在新档位才算。到减仓线不用等连跌，下一个交易日就卖；每条线一段行情只卖一次，评分回到 12 以上重新计。评分涨、指数跌，说明越跌越便宜；评分跌、指数涨，说明涨贵了。</p>
+</section>
+
+<section class="panel">
   <h2>评分区间尺</h2>
   <div class="ruler sruler" id="sRuler">
     <div class="pin now" id="sNow"><span>现在</span><b id="sNowV"></b></div>
@@ -330,27 +335,6 @@
 </section>
 
 <section class="panel">
-  <h2>四维体检</h2>
-  <p class="note" style="margin:-6px 0 12px">每项 0~100，分越高越便宜。条越长越便宜。</p>
-  <div class="dims" id="dims"></div>
-</section>
-
-<section class="panel">
-  <h2>八档金额表</h2>
-  <div class="scroll"><table id="tierTbl">
-    <thead><tr><th>评分</th><th class="r">倍数</th><th class="r">每天金额</th><th>含义</th></tr></thead>
-    <tbody></tbody>
-  </table></div>
-  <p class="note">外部每天固定投入 200 元：少投的钱进现金池，多投的钱从现金池里出。评分跌破 6 / 4 / 2 时，下一个交易日分批卖出 25% / 33% / 50%（每条线一段行情只卖一次），卖出的钱等评分回到 12 分以上再买回。</p>
-</section>
-
-<section class="panel">
-  <h2>近半个月每天怎么买</h2>
-  <div class="scroll"><table id="dRecent"><thead><tr><th>日期</th><th class="r">评分</th><th>当天</th><th class="r">指数涨跌</th></tr></thead><tbody></tbody></table></div>
-  <p class="note">指数是红利低波100。每天收盘后按评分记下该买多少（每天 200 元为 1 倍），<b>先攒着；红利低波100 连续跌 2 天后，第二天把攒着的一起买</b>（回测年化 <span id="dBtS">—</span>，每天买是 <span id="dBtD">—</span>，下单次数少到约四分之一）。换档要连续 2 天落在新档位才算。到减仓线不用等连跌，下一个交易日就卖；每条线一段行情只卖一次，评分回到 12 以上重新计。评分涨、指数跌，说明越跌越便宜；评分跌、指数涨，说明涨贵了。</p>
-</section>
-
-<section class="panel">
   <h2>评分走势</h2>
   <div class="ranges" role="group" aria-label="时间范围" data-for="sChart"><button type="button" data-r="1y">近1年</button><button type="button" data-r="3y">近3年</button><button type="button" data-r="all" aria-pressed="true">全部</button></div>
   <div class="chartwrap"><svg class="chart" id="sChart" viewBox="0 0 720 260" role="img" style="touch-action:pan-y" aria-label="评分与红利低波100走势"></svg><div class="tip" hidden></div></div>
@@ -364,6 +348,12 @@
   <p class="concl" id="dChartConcl"></p>
 </section>
 
+<section class="panel">
+  <h2>四维体检</h2>
+  <p class="note" style="margin:-6px 0 12px">每项 0~100，分越高越便宜。条越长越便宜。</p>
+  <div class="dims" id="dims"></div>
+</section>
+
 <section class="panel" id="posPanel" hidden>
   <h2>红利位置：便宜还是贵 <span class="exptag">实验</span></h2>
   <p class="concl" id="posNow"></p>
@@ -374,29 +364,30 @@
   <p class="note">红利位置 = 股息率、股债利差（股息率 − 十年国债）各自在近 5 年里高于多少比例的日子，取平均；越高越便宜。表格是 2012 年底以来每一档之后红利低波100 全收益指数的平均表现（涨的概率 = 一年后上涨的比例；再跌 = 一年内平均最多再跌多少），随数据自动更新。<b>只作参考，不改买卖：评分说不买（空仓）时照样不买</b>；它只回答「规则让买的时候，该坚定还是该收着」。两者看的东西不同：评分一半看技术面（最近涨多了没有），位置只看股息和利差，所以有时会不一致（2018 年以来约 14% 的周是评分空仓、位置偏便宜）。历史数据里段数不多、相邻日子高度重叠，表格只看大致方向。</p>
 </section>
 
-<section class="panel">
-  <h2>回测：每天 200 元</h2>
+<details class="panel fold"><summary>规则：每天记多少、什么时候买卖</summary><div class="pbody">
+  <h3 class="h3">规则速查</h3>
+  <div class="rule"><span class="k">每天记钱</span><span>按前一天收盘的评分记下该买多少（下表），换档要连续 2 天才算</span></div>
+  <div class="rule"><span class="k">一起买</span><span>红利低波100 连跌 2 天，下一个交易日把攒的钱一起买掉；账上是 0 就不买</span></div>
+  <div class="rule"><span class="k">≤ 6/4/2</span><span>下一个交易日分别卖 25% / 33% / 50%，每条线一段行情只卖一次；回到 12 分以上买回</span></div>
+  <h3 class="h3">八档金额表</h3>
+  <div class="scroll"><table id="tierTbl">
+    <thead><tr><th>评分</th><th class="r">倍数</th><th class="r">每天金额</th><th>含义</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+  <p class="note">每天 200 元为 1 倍。记下的钱先攒着，红利低波100 连跌 2 天后下一个交易日一起买。评分跌破 6 / 4 / 2 时，下一个交易日分批卖出 25% / 33% / 50%（每条线一段行情只卖一次），卖出的钱等评分回到 12 分以上再买回。</p>
+</div></details>
+
+<details class="panel fold"><summary>回测和性格对比</summary><div class="pbody">
+  <h3 class="h3">回测：每天 200 元</h3>
   <div class="scroll"><table>
     <thead><tr><th>方案</th><th class="r">年化 XIRR</th><th class="r">净值回撤</th><th class="r">Calmar</th><th class="r">期末现金</th></tr></thead>
     <tbody id="dBt"></tbody>
   </table></div>
   <p class="note" id="dBtNote"></p>
-</section>
-
-<section class="panel">
-  <h2>性格对比</h2>
+  <h3 class="h3">性格对比</h3>
   <div class="pers" id="pers"></div>
   <p class="note" id="persNote"></p>
-</section>
-
-<section class="panel rules">
-  <h2>规则速查</h2>
-  <div class="rule"><span class="k">≥ 12</span><span>加码，评分越高倍数越大；卖出池在 12 分以上一次性买回</span></div>
-  <div class="rule"><span class="k">10–12</span><span>正常定投 200 元</span></div>
-  <div class="rule"><span class="k">8–10</span><span>少买，100 元</span></div>
-  <div class="rule"><span class="k">&lt; 8</span><span>空仓，当天的钱进现金池</span></div>
-  <div class="rule"><span class="k">≤ 6/4/2</span><span>分批减仓 25% / 33% / 50%</span></div>
-</section>
+</div></details>
 </div>
 
 <footer>
@@ -826,13 +817,13 @@ function loadGold(){
       ${d.sell_episodes.map(e=>`<tr><td class="num">${e.from.slice(0,7)}${e.to.slice(0,7)!==e.from.slice(0,7)?"~"+e.to.slice(0,7):""}</td><td class="r num">${sg1(e.r60)}</td><td class="r num">${sg1(e.r120)}</td></tr>`).join("")||`<tr><td colspan="3" class="note">没有</td></tr>`}</tbody></table></div>
       <p class="note">卖 1/3 是保险，不保证卖在高点：2025 年 4 月那次卖早了，2026 年初那次躲过了大跌。卖出的钱放红利低波100，价格回到年线附近或 ETF 资金恐慌撤出时再买回。</p>
     </section>
-    <section class="panel" id="g_unused"><h2>测过但不用的</h2>
+    <details class="panel fold" id="g_unused"><summary>测过但不用的</summary><div class="pbody">
       <p><b>实际利率</b>（美国 10 年期 TIPS，现在 ${L.ref.real10==null?"—":L.ref.real10.toFixed(2)+"%"}）</p>
       <p class="note" style="margin-top:0">过去最常用的黄金模型。2013~2020 年和金价同期变化相关 ${T.real_corr["2013-2020"]}（很强），2022 年后只剩 ${T.real_corr["2022-2026"]}；而且对之后的走势几乎没有预测力，2022 年起各国央行大量买金，实际利率很高的几年反而是黄金大牛市。</p>
       <h3 class="h3">实际利率与黄金ETF${big("gd_c4","美国 10 年期实际利率（左轴 %）与黄金ETF（右轴）")}</h3>${box("gd_c4",200)}
       <p class="note"><b>金银比</b>（现在近 5 年 ${L.ref.ratio_pct==null?"—":pc(L.ref.ratio_pct,0)} 分位）：白银相对强时，2020~2021 年三次之后黄金都跌，但 2024 年、2025~2026 年两次没应验，不用。<b>期货持仓（CFTC）</b>：投机盘最拥挤之后金价反而继续涨（样本主要是牛市），不用。<b>跌破 10 个月线卖</b>：跌下来时已经晚了；“上方持有、下方空仓”年化 ${pc(T.timing.trend.cagr,1)}，不如一直拿着的 ${pc(T.timing.hold.cagr,1)}。</p>
       <p class="note">数据：黄金ETF 东方财富；SPDR 持仓、白银 AKShare；实际利率 美国财政部。</p>
-    </section>
+    </div></details>
 `;
     const lt=tk(Math.min(...px),Math.max(...px));
     DualChart($("gd_c1"),{W:720,H:250,dates,leftRange:[lt[0],lt[lt.length-1]],leftTicks:lt,leftFmt:v=>v.toFixed(v<10?1:0),bg:d.state_series.split("").map(c=>GFILL[c]),
@@ -863,11 +854,11 @@ fetch("data/health.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).the
 function nextUpdate(){
   const n=new Date(Date.now()+8*3600e3),slots=[];   // 北京时间
   for(let k=0;k<8;k++){const d=new Date(Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate()+k)),w=d.getUTCDay();
-    if(w===5)slots.push([d,8,37]);if(w>=1&&w<=5)slots.push([d,17,41],[d,19,17],[d,21,23]);if(w===6)slots.push([d,9,29])}
+    if(w>=1&&w<=5)slots.push([d,17,45],[d,21,30])}   // 外部定时器 cron-job.org 准点触发（13:40 / 15:10 只出红利快速图）
   for(const [d,h,m] of slots){const t=new Date(d.getTime()+(h*60+m)*6e4);if(t>n){
     const same=t.getUTCDate()===n.getUTCDate(),tom=t.getUTCDate()===new Date(n.getTime()+864e5).getUTCDate();
     const wd="日一二三四五六"[t.getUTCDay()];
-    return `下次更新：${same?"今天":tom?"明天":"周"+wd} ${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}（北京时间，GitHub 有时会晚一两个小时）`}}
+    return `下次更新：${same?"今天":tom?"明天":"周"+wd} ${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}（北京时间）`}}
   return "";
 }
 // 统一配色：绿=可以买 / 多买，灰=照常或暂停等待，橙=过热或偏贵（不加钱），红=卖出 / 减仓 / 异常
@@ -961,7 +952,7 @@ function loadVerdict(){
 }
 function loadKeyInd(){
   getJ("keyind.json").then(d=>{if(!d){$("kiSec").hidden=true;return}
-    $("kiBody").innerHTML=d.groups.map(g=>`<div class="kig">${g.key==="exp"?'<span class="exptag">实验</span>':g.title}<small>${g.desc}</small></div>`+
+    $("kiBody").innerHTML=d.groups.filter(g=>g.key==="rule").map(g=>""+
       g.rows.map(r=>`<div class="ki"><div class="n"><a href="${r.tab.includes(".html")?r.tab:"#"+r.tab}">${r.name}</a>${g.key==="exp"?' <span class="exptag">实验</span>':""}</div><div class="v">${r.value}</div><div class="s"><span class="lv ${r.cls}">${r.status}</span></div><div class="x">${r.plain?`<b class="pl">${r.plain}</b><small class="nt">${r.note}</small>`:r.note}</div></div>`).join("")).join("");
   });
 }
@@ -1038,7 +1029,6 @@ function renderTemp(el,compact){
 function loadTemp(){
   renderTemp($("t_temp"),false);loadTop();
   getJ("hs300.json").then(d=>loadEtf300($("viewT"),d&&d.latest));
-  loadCombo();
   Promise.all([getJ("temp.json"),getJ("market.json")]).then(([T,m])=>{
     if(!T){["t_zoneBody","t_dirBody","t_bot"].forEach(id=>$(id).innerHTML=`<div class="note">还没有生成数据</div>`);return}
     renderZone(T);renderDir(T);renderBot(T,m);
@@ -1136,15 +1126,16 @@ function loadEtf300(root,HL){
     const fr=x=>x==null?"—":`<span style="color:${x>0?"var(--grow)":"var(--mark)"}">${sg(x)}</span>`;
     const statRow=(k,S2=st,tag="")=>{const v=S2[k];if(!v)return"";const c=h=>v[h]?`${sg(v[h].avg)}<br><small>上涨 ${pc(v[h].up,0)}</small>`:"—";
       return `<tr><td>${k==="全部交易日"?"对照":k==="大幅流入·托底"?"大幅流入":"撤出"}${tag}</td><td class="r num">${k==="全部交易日"?"—":v.n}</td><td class="r num">${c("20")}</td><td class="r num">${c("60")}</td><td class="r num">${c("120")}</td></tr>`};
-    sec.innerHTML=`<h2>托底资金（国家队）</h2>
-      <p class="note" style="margin:-6px 0 10px">华泰柏瑞 510300、易方达 510310、华夏 510330、嘉实 159919 合计规模（份额 × 单位净值）占沪深300 流通市值。汇金托底主要买这几只，可以近似看作国家队在沪深300 上的仓位。<b>先观察，不改定投规则；状态变化会发邮件。</b></p>
-      <div><span class="lv ${L.cls}">${L.zone}</span> <span style="margin-left:6px">${L.action}</span></div>
+    sec.innerHTML=`<h2>国家队资金</h2>
+      <p class="note" style="margin:-6px 0 10px">看 4 只沪深300 ETF（华泰柏瑞 510300、易方达 510310、华夏 510330、嘉实 159919）的申购赎回，汇金托底主要买这几只。<b>买卖都用同一把尺子：净申购 ÷ 沪深300 流通市值</b>（相对值，市场变大不用改门槛）。</p>
+      <div id="ntfbox"></div>
+      <details class="sub" style="margin-top:12px"><summary>仓位：国家队手里有多少（托底资金） ▾</summary>
+      <div style="margin-top:8px"><span class="lv ${L.cls}">${L.zone}</span> <span style="margin-left:6px">${L.action}</span></div>
       <p class="concl"><b>现在怎么办：</b>${judge}。<span class="note">（结合沪深300 便宜指数 ${cheap==null?"—":cheap.toFixed(1)}，只作参考，不改规则和倍数）</span></p>
       <div class="kv"><div><div class="label">合计规模</div><div class="v">${L.size.toLocaleString()} 亿</div><div class="s">${L.date} · ${L.shares.toFixed(0)} 亿份</div></div>
         <div><div class="label">占流通市值</div><div class="v">${L.ratio.toFixed(2)}%</div><div class="s">图中区间 ${lo.toFixed(2)}%~${hi.toFixed(2)}%</div></div>
         <div><div class="label">近 252 日分位</div><div class="v">${L.pct==null?"—":pc(L.pct,0)}</div><div class="s">≥80% 重仓 · ≤20% 撤空</div></div>
         <div><div class="label">近 20 日份额</div><div class="v">${sg(L.chg20)}</div><div class="s">≥+15% 大幅流入 · ≤−15% 撤出</div></div></div>
-      <div id="ntfbox"></div>
       <h3 style="font-size:14px;margin:16px 0 4px">① 国家队手里有多少（绿线越高 = 拿得越多）<button type="button" class="bigbtn" data-big="etf_c1" data-title="占沪深300 流通市值（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
       <p class="note" style="margin:0 0 6px">绿线 = 沪深300 ETF 的总规模占整个沪深300 市值的百分比，可以看成国家队通过 ETF 拿了多少沪深300。只画 2023 年起：之前国家队基本不用 ETF 托市，线一直贴着底，没有参考意义。<br><span style="color:var(--grow);font-weight:700">——</span> 占比（%，左轴）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">大幅流入</span> / <span style="color:var(--div)">撤出</span></p>
       <div class="chartwrap"><svg class="chart" id="etf_c1" viewBox="0 0 720 260" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
@@ -1165,7 +1156,7 @@ function loadEtf300(root,HL){
       <div class="chartwrap"><svg class="chart" id="etf_c3" viewBox="0 0 720 200" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>`:""}
       </details>
       <p class="note" style="margin-top:10px">怎么看：<b>大幅流入</b>大多发生在下跌途中，之后 1~3 个月往往还在磨底，说明有人托底、但不等于马上见底；<b>重仓之后会拿很久</b>，分位高不代表现在便宜；<b>撤出</b>（尤其在高位）之后沪深300 偏弱，这个信号目前更有参考价值。事件只有几次，只作旁证。<br>
-      数据：份额来自上交所、深交所，单位净值来自天天基金；流通市值${d.first_real_cap?`从 ${d.first_real_cap} 起是东方财富每天的真实值，之前`:""}按沪深300 点位倒推，越早越不准（只影响高低，不影响方向）。份额里也有非国家队的资金。</p>`;
+      数据：份额来自上交所、深交所，单位净值来自天天基金；流通市值${d.first_real_cap?`从 ${d.first_real_cap} 起是东方财富每天的真实值，之前`:""}按沪深300 点位倒推，越早越不准（只影响高低，不影响方向）。份额里也有非国家队的资金。</p></details>`;
     const dates=S.map(r=>r[0]),marks=ev.map(e=>({d:e.date,c:e.kind==="撤出中"?"var(--div)":"var(--grow)",t:""}));
     const tip=i=>`${dates[i]}<br>占流通市值 <b>${S[i][1].toFixed(2)}%</b>`+(S[i][2]!=null?`<br>252 日分位 ${S[i][2].toFixed(0)}%`:"")+`<br>合计 ${S[i][3].toFixed(0)} 亿份<br>沪深300 ${S[i][4].toFixed(0)}`;
     const hiR=Math.max(...S.map(r=>r[1])),step=hiR>2?0.5:hiR>1?0.25:0.1,lt=[];for(let v=0;;v+=step){lt.push(+v.toFixed(2));if(v>=hiR)break}
@@ -1180,34 +1171,6 @@ function loadEtf300(root,HL){
     if((d.quarterly||[]).length){const Q=d.quarterly,qm=new Map(Q.map(r=>[r[0],r]));
       LineChart($("etf_c3"),{W:720,H:200,fixedY:[0,Math.ceil(Math.max(...Q.map(r=>r[1])))],ticks:Array.from({length:Math.ceil(Math.max(...Q.map(r=>r[1])))+1},(_,i)=>i)}).set(Q.map(r=>[r[0],r[1]]),{tip:(dt,v)=>`${dt}<br>占流通市值 <b>${v.toFixed(2)}%</b><br>规模 ${qm.get(dt)[2].toLocaleString()} 亿<br>沪深300 ${qm.get(dt)[3].toFixed(0)}`})}
   }).catch(e=>{sec.innerHTML=`<h2>托底资金（国家队）</h2><p class="note">${e.message}</p>`});
-}
-
-// ---------------- 综合判断（实验）：各指标独立表态（偏多 / 偏空 / 不表态），再按票数综合，不进规则
-function loadCombo(){
-  const sec=$("combo");if(!sec)return;
-  fetch("data/combo.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("还没有生成数据");return r.json()}).then(d=>{
-    const L=d.latest,sg=x=>x==null?"—":(x>0?"+":"")+pc(x),C=d.cls,IS=d.ind_stats;
-    const cell=v=>v?`${sg(v.avg)}<br><small>上涨 ${pc(v.up,0)}</small>`:"—";
-    const lamp=x=>{const v=L.ind[x.name],t=IS[x.name],h="120",o=t.on[h],bs=t.base[h];return `<tr><td><span class="lv ${v>0?"g1":v<0?"h1":"c0"}">${v>0?"偏多":v<0?"偏空":"不表态"}</span></td><td style="white-space:normal"><b>${x.name}</b><br><small class="note">${x.rule}</small></td><td class="r num">${o?`<span style="color:${o.avg>bs.avg?"var(--grow)":"var(--mark)"}">${sg(o.avg)}</span><br><small>上涨 ${pc(o.up,0)}</small><br><small class="note">平时 ${sg(bs.avg)}</small>`:"—"}</td></tr>`};
-    const cmp=(T)=>{const ks=Object.keys(T);return `<div class="scroll"><table><thead><tr><th>档（倍数）</th>${ks.map(k=>`<th class="r">${k}</th>`).join("")}</tr></thead><tbody>
-      ${d.levels.map(l=>`<tr><td>${l}（${d.mult[l]}）</td>${ks.map(k=>{const v=T[k].levels[l];return `<td class="r num">${v["120"]?sg(v["120"].avg)+`<br><small>上涨 ${pc(v["120"].up,0)}<br>${v.days} 天</small>`:`<small>${v.days} 天</small>`}</td>`}).join("")}</tr>`).join("")}
-      <tr><td><b>按档定投</b></td>${ks.map(k=>`<td class="r num"><b>${sg(T[k].dca)}</b></td>`).join("")}</tr>
-      <tr><td class="note">每周固定买</td>${ks.map(k=>`<td class="r num note">${sg(T[k].flat)}</td>`).join("")}</tr></tbody></table></div>`};
-    const t13=d.test["2013"],a=t13["只看区间"].levels,b=t13["独立投票"].levels;
-    sec.innerHTML=`<h2>综合判断（实验）</h2>
-      <p class="note" style="margin:-6px 0 10px">每个指标<b>各自独立</b>表态：偏多、偏空或不表态（只在回测过有用的那一边表态），再数票：偏多 − 偏空 ≥2 积极 · 1 偏积极 · 0 照常 · −1 偏谨慎 · ≤−2 谨慎。<b>只作实验对比，不改定投规则和倍数。</b></p>
-      <p class="concl"><b>怎么用：只看两头。</b>“积极”= 好几个指标同时看好，很少出现，但出现后半年几乎都涨 → 按规则该加的放心加；“谨慎”= 好几个同时看坏 → 别额外加钱，止盈可以果断。中间三档不用管，照规则走。</p>
-      <div><span class="lv ${L.cls}">${L.level}</span> <span style="margin-left:6px">偏多 ${L.bull} 票、偏空 ${L.bear} 票（只看区间是“${L.zone_level}”）</span></div>
-      <h3 class="h3">四个指标各自怎么说</h3>
-      <div class="scroll"><table><thead><tr><th>现在</th><th>指标</th><th class="r">表态后半年</th></tr></thead><tbody>${d.ind.map(lamp).join("")}</tbody></table></div>
-      <p class="concl"><b>结论：</b>四个指标单独看都有用：偏多的之后半年都比平时好，偏空的之后半年大多下跌。</p>
-      <p class="note">测过但不放进来：国家队加速（只管 60 天，放进来反而把“积极”冲淡，单独在托底资金里做加仓提醒）；放量托底（之后 60 天没有优势）；方向全部走弱（之后并不差）；轮动比值 × 市场温度（“比值低但市场热”只出现过一次，2017—2018 年）。</p>
-      <h3 class="h3">综合之后 vs 只看区间（各档之后沪深300 120 日）</h3>
-      <p class="note" style="margin:0 0 4px">2013 年起</p>${cmp(t13)}
-      <p class="note" style="margin:10px 0 4px">2023 年起</p>${cmp(d.test["2023"])}
-      <p class="concl"><b>结论：</b>独立投票把档分得更开：“积极”之后半年 ${sg(b["积极"]["120"].avg)}（上涨 ${pc(b["积极"]["120"].up,0)}，只看区间是 ${sg(a["积极"]["120"].avg)}），“谨慎”之后 ${sg(b["谨慎"]["120"].avg)}（只看区间 ${sg(a["谨慎"]["120"].avg)}），从积极到谨慎一档比一档差。
-        <b>→ 用来判断“现在偏好还是偏坏”更清楚；但“积极”很少出现，按档定投的总收益和只看区间差不多（${sg(t13["独立投票"].dca)} 对 ${sg(t13["只看区间"].dca)}）。</b>2023 年起只有不到 4 年，再观察。</p>`;
-  }).catch(e=>{sec.innerHTML=`<h2>综合判断（实验）</h2><p class="note">${e.message}</p>`});
 }
 
 // ---------------- 国家队流向加速度 + 放量托底日 + 分指数（托底资金区块里）：只作提醒
@@ -1228,8 +1191,6 @@ function loadNtf(){
         <div><div class="label">近 5 日占沪深300 市值</div><div class="v">${L.rush&&L.rush.r5!=null?(L.rush.r5>0?"+":"")+(L.rush.r5*1000).toFixed(2)+"‰":"—"}</div><div class="s">≥1.5‰ 算急买（只提醒）</div></div>
         <div><div class="label">上一段集中大买</div><div class="v" style="font-size:17px">${L.episode?L.episode.date:"—"}</div><div class="s">${L.episode&&L.episode.fwd["60"]!=null?"之后 60 日 "+sg(L.episode.fwd["60"]):""}</div></div>
 </div>
-      ${L.pull?`<div style="margin:10px 0 0;padding:8px 10px;border:1px dashed var(--div);border-radius:8px"><span class="exptag">实验</span> <b>大买后回落：${L.pull.level}</b>（近 5 日 ${L.pull.d5>0?"+":""}${L.pull.d5.toLocaleString()} 亿，近 20 日 ${L.pull.d20>0?"+":""}${L.pull.d20.toLocaleString()} 亿）<br><small>${L.pull.note}。2023 年起：轻度回落之后 60 日 ${sg(L.pull.stats["轻度回落"]["60"].avg)}（${L.pull.stats["轻度回落"].n} 天），明显回落 ${sg(L.pull.stats["明显回落"]["60"].avg)}（${L.pull.stats["明显回落"].n} 天），任意一天 ${sg(L.pull.stats["任意一天"]["60"].avg)}。样本少，只作提醒。</small></div>`:""}
-      ${L.rush?(()=>{const r=L.rush,s=r.stats["急买第一天"];return `<div style="margin:10px 0 0;padding:8px 10px;border:1px dashed var(--div);border-radius:8px"><span class="exptag">实验</span> <b>国家队急买：${r.on?"急买中（"+r.since+" 起，已 "+r.days+" 天）":"没有"}</b>（近 5 日 ${r.d5>0?"+":""}${r.d5.toLocaleString()} 亿，占沪深300 市值 ${r.r5==null?"—":(r.r5*1000).toFixed(2)+"‰"}，≥${(r.th*1000).toFixed(1)}‰ 算急买）<br><small>几天内突然大买，比"加速度"反应快；用占沪深300 市值的比例（相对值，买卖同一把尺子），市场变大不用改门槛。${s&&s["60"]?`2023 年起 ${s.n} 段${r.last?"（最近一次 "+r.last.date+"）":""}，已满 60 天的 ${s["60"].n} 段之后 60 日沪深300 平均 ${sg(s["60"].avg)}（${(s["60"].up*100).toFixed(0)}% 上涨），任意一天 ${sg(r.stats["任意一天"]["60"].avg)}。`:""}样本少，只作提醒，不改倍数。</small></div>`})():""}
       <h3 style="font-size:14px;margin:16px 0 4px">国家队每天买了多少（一图看懂）</h3>
       <p class="note" style="margin:0 0 6px">从上到下：① 沪深300 走势；② 买得快不快（蓝线 = 加速度排名，只作参考；加仓规则看"近 20 日占市值 ≥2‰"）；③ 每天净买入多少亿（绿 = 买，红 = 卖，柱子上是金额）。点图看当天数字。</p>
       <div class="ranges" id="n3r" style="margin-bottom:4px"><button type="button" data-n="66" aria-pressed="true">近 3 个月</button><button type="button" data-n="130">近半年</button><button type="button" data-n="ytd">今年</button></div>
@@ -1239,7 +1200,11 @@ function loadNtf(){
       <h3 style="font-size:14px;margin:14px 0 4px">加速度分位与沪深300<button type="button" class="bigbtn" data-big="ntf_c1" data-title="流入加速度的近一年分位（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
       <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 分位（%，左轴；绿色 ≥90% 加速流入，红色 ≤10% 加速流出）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">加速流入第一天</span></p>
       <div class="chartwrap"><svg class="chart" id="ntf_c1" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div></details>
-      <p class="concl"><b>结论：</b>${a60&&b60?`加速流入出现后 60 个交易日，沪深300 平均 ${sg(a60.avg)}（上涨 ${pc(a60.up,0)}），平时是 ${sg(b60.avg)}。`:""}但出现后 20 天内多半还会再跌一点（国家队是在下跌里托底），<b>→ 出现时宽基额外买 4 周的量，分 2~4 周买完，拿着不用卖；同一段只加一次，市场偏热 / 顶部区不加。</b>加速流出之后只是略弱，不提醒。次数只有 ${d.episodes.length} 段，2023 年 7 月那次没托住（60 天后 −10%），所以加的量有上限。</p>
+      <p class="concl"><b>结论：</b>${a60&&b60?`集中大买出现后 60 个交易日，沪深300 平均 ${sg(a60.avg)}（上涨 ${pc(a60.up,0)}），平时是 ${sg(b60.avg)}。`:""}但出现后 20 天内常常还在跌（国家队是在下跌里托底），<b>→ 出现时宽基额外买 4 周的量，分 2~4 周买完，拿着不用卖；同一段只加一次，市场偏热 / 顶部区不加。</b>集中大卖只在高位时要警惕（见总览"组合信号"的高位撤离）。2023 年起只有 ${d.episodes.length} 段，所以加的量有上限。<span class="note">（2026-11-27 起：原来看"加速度排名"，买得越久越稳定反而显示不在加速，还会把"大卖后不卖了"误判成加速，改成直接看近 20 日净申购占市值。）</span></p>
+      <details class="sub"><summary>其他提醒（实验）：急买、大买后回落 ▾</summary>
+      ${L.pull?`<div style="margin:10px 0 0;padding:8px 10px;border:1px dashed var(--div);border-radius:8px"><span class="exptag">实验</span> <b>大买后回落：${L.pull.level}</b>（近 5 日 ${L.pull.d5>0?"+":""}${L.pull.d5.toLocaleString()} 亿，近 20 日 ${L.pull.d20>0?"+":""}${L.pull.d20.toLocaleString()} 亿）<br><small>${L.pull.note}。2023 年起：轻度回落之后 60 日 ${sg(L.pull.stats["轻度回落"]["60"].avg)}（${L.pull.stats["轻度回落"].n} 天），明显回落 ${sg(L.pull.stats["明显回落"]["60"].avg)}（${L.pull.stats["明显回落"].n} 天），任意一天 ${sg(L.pull.stats["任意一天"]["60"].avg)}。样本少，只作提醒。</small></div>`:""}
+      ${L.rush?(()=>{const r=L.rush,s=r.stats["急买第一天"];return `<div style="margin:10px 0 0;padding:8px 10px;border:1px dashed var(--div);border-radius:8px"><span class="exptag">实验</span> <b>国家队急买：${r.on?"急买中（"+r.since+" 起，已 "+r.days+" 天）":"没有"}</b>（近 5 日 ${r.d5>0?"+":""}${r.d5.toLocaleString()} 亿，占沪深300 市值 ${r.r5==null?"—":(r.r5*1000).toFixed(2)+"‰"}，≥${(r.th*1000).toFixed(1)}‰ 算急买）<br><small>几天内突然大买，比"加速度"反应快；用占沪深300 市值的比例（相对值，买卖同一把尺子），市场变大不用改门槛。${s&&s["60"]?`2023 年起 ${s.n} 段${r.last?"（最近一次 "+r.last.date+"）":""}，已满 60 天的 ${s["60"].n} 段之后 60 日沪深300 平均 ${sg(s["60"].avg)}（${(s["60"].up*100).toFixed(0)}% 上涨），任意一天 ${sg(r.stats["任意一天"]["60"].avg)}。`:""}样本少，只作提醒，不改倍数。</small></div>`})():""}
+      </details>
       <h3 style="font-size:14px;margin:14px 0 4px">国家队在买哪个指数（ETF 净申购，亿元）</h3>
       <div class="scroll"><table><thead><tr><th>指数</th><th class="r">近 5 日</th><th class="r">近 20 日</th><th class="r">今年</th></tr></thead><tbody>
         ${top.map(g=>`<tr><td>${g.name}</td><td class="r num">${yi(g.d5)}</td><td class="r num">${yi(g.d20)}</td><td class="r num">${yi(g.ytd)}</td></tr>`).join("")}
@@ -1247,10 +1212,10 @@ function loadNtf(){
       <p class="concl"><b>结论：</b>近 20 日买得最多的是 <b>${top[0].name}</b>（${yi(top[0].d20)} 亿）${top[1]?`，其次 ${top[1].name}（${yi(top[1].d20)} 亿）`:""}；今年合计 ${yi(tot.ytd)} 亿。份额里也有普通资金，大额变化才看得出国家队。</p>
       <details class="sub"><summary>看回测和历次信号 ▾</summary>
       <div class="scroll"><table><thead><tr><th>之后沪深300</th><th class="r">次/天</th><th class="r">20日后</th><th class="r">60日后</th><th class="r">120日后</th></tr></thead><tbody>
-        ${row("集中大买第一天","集中大买第一天")}${row("集中大买（每天）","集中大买的每天")}${row("集中大卖（每天）","集中大卖的每天")}${row("放量托底日","放量托底日（测过不用）")}${row("全部交易日","对照：任意一天")}</tbody></table></div>
+        ${row("集中大买第一天","集中大买第一天")}${row("集中大买（每天）","集中大买的每天")}${row("集中大卖（每天）","集中大卖的每天")}${row("全部交易日","对照：任意一天")}</tbody></table></div>
       <div class="scroll" style="margin-top:8px"><table><thead><tr><th>日期</th><th>信号</th><th class="r">20 日后</th><th class="r">60 日后</th><th class="r">120 日后</th></tr></thead><tbody>
-        ${[...d.episodes.map(e=>({...e,k:"加速流入"})),...d.vols.map(e=>({...e,k:`放量 ${e.x} 倍`}))].sort((a,b)=>a.date<b.date?1:-1).map(e=>`<tr><td class="num">${e.date}</td><td>${e.k}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td><td class="r num">${fr(e.fwd["120"])}</td></tr>`).join("")}</tbody></table></div>
-      <p class="note">放量托底日之后 60 天没有优势、半年结果不稳定，暂不使用。2023 年起。净申购 = 份额变化 × 单位净值；加速度只看 4 只沪深300 ETF（换成 20 只宽基 ETF 回测更差）；放量 = 3 只上交所沪深300 ETF 成交额 ≥ 前 20 日均值 ${d.rule.vol} 倍且当天下跌。</p></details>`;
+        ${[...d.episodes.map(e=>({...e,k:"集中大买"}))].sort((a,b)=>a.date<b.date?1:-1).map(e=>`<tr><td class="num">${e.date}</td><td>${e.k}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td><td class="r num">${fr(e.fwd["120"])}</td></tr>`).join("")}</tbody></table></div>
+      <p class="note">2023 年起。净申购 = 份额变化 × 单位净值；加速度只看 4 只沪深300 ETF（换成 20 只宽基 ETF 回测更差）；放量 = 3 只上交所沪深300 ETF 成交额 ≥ 前 20 日均值 ${d.rule.vol} 倍且当天下跌。</p></details>`;
     ntf3(S);
     const dates=S.map(r=>r[0]),marks=d.episodes.map(e=>({d:e.date,c:"var(--grow)",t:""}));
     DualChart($("ntf_c1"),{W:720,H:220,dates,leftRange:[0,100],leftTicks:[0,10,50,90,100],leftFmt:v=>v,
@@ -1452,7 +1417,7 @@ function renderDiv(d){
 
   // 金额表
   const rows=[["≥ 18",5,"极便宜，全力加码",18,99],["16 ~ 18",4,"很便宜",16,18],["14 ~ 16",3,"便宜",14,16],["12 ~ 14",2,"偏便宜 + 买回",12,14],
-    ["10 ~ 12",1,"正常定投",10,12],["8 ~ 10",.5,"偏贵，少买",8,10],["< 8",0,"暂停定投，钱进现金池",6.0001,8],["≤ 6 / 4 / 2",0,"减仓 25% / 33% / 50%",-1,6.0001]];
+    ["10 ~ 12",1,"正常定投",10,12],["8 ~ 10",.5,"偏贵，少买",8,10],["6 ~ 8",0,"空仓，不攒新钱",6.0001,8],["≤ 6 / 4 / 2",0,"减仓 25% / 33% / 50%",-1,6.0001]];
   $("tierTbl").tBodies[0].innerHTML=rows.map(([lab,m,txt,lo,hi])=>{const cur=L.score>=lo&&L.score<hi;
     return `<tr class="${cur?"cur":""}"><td class="num">${lab}</td><td class="r num">${m?m+" 倍":"—"}</td><td class="r num">${m?P.base*m+" 元":(lo<0?"卖出":"0 元")}</td><td>${txt}${cur?" ← 现在":""}</td></tr>`}).join("");
 

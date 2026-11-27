@@ -140,6 +140,13 @@ def ntf_rush(d):
     return state, now, act, "temp"
 
 
+def verdict(d):
+    """组合信号（实验）：几个指标同时出现的组合。只在 跟进买入 / 见底加码 / 高位撤离 / 高位护盘 亮起时发提醒"""
+    L = d["latest"]
+    facts = "；".join(f"{x['name']} {x['text']}" for x in L.get("facts", []))
+    return L["title"], facts, L["act"] + "【实验，只作提醒，不改倍数】", "overview"
+
+
 def ntf_pull(d):
     """国家队大买后回落（实验）：连续 2 天以上才提醒；只作参考，不改倍数"""
     p = d["latest"].get("pull") or {}
@@ -210,10 +217,8 @@ def collect(prev):
              ("黄金", "gold.json", gold),
              ("债基", "bond.json", bond),
              ("海外小仓位", "overseas.json", overseas),
-             ("托底资金（国家队）", "etf300.json", etf300),
              ("国家队流向", "ntf.json", ntf),
-             ("国家队回落（实验）", "ntf.json", ntf_pull),
-             ("国家队急买（实验）", "ntf.json", ntf_rush),
+             ("组合信号（实验）", "verdict.json", verdict),
              ("见顶信号灯", "topsig.json", topsig)]
     for name, f, fn in pairs:
         d = load(f)
@@ -423,11 +428,9 @@ def headline():
         out.append(f"- **市场温度**：{t['latest']['verdict']}")
     if g:
         out.append(f"- **黄金**：{g['latest']['verdict']}")
-    cb = load("combo.json")
-    if cb and cb["latest"]["level"] in ("积极", "谨慎"):
-        lv = cb["latest"]["level"]
-        out.append(f"- **综合判断：{lv}**（好几个指标同时{'看好' if lv == '积极' else '看坏'}）→ "
-                   + ("按规则该加的放心加" if lv == "积极" else "别额外加钱，止盈可以果断"))
+    vd = load("verdict.json")
+    if vd and vd.get("latest"):
+        out.insert(0, f"- **组合信号：{vd['latest']['title']}** → {vd['latest']['act']}（实验，只提醒）")
     if mf:
         c = mf["count"]
         add = [short(f["name"]) for f in mf["funds"] if f["tag"] == "add"]
@@ -458,7 +461,7 @@ def main():
     if not report:   # 平时只为"要做的事"发邮件：红利只在下单 / 减仓时；急买只在开始时（结束、攒着↔暂停这种不发）
         changes = [(n, a, b) for n, a, b in changes
                    if not (n == "红利打分" and not b.startswith(("下单", "减仓")))
-                   and not (n == "国家队急买（实验）" and b == "无")]
+                   and not (n == "组合信号（实验）" and b not in ("跟进买入", "见底加码", "高位撤离", "高位护盘"))]
     G = change_lines(changes, cur, prev, report) if changes else {}
     chg = "\n\n".join(f"**{k}**\n\n" + "\n".join(v) for k, v in G.items() if v)
     dues = "\n\n".join(f"### {r['title']}\n\n{r['body']}" for r in due)

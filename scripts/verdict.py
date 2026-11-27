@@ -46,7 +46,13 @@ def run():
     T = _load("temp.json")["series"]          # [日期, 区间 0~4, 沪深300, 见底灯, 见顶灯, 各灯, 方向]
     names = _load("temp.json").get("bot_names") or []
     E = {x[0]: x[3] for x in _load("etf300.json")["series"]}
-    NT = {x[0]: (x[5], x[6]) for x in _load("ntf.json")["series"] if len(x) > 6 and x[6]}
+    NS = _load("ntf.json")["series"]
+    E3 = _load("etf300.json").get("latest") or {}
+    cap0 = E3["size"] / (E3["ratio"] / 100) if E3.get("size") and E3.get("ratio") else None
+    # 每天的沪深300 流通市值：ntf.json 第 7 列；旧数据没有时按沪深300 点位从最新一次推算
+    NT = {x[0]: (x[5], x[6] if len(x) > 6 and x[6] else (cap0 * x[4] / NS[-1][4] if cap0 else None))
+          for x in NS if len(x) > 5 and x[5] is not None}
+    NT = {k: v for k, v in NT.items() if v[1]}
     D, P = [x[0] for x in T], [x[2] for x in T]
     n = len(D)
     ek = sorted(E)

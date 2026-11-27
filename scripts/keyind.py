@@ -41,7 +41,9 @@ def plain(r):
     if n.startswith("A500"):
         return f"宽基{s.replace(' · ', '，每周买 ')}" if "倍" in s else f"宽基{s}"
     if n.startswith("黄金"):
-        return "黄金暂不给建议，只看位置"
+        v = r["value"]
+        return (f"黄金{'低于' if v.startswith('-') else '高于'}年线 {v.lstrip('+-')}" + ("，但波动太大，先少买" if "等" in s else "")
+                + "（暂不给建议，只看位置）")
     if n.startswith("纳指"):
         return f"场内纳指 ETF 比实际值贵 {r['value']}，改买场外联接基金" if has("场外") else "场内价格正常，照常买"
     if n == "国家队集中大买":
@@ -99,7 +101,7 @@ def run():
     if G:
         L = G["latest"]
         rule.append(row("黄金离年线", f"{L['dev'] * 100:+.0f}%", L["zone"], L.get("cls", "c0"),
-                        "比年线高 25% 暂停、30% 卖 1/3；低 5% 以上 1.5 倍", "gold", L["date"]))
+                        "六档：比年线高 25% 暂停、30% 卖 1/3；低 5% 以上 1.5 倍；但波动太大（近一年最高的约 10%）时先少买 0.5 倍，这条优先", "gold", L["date"]))
     if N:
         pr = (N.get("premium") or {}).get("value")
         if pr is not None:
@@ -126,10 +128,6 @@ def run():
         L = E["latest"]
         warn.append(row("托底资金", f"20 日 {L['chg20'] * 100:+.0f}%", L["zone"].split("·")[0], L["cls"],
                         "份额 20 日减少 ≥15% = 撤出，之后 60 日平均 −4%", "temp", L["date"]))
-    if C:
-        L = C["latest"]
-        exp.append(row("综合判断", f"多 {L['bull']} · 空 {L['bear']}", L["level"], L["cls"],
-                       "只看两头：积极之后半年历史上全部上涨，谨慎之后平均 −13%", "temp", L["date"]))
     if D and D["latest"].get("pos"):
         P_ = D["latest"]["pos"]
         st_ = {x["zone"]: x for x in D.get("pos_stats", [])}.get(P_["zone"], {})
