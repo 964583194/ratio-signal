@@ -318,6 +318,20 @@ def ak_buffett(since):
     return out
 
 
+def ak_mktcap(since):
+    """A 股总市值（亿元，乐咕乐股，经 AKShare）：和巴菲特指标同一个接口，存下来算换手率（成交额 ÷ 总市值）"""
+    import akshare as ak  # noqa: PLC0415
+    df = ak.stock_buffett_index_lg()
+    out = {}
+    for _, r in df.iterrows():
+        v = float(r["总市值"] or 0)
+        if v > 0:
+            out[str(r["日期"])[:10]] = v / 1e8 if v > 1e10 else v     # 元 → 亿元（接口单位不确定时按大小判断）
+    if not out:
+        raise RuntimeError("没有取到")
+    return out
+
+
 def _month(s):
     """'2026年09月份' / '2026.9' / '202609' → '2026-09-01'（月度数据用当月 1 号表示）"""
     import re  # noqa: PLC0415
@@ -700,6 +714,7 @@ CATALOG = {
     "unav159919": ("159919 单位净值", 200, [("天天基金", lambda s: em_pzd("159919")), ("东方财富", lambda s: em_lsjz("159919", 3 if s else 60)), ("新浪", lambda s: sina_nav("159919", 60 if s else 1000))]),
     "cap300": ("沪深300 流通市值", 1, [("东方财富", em_cap300)]),
     "buffett": ("巴菲特指标（总市值÷GDP）", 200, [("乐咕乐股", ak_buffett)]),
+    "mkt_cap": ("A 股总市值", 200, [("乐咕乐股", ak_mktcap)]),
     # ---- 宏观（月度，市场温度的“方向”用；每月中旬公布上个月）
     "m1": ("M1 同比", 100, [("东方财富", ak_money("货币(M1)-同比增长")), ("AKShare 货币供应", ak_m1_b)]),
     "loan": ("新增人民币贷款", 100, [("东方财富", ak_loan)]),     # 另一个接口（金十）口径不同，对不上，不用

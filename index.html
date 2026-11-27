@@ -1141,7 +1141,7 @@ function renderBot(T,m){
   const L=T.latest,B=L.bottom,N=T.bot_names,lit=new Set(B.lit),V=B.values,S=T.series,c=B.count,Z=T.zone_stats;
   const pv=v=>v==null?"—":pc(v,0);
   const val={"破净率":`现在 ${pv(V["破净率"])} 分位`+(m&&m.extra&&m.extra.pb_val!=null?`（破净率 ${(m.extra.pb_val*100).toFixed(1)}%）`:""),"股债利差":`现在 ${pv(V["股债利差"])} 分位`,
-    "地量":`成交额在近 3 年 ${pv(V["地量"])} 分位`,"创业板便宜":`市盈率在近 10 年 ${pv(V["创业板便宜"])} 分位`,"宽度低":`站上年线 ${pv(V["宽度低"])}`,"总市值低":`现在 ${pv(V["总市值低"])} 分位`};
+    "地量":`成交额在近 3 年 ${pv(V["地量"])} 分位`+(B.turnover?`<br>换手率 ${(B.turnover.value*100).toFixed(2)}%（成交额 ÷ 总市值，近 3 年 ${pv(B.turnover.pct)} 分位，只作参考）`:""),"创业板便宜":`市盈率在近 10 年 ${pv(V["创业板便宜"])} 分位`,"宽度低":`站上年线 ${pv(V["宽度低"])}`,"总市值低":`现在 ${pv(V["总市值低"])} 分位`};
   const dates=S.map(r=>r[0]),cnt=S.map(r=>r[3]),cl=S.map(r=>r[2]),z0=Z["底部"]||{},z1=Z["偏冷"]||{};
   $("t_bot").innerHTML=`<p class="note" style="margin:-6px 0 10px">6 个信号各自独立亮灯，和见顶信号灯同一个思路：<b>亮 2~3 个算偏冷，4 个以上算底部区</b>（按近 20 个交易日最多亮几个）。原来的“见底评分”是 5 项取平均，好指标会被差指标冲淡，已经换成这个。轮动“见底才加码”仍然只看破净率，规则不变。</p>
     <div style="display:flex;gap:14px;align-items:center"><div class="big num">${c}<small style="font-size:20px"> / 6</small></div><div><span class="lv ${c>=2?"g1":"c0"}">${c>=4?"底部":c>=2?"偏冷":"未到"}</span><div class="note" style="margin:4px 0 0">${L.date}</div></div></div>

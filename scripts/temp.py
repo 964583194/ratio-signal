@@ -204,10 +204,29 @@ def run():
     verdict = f"{zn}区" + (f"，方向{dlab}（{dtext}）" if z <= 1 else "") + f" → {act}"
     cls = "g1" if z <= 1 else "c0" if z == 2 else "h1" if z == 3 else "r1"
     pv = L["v"]
+    # 换手率（只显示，不进见底灯）：两市成交额 20 日均值 ÷ A 股总市值，近 3 年分位。市值变大变小不影响，2027-05 复盘再看要不要替换"地量"
+    turnover = None
+    try:
+        cap, _ = S.get_series("mkt_cap")
+        ck, ak_ = sorted(cap), sorted(am)
+        tv = {}
+        for j in range(19, len(ak_)):
+            d = ak_[j]
+            i = bisect.bisect_right(ck, d) - 1
+            if i >= 0 and cap[ck[i]] > 0:
+                tv[d] = sum(am[ak_[x]] for x in range(j - 19, j + 1)) / 20 / cap[ck[i]]
+        tk = sorted(tv)
+        if tk:
+            last = tk[-1]
+            hist = [tv[x] for x in tk if x > (dt.date.fromisoformat(last) - dt.timedelta(days=1095)).isoformat()]
+            turnover = {"date": last, "value": round(tv[last], 5), "pct": round(sum(x <= tv[last] for x in hist) / len(hist), 3),
+                        "lo15": round(sorted(hist)[int(len(hist) * 0.15)], 5)}
+    except Exception as e:  # noqa: BLE001
+        print(f"换手率算不出来（还没有总市值数据）：{e}")
     data = {
         "updated": dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M"),
         "latest": {"date": L["d"], "zone": zn, "z": z, "cls": cls, "action": act, "verdict": verdict,
-                   "bottom": {"count": sum(L["lit"]), "lit": bl, "values": {BOT[k]: (None if pv[k] is None else round(pv[k], 4)) for k in range(6)}},
+                   "bottom": {"count": sum(L["lit"]), "lit": bl, "values": {BOT[k]: (None if pv[k] is None else round(pv[k], 4)) for k in range(6)}, "turnover": turnover},
                    "top": {"count": L["top"], "lit": (T.get("latest") or {}).get("lit", [])},
                    "dir": {"label": dlab, "n_up": nup, "n": len(known), "items": dnow, "text": dtext},
                    "month_partial": bool((B.get(mo_now) or {}).get("partial"))},
