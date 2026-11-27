@@ -46,6 +46,7 @@
 <section class="panel topcard" id="topCard" hidden></section>
 
 <div id="viewO">
+<section class="panel topcard" id="todayCard"><div class="note">加载中</div></section>
 <section class="panel" id="vdSec" hidden><h2>组合信号 <span class="exptag">实验</span></h2>
   <div id="vdBody"><div class="note">加载中</div></div>
 </section>
@@ -865,6 +866,23 @@ function nextUpdate(){
 // 统一配色：绿=可以买 / 多买，灰=照常或暂停等待，橙=过热或偏贵（不加钱），红=卖出 / 减仓 / 异常
 const OCLS=s=>/卖出预警|过热|偏贵|利率偏低|先等等|^不动/.test(s)?"h1":/卖出|很贵|减仓|异常|卖一部分/.test(s)?"r1":/买入区|低区|便宜|加码|多买|深度|大幅|回撤 ≥/.test(s)?"g1":"c0";
 // 本周下单清单：data/plan.json 是每 1000 元的清单（notify.py 生成，和周报同一套），按自己的预算等比例换算
+// 总览最上面：一眼看懂这周要做什么（买什么、多少钱、要不要卖），按自己填的预算换算
+function todayCard(P,k,tot,b){
+  const box=$("todayCard");if(!box)return;
+  const buy={};P.rows.forEach(r=>{const a=Math.round(r.amt*k);if(a>0)buy[r.what]=(buy[r.what]||0)+a});
+  const items=Object.entries(buy).map(([w,a])=>`<span style="white-space:nowrap"><b>${w.replace("（或沪深300）","")}</b> ${a.toLocaleString()} 元</span>`).join("　");
+  const n=new Date(Date.now()+8*3600e3),wd=n.getUTCDay(),late=wd===5&&n.getUTCHours()>=15||wd===6||wd===0;
+  Promise.all([getJ("state.json"),getJ("verdict.json")]).then(([st,vd])=>{
+    const sell=st?Object.entries(st).filter(([nm,v])=>/卖出|减仓|卖一部分|止盈：卖/.test((v.act||"").split("；")[0])&&!/不卖|没有/.test(v.act)).map(([nm])=>nm):[];
+    const dv=st&&st["红利打分"],dvTxt=dv?(dv.state==="下单"?dv.act:dv.state==="暂停"?"红利评分空仓，暂不攒新钱":"红利评分 "+dv.act.split("（")[0]):"";
+    const C={g2:"var(--grow)",g1:"var(--grow)",c0:"var(--ink)",h1:"var(--div)",r1:"var(--mark)"},L=vd&&vd.latest;
+    box.innerHTML=`<div class="label">这周怎么做 · ${late?"已过周五 15:00，下周一 15:00 前补买":"周五 15:00 前下单"} · 每周 ${b.toLocaleString()} 元</div>
+      <div class="tc-main">买 ${tot.toLocaleString()} 元</div>
+      <div style="line-height:1.9;font-size:15px">${items||"本周不用买"}</div>
+      <div class="note" style="margin:6px 0 0">${sell.length?`<b style="color:var(--mark)">要卖：${sell.join("、")}（看下面那一行）</b>`:"不用卖"}${dvTxt?" · "+dvTxt:""}${(P.side||[]).length?" · 纳指另外小额定投":""}</div>
+      ${L?`<div class="note" style="margin:6px 0 0">组合信号：<b style="color:${C[L.cls]}">${L.title}</b> · ${L.act}</div>`:""}`;
+  });
+}
 function loadPlan(){
   let B=1000;try{const v=+localStorage.getItem("weeklyBudget");if(v>0)B=v}catch(e){}
   const inp=$("budget");inp.value=B;
@@ -875,6 +893,7 @@ function loadPlan(){
         return `<div class="prow"><div class="n">${r.name}<small>${r.what}</small></div><div class="a">${r.note}</div><div class="amt num">${a.toLocaleString()} 元${r.daily?`<small>攒着，连跌 2 天一起买</small>`:""}${r.fixed?`<small>另加 ${r.fixed} 元</small>`:""}</div></div>`}).join("")
         +(P.side||[]).map(r=>`<div class="prow"><div class="n">${r.name}<small>${r.what}</small></div><div class="a">${r.note}</div><div class="amt num"><small>单独</small></div></div>`).join("");
       const over=tot-b;
+      todayCard(P,k,tot,b);
       $("planSum").textContent=`每周 ${b.toLocaleString()} 元：合计 ${tot.toLocaleString()} 元${over>0?`，多 ${over.toLocaleString()} 元从备用金出`:""}`;
       $("planNote").innerHTML=`合计 <b class="num">${tot.toLocaleString()} 元</b>${over>0?`，比预算多 ${over.toLocaleString()} 元，从备用金出`:over<0?`，预算里 ${(-over).toLocaleString()} 元没花，存着`:""}${fx?`；另外加码 ${fx} 元（固定金额，破净率见底时）`:""}。按交易系统的比例和本周信号算，${P.date} 更新，和周报一致。`};
     draw();inp.addEventListener("input",()=>{try{localStorage.setItem("weeklyBudget",inp.value)}catch(e){}draw()});
