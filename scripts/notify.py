@@ -147,6 +147,24 @@ def verdict(d):
     return L["title"], facts, L["act"] + "【实验，只作提醒，不改倍数】", "overview"
 
 
+def ntfscene(d):
+    """国家队场景（实验）：大额买卖一小波一小波地看，场景换了发提醒（"不发"的场景只在网页显示）"""
+    L, st = d["latest"], d["latest"].get("stage")
+    now = f"{L['loc']}；" + (f"{st['from']} 起{st['dir']}第 {st['days']} 天，累计 {st['sum_yi']:+,} 亿（市值 {abs(st['sum_pm']):.1f}‰，2023 年以来第 {st['rank']} 大），"
+                            f"大额 {st['big_days']} 天，近 5 天日均 {st['l5_yi']:+,} 亿（{st['pace']}）；沪深300 {st['hs_from']} → {st['hs_to']}（{st['hs_chg']:+.1f}%）"
+                            if st else "没有集中买卖")
+    s = (d.get("stats") or {}).get(L["key"]) or {}
+    bt = f"；同类节点之后 60 天平均 {s['f60']['avg']:+.1f}%，{s['f60']['n']} 次里涨 {s['f60']['up']} 次" if s.get("f60") else ""
+    return L["name"], now + bt, f"{L['act']}【实验，只作参考，不改倍数】", "temp"
+
+
+def ntfshort(d):
+    """短线（实验）：用手里的仓位做 T。只在"加仓"和"卖回"那天发提醒"""
+    s, ss = d["latest"]["short"], d["short"]["stats"]
+    now = f"条件：5 天跌 ≥2.5% + 国家队当天买 ≥ 市值 0.1‰ + 成交不缩量 + 不在高位；2023 年起 {ss['n']} 次，赚 {ss['win']} 次，平均每次 {ss['avg']:+.2f}%"
+    return s["state"], now, s["act"] + "【实验，小钱试】", "temp"
+
+
 def ntf_pull(d):
     """国家队大买后回落（实验）：连续 2 天以上才提醒；只作参考，不改倍数"""
     p = d["latest"].get("pull") or {}
@@ -219,6 +237,8 @@ def collect(prev):
              ("海外小仓位", "overseas.json", overseas),
              ("国家队流向", "ntf.json", ntf),
              ("组合信号（实验）", "verdict.json", verdict),
+             ("国家队场景（实验）", "ntfstage.json", ntfscene),
+             ("短线（实验）", "ntfstage.json", ntfshort),
              ("见顶信号灯", "topsig.json", topsig)]
     for name, f, fn in pairs:
         d = load(f)
@@ -267,6 +287,9 @@ def collect(prev):
 
 
 # ---------------------------------------------------------------- 发 Issue
+SCN_LV = {}
+
+
 def gh(method, path, body=None):
     req = urllib.request.Request(f"https://api.github.com/repos/{REPO}{path}", method=method,
                                  data=json.dumps(body).encode() if body is not None else None,
@@ -388,6 +411,8 @@ def group_of(n, b, cur, report):
     """今天就做：卖出类、红利打分（按日买）；周五再定：其他定投板块（周五按周四收盘下单）"""
     if n == "数据源":
         return "数据源"
+    if n == "短线（实验）" and b.startswith(("加仓", "卖回")):
+        return "今天就做"
     if n == "红利打分" and not b.startswith(("下单", "减仓")):
         return "提醒"
     if n in OPS or (n == "国家队流向" and b.startswith("加仓")):
@@ -470,6 +495,8 @@ def headline():
 
 
 def main():
+    global SCN_LV
+    SCN_LV = {v["name"]: v["level"] for v in ((load("ntfstage.json") or {}).get("scen") or {}).values()}
     prev = load("state.json")
     first = prev is None
     prev = prev or {}
@@ -492,7 +519,9 @@ def main():
     if not report:   # 平时只为"要做的事"发邮件：红利只在下单 / 减仓时；急买只在开始时（结束、攒着↔暂停这种不发）
         changes = [(n, a, b) for n, a, b in changes
                    if not (n == "红利打分" and not b.startswith(("下单", "减仓")))
-                   and not (n == "组合信号（实验）" and b not in ("跟进买入", "见底加码", "高位撤离", "高位护盘"))]
+                   and not (n == "组合信号（实验）" and b not in ("跟进买入", "见底加码", "高位撤离", "高位护盘"))
+                   and not (n == "国家队场景（实验）" and not SCN_LV.get(b))
+                   and not (n == "短线（实验）" and not b.startswith(("加仓", "卖回")))]
     G = change_lines(changes, cur, prev, report) if changes else {}
     chg = "\n\n".join(f"**{k}**\n\n" + "\n".join(v) for k, v in G.items() if v)
     dues = "\n\n".join(f"### {r['title']}\n\n{r['body']}" for r in due)
@@ -521,7 +550,8 @@ def main():
             tt.append("到期复盘")
         body = (chg + (f"\n\n## 到期复盘\n\n{dues}" if dues else "")
                 + ("" if G.get("今天就做") else "\n\n今天没有要马上做的事，定投照常等下一封周报（周四收盘后发）。")).lstrip()
-        post(f"【{'要操作' if G.get('今天就做') else '提醒'}】{TODAY} " + "；".join(tt), body, ("【提醒】", "【要操作】", "【信号提醒】"))
+        warn = "⚠ " if any(n == "国家队场景（实验）" and SCN_LV.get(b) == "重点" for n, _, b in changes) else ""
+        post(f"【{'要操作' if G.get('今天就做') else '提醒'}】{TODAY} {warn}" + "；".join(tt), body, ("【提醒】", "【要操作】", "【信号提醒】"))
     else:
         print("信号没有变化，不发提醒")
 

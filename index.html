@@ -916,23 +916,34 @@ function ntfJudgeCalc(S,E,TT){
     act==="加"?["国家队在集中加仓，但市场不在低位","c0","样本少，按规则走"]:["国家队没有明显动作","c0","按规则走"];
   return {J,m,rk,act,pos,loc,date:r[0]};
 }
-// 这一段进行到哪了（只作参考，不进规则）：国家队买卖都是一两个月里一波一波做的。
-// 回测 2023 起：买的时候指数常还在跌、买到后半段或停手后才涨；卖的时候指数常还在涨、卖得差不多后才跌
-function ntfStage(S,G){
-  if(!G)return "";const L=G.v[G.names[0]].length,F=[...Array(L)].map((_,k)=>G.names.reduce((p,g)=>p+(G.v[g][k]||0),0)),SS=S.slice(-L);
-  const cap=SS.map(r=>r[6]),r20=F.map((_,k)=>cap[k]?F.slice(Math.max(0,k-19),k+1).reduce((p,q)=>p+q,0)/cap[k]*1000:0);
-  const sgn=r20[L-1]>=2?1:r20[L-1]<=-2?-1:0;if(!sgn)return "";
-  let a=L-1;while(a>0&&(r20[a-1]*sgn>=2||[...Array(10)].some((_,j)=>a-1-j>=0&&r20[a-1-j]*sgn>=2)))a--;   // 往前找这一段的开头（中间断开不到 10 天也算同一段）
-  while(a<L-1&&r20[a]*sgn<2)a++;
-  const s0=Math.max(0,a-19),seg=F.slice(s0),tot=seg.reduce((p,q)=>p+q,0),avg=tot/seg.length,l5=F.slice(-5).reduce((p,q)=>p+q,0)/5;
-  const big=seg.filter((x,j)=>cap[s0+j]&&x*sgn/cap[s0+j]*1000>=0.3).length,days=L-s0,word=sgn>0?"买":"卖";
-  const pace=l5*sgn>=avg*sgn*1.2?`还在加码（近 5 天日均 ${Math.round(Math.abs(l5))} 亿，比这一段平均多）`:l5*sgn>=avg*sgn*0.5?`节奏差不多（近 5 天日均 ${Math.round(Math.abs(l5))} 亿）`:l5*sgn>0?`在放缓（近 5 天日均只有 ${Math.round(Math.abs(l5))} 亿）`:`近 5 天基本停手`;
-  const p0=SS[s0][4],p1=SS[L-1][4];
-  return `<br><b>这一段进行到哪了：</b>${SS[s0][0]} 开始${word}，已 ${days} 个交易日，7 个指数累计 ${tot>0?"+":""}${Math.round(tot).toLocaleString()} 亿，大额（单日 ≥ 沪深300 市值 0.3‰，现在约 ${Math.round(cap[L-1]*0.0003)} 亿）${big} 天；${pace}。这段时间沪深300 ${p0.toFixed(0)} → ${p1.toFixed(0)}（${(p1/p0-1)*100>0?"+":""}${((p1/p0-1)*100).toFixed(1)}%）。<span class="note" style="margin:0">${sgn>0?"历史上常常一边买一边跌，买到后半段或停手后才涨":"历史上常常一边卖一边涨，卖得差不多后才跌"}；只作参考。</span>`;
+// 国家队场景 + 短线（实验，data/ntfstage.json）：大额买卖按"一小波一小波"看，不同场景不同做法；只作提醒，不改倍数
+const SCN_CLS={sell_up:"r2",hi_buy:"r2",buy_up:"g2",buy_slow:"g1",buy_first:"g1",buy_small:"c0",sell_first:"r1",sell_slow:"r1",none:"c0"};
+function ntfScene(Z,box){
+  if(!Z||!box)return;const L=Z.latest,st=L.stage,y=v=>`${v>0?"+":""}${Math.round(v).toLocaleString()} 亿`,pc=v=>v==null?"—":`${v>0?"+":""}${v.toFixed(1)}%`;
+  const S1=k=>{const s=Z.stats[k];return s&&s.f60?`之后 60 天平均 ${pc(s.f60.avg)}，${s.f60.n} 次里涨 ${s.f60.up} 次`:"历史上还没出现过"};
+  let h=`<b>国家队场景（实验）：</b><span class="lv ${SCN_CLS[L.key]||"c0"}">${L.loc} · ${L.name}</span> → <b>${L.act}</b>`;
+  if(st){h+=`<br>这一段：${st.from} 起${st.dir}，第 ${st.days} 个交易日，累计 ${y(st.sum_yi)}（市值的 ${Math.abs(st.sum_pm).toFixed(1)}‰${st.rank?`，2023 年以来 ${st.n_seg} 段里第 ${st.rank} 大`:""}）；大额（单日 ≥ 市值 0.3‰，现在约 ${st.big_yi} 亿）${st.big_days} 天；近 5 天日均 ${y(st.l5_yi)}（${st.pace}）。沪深300 ${st.hs_from} → ${st.hs_to}（${pc(st.hs_chg)}）。`;
+    if(st.waves.length){h+=`<br>一小波一小波：${st.waves.map(w=>`<b>${w.tag}</b> ${w.from.slice(5)}~${w.to.slice(5)} ${w.sum.toFixed(1)}‰`).join(" → ")}`;
+      const lw=st.waves[st.waves.length-1],mx=Math.max(...st.waves.slice(0,-1).map(w=>w.sum),0),gap=(new Date(L.date)-new Date(lw.to))/864e5;
+      if(st.waves.length>1&&lw.tag!=="加码"&&gap<=7)h+=`。<b>这一小波还在进行，累计超过 ${mx.toFixed(1)}‰（还差 ${(mx-lw.sum).toFixed(1)}‰）就变成 ⚠ 加码</b>`;}}
+  h+=`<br><span class="note" style="margin:0">同类节点${S1(L.key)}。样本少，只作参考。</span>`;
+  const sh=L.short,ss=Z.short.stats;
+  h+=`<br><b>短线（实验，用手里仓位做 T）：</b><span class="lv ${/^加仓|^卖回/.test(sh.state)?"d2":"c0"}">${sh.state.split("|")[0]}</span> ${sh.act}。<span class="note" style="margin:0">条件：5 天跌 ≥2.5% + 国家队当天买 ≥ 市值 0.1‰ + 成交不缩量（今天成交额是前 20 天平均的 ${L.vr.toFixed(2)} 倍）+ 不在高位。2023 年起 ${ss.n} 次，赚 ${ss.win} 次，平均每次 ${pc(ss.avg)}。</span>`;
+  const tb=Object.entries(Z.scen).filter(([k])=>k!=="none").map(([k,v])=>`<tr><td><span class="lv ${SCN_CLS[k]}">${v.name}</span></td><td>${v.act}</td><td>${S1(k)}</td><td>${v.level==="重点"?"⚠ 重点":v.level||"不发"}</td></tr>`).join("");
+  const ev=Z.events.slice().reverse().map(e=>`<tr><td>${e.date}</td><td>${e.loc} · ${e.name}</td><td>${e.hs300}</td><td>${pc(e.f20)}</td><td>${pc(e.f60)}</td></tr>`).join("");
+  const tr=Z.short.trades.slice().reverse().map(x=>`<tr><td>${x.buy}</td><td>${x.sell}</td><td>${pc(x.ret)}</td></tr>`).join("");
+  h+=`<details style="margin-top:6px"><summary>各场景怎么做 · 历史节点 · 短线记录</summary>
+  <div class="tblwrap"><table class="tbl"><tr><th>场景</th><th>怎么做</th><th>回测（2023 起）</th><th>邮件</th></tr>${tb}</table></div>
+  <p class="note">场景换了的那天发邮件（⚠ 重点 / 普通；"不发"的只在这里显示）。大额 = 单日 ≥ 沪深300 市值 0.3‰；相隔 5 天以内算同一小波；"加码" = 这一小波累计超过前面任何一小波；卖出加码不分位置。</p>
+  <div class="tblwrap"><table class="tbl"><tr><th>日期</th><th>场景</th><th>沪深300</th><th>20 天后</th><th>60 天后</th></tr>${ev}</table></div>
+  <div class="tblwrap"><table class="tbl"><tr><th>短线加</th><th>卖回</th><th>沪深300</th></tr>${tr}</table></div>
+  <p class="note">短线：第二天 15:00 前加（≤ 仓位 5%），加完第 5 个交易日卖回同样多，中途收盘涨 ≥3% 就第二天卖回。场外基金赎回先卖老份额，持有久的一般不收赎回费；C 类没有申购费最合适。</p></details>`;
+  box.innerHTML=h;box.hidden=false;
 }
 function ntfJudge(S,E,TT,G){
   const box=$("ntfJ"),R=ntfJudgeCalc(S,E,TT);if(!box||!R)return;const {J,m,rk,act,pos,loc}=R;
-  box.innerHTML=`<b>国家队综合判断：</b><span class="lv ${J[1]}">${J[0]}</span><br>近 20 天买卖 ${m>0?"+":""}${m.toFixed(1)}‰（${act==="加"?"集中大买":act==="减"?"集中大卖":"不多"}）· 手里的量在近一年排 ${rk==null?"—":Math.round(rk)}（${pos==="重"?"重仓":pos==="轻"?"轻仓":"中等"}）· 市场${loc==="低"?"在低位":loc==="高"?"在高位":"在中间"}。<br><span class="note" style="margin:0">${J[2]}。只作提醒，不改倍数；加仓规则只看"集中大买"。</span>${ntfStage(S,G)}`;
+  box.innerHTML=`<b>国家队综合判断：</b><span class="lv ${J[1]}">${J[0]}</span><br>近 20 天买卖 ${m>0?"+":""}${m.toFixed(1)}‰（${act==="加"?"集中大买":act==="减"?"集中大卖":"不多"}）· 手里的量在近一年排 ${rk==null?"—":Math.round(rk)}（${pos==="重"?"重仓":pos==="轻"?"轻仓":"中等"}）· 市场${loc==="低"?"在低位":loc==="高"?"在高位":"在中间"}。<br><span class="note" style="margin:0">${J[2]}。只作提醒，不改倍数；加仓规则只看"集中大买"。</span>`;
+  const sc=document.createElement("p");sc.className="concl";sc.id="ntfSc";box.after(sc);getJ("ntfstage.json").then(Z=>ntfScene(Z,sc));
   box.hidden=false;
 }
 function ntf3(S,G,E){
@@ -1063,7 +1074,9 @@ function loadVerdict(){
 function homeNtf(){
   Promise.all([getJ("ntf.json"),getJ("etf300.json"),getJ("temp.json")]).then(([N,E,TT])=>{const a=$("vdNtf");if(!a||!N)return;
     const R=ntfJudgeCalc(N.series,E,TT);if(!R)return;
-    a.innerHTML=`<small>国家队</small><b class="lv ${R.J[1]}">${R.J[0]}</b><small>${R.J[2]} ›</small>`;a.hidden=false});
+    a.innerHTML=`<small>国家队</small><b class="lv ${R.J[1]}">${R.J[0]}</b><small>${R.J[2]} ›</small>`;a.hidden=false;
+    getJ("ntfstage.json").then(Z=>{if(!Z)return;const L=Z.latest,b=document.createElement("a");b.className=a.className;b.href=a.getAttribute("href")||"#temp";
+      b.innerHTML=`<small>国家队场景</small><b class="lv ${SCN_CLS[L.key]||"c0"}">${L.loc} · ${L.name}</b><small>${L.act}${/^加仓|^卖回/.test(L.short.state)?`；短线：${L.short.act}`:""} ›</small>`;a.after(b)})});
 }
 function keyChips(){
   Promise.all([getJ("state.json"),getJ("temp.json"),getJ("ntf.json")]).then(([st,T,N])=>{const box=$("vdChips");if(!box||!st)return;
