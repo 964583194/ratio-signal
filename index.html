@@ -840,7 +840,7 @@ function loadGold(){
     const l4=tk(Math.min(...ry.filter(v=>v!=null)),Math.max(...ry.filter(v=>v!=null)));
     DualChart($("gd_c4"),{W:720,H:200,dates,leftRange:[l4[0],l4[l4.length-1]],leftTicks:l4,leftFmt:v=>v.toFixed(1)+"%",
       left:[{v:ry,c:"var(--div)",w:1.5}],right:{v:px,c:"var(--ink)"},tip:i=>`${dates[i]}<br>实际利率 <b>${ry[i]==null?"—":ry[i].toFixed(2)+"%"}</b><br>黄金ETF ${px[i].toFixed(3)}`});
-    root.querySelectorAll(".bigbtn").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
+    root.querySelectorAll(".bigbtn[data-big]").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
     foldHist("viewG");
   });
 }
@@ -930,12 +930,12 @@ function ntf3(S,G){
       return `<div class="nrow"><div class="nn"><b>${g}</b><small>近 20 天 ${y(now)} · ${days}/20 天在买</small></div><div class="nb">${svg}</div><div class="nt">${tag}</div></div>`}).join("");
     $("ntfIdx").innerHTML=rows+`<p class="note" style="margin:4px 0 0">小柱 = 近半年每周净买入（绿买红卖），7 行同一个刻度，柱子越高买得越多。"上一波" = 20~120 天前最大的一段 20 天。这一波比上一波多、而且大多数日子都在买，就是"一次比一次多、集中买入"。</p>`}
   if(gb)gb.onclick=e=>{const b=e.target.closest("button");if(!b)return;gm=b.dataset.g;gb.querySelectorAll("button").forEach(z=>z.setAttribute("aria-pressed",z===b));draw()};
-  const draw=()=>{
+  const drawTo=(svg,W,H,tipEl)=>{
     let R=mode==="ytd"?S.filter(r=>r[0]>=S[S.length-1][0].slice(0,4)+"-01-01"):mode==="all"?S.slice():S.slice(-(+mode));
-    R=R.filter(r=>r[5]!=null);const n=R.length;if(n<2){svg.innerHTML="";$("ntf3t").textContent="每天净买入的数据还没生成，下一次数据更新后显示。";return}
-    const W=720,L=58,Rr=14,w=W-L-Rr,x=i=>L+w*(i+.5)/n,bw=Math.max(1.5,w/n*.72);
-    const P=[[34,110],[186,100],[330,190]];      // 三层：[顶, 高]
-    const cw=svg.clientWidth||W,fs=Math.min(17,Math.max(10,8.6*W/cw));
+    R=R.filter(r=>r[5]!=null);const n=R.length;if(n<2){svg.innerHTML="";tipEl.textContent="每天净买入的数据还没生成，下一次数据更新后显示。";return}
+    const L=58,Rr=14,w=W-L-Rr,x=i=>L+w*(i+.5)/n,bw=Math.max(1.5,w/n*.72);
+    const k=H/560,P=[[34*k,110*k],[186*k,100*k],[330*k,190*k]];      // 三层：[顶, 高]，大图按高度等比放大
+    const cw=svg.clientWidth||W,fs=Math.min(W>720?24:17,Math.max(10,8.6*W/cw));
     let s=`<style>#ntf3 text{font-size:${fs}px;fill:var(--muted)}#ntf3 .t{fill:var(--ink);font-weight:700}</style>`;
     const yx=(v,lo,hi,[t,h])=>t+h-(v-lo)/(hi-lo)*h;
     // ① 沪深300
@@ -975,12 +975,21 @@ function ntf3(S,G){
     const step=Math.ceil(n/7);R.forEach((r,i)=>{if((n-1-i)%step===0)s+=`<text x="${x(i)}" y="${T3[0]+T3[1]+fs+6}" text-anchor="${i===n-1?"end":"middle"}">${n>260?r[0].slice(2,7):r[0].slice(5)}</text>`});
     s+=`<line id="n3c" x1="0" x2="0" y1="${P[0][0]}" y2="${T3[0]+T3[1]}" stroke="var(--ink)" stroke-width=".8" stroke-dasharray="3 3" visibility="hidden"/>`;
     svg.innerHTML=s;
-    const tot=fv.reduce((p,q)=>p+q,0);$("ntf3t").innerHTML=`这段时间${stack?"7 个指数":"沪深300"}合计净买入 <b>${tot>0?"+":""}${Math.round(tot).toLocaleString()} 亿元</b>。点图上任意一天，看当天的数字。`;
-    svg.onclick=e=>{const bx=svg.getBoundingClientRect(),X=(e.clientX-bx.left)/bx.width*W,i=Math.max(0,Math.min(n-1,Math.round((X-L)/w*n-.5))),r=R[i],c=$("n3c");
+    const tot=fv.reduce((p,q)=>p+q,0);tipEl.innerHTML=`这段时间${stack?"7 个指数":"沪深300"}合计净买入 <b>${tot>0?"+":""}${Math.round(tot).toLocaleString()} 亿元</b>。点图上任意一天，看当天的数字。`;
+    svg.onclick=e=>{const bx=svg.getBoundingClientRect(),X=(e.clientX-bx.left)/bx.width*W,i=Math.max(0,Math.min(n-1,Math.round((X-L)/w*n-.5))),r=R[i],c=svg.querySelector("#n3c");
       c.setAttribute("x1",x(i));c.setAttribute("x2",x(i));c.setAttribute("visibility","visible");
       const sgn=v=>`${v>0?"+":""}${Math.round(v)}`,tv=fv[i],br=stack?"<br>"+GGRP.map(([nm,col,ms],j)=>`<b style="color:${col}">${nm} ${sgn(GV[i][j])}</b><small>（${ms.map(g=>g+" "+sgn(G.v[g][gi[r[0]]]||0)).join("、")}）</small>`).join("<br>"):"";
-      $("ntf3t").innerHTML=`<b>${r[0]}</b>：${stack?"7 个指数合计":"沪深300"}净买入 <b style="color:${tv>=0?"var(--grow)":"var(--mark)"}">${tv>0?"+":""}${Math.round(tv)} 亿元</b>${br}<br>沪深300 近 20 日 ${r[3]>0?"+":""}${r[3].toLocaleString()} 亿，占市值 ${r[6]?(r[3]/r[6]*1000).toFixed(1)+"‰":"—"}，沪深300 ${Math.round(r[4])}`};
+      tipEl.innerHTML=`<b>${r[0]}</b>：${stack?"7 个指数合计":"沪深300"}净买入 <b style="color:${tv>=0?"var(--grow)":"var(--mark)"}">${tv>0?"+":""}${Math.round(tv)} 亿元</b>${br}<br>沪深300 近 20 日 ${r[3]>0?"+":""}${r[3].toLocaleString()} 亿，占市值 ${r[6]?(r[3]/r[6]*1000).toFixed(1)+"‰":"—"}，沪深300 ${Math.round(r[4])}`};
   };
+  const draw=()=>drawTo($("ntf3"),720,560,$("ntf3t"));
+  // 横屏看大图：和其他图的大图一样，手机竖着拿时整张转 90°；按钮、时间范围跟着页面上选的
+  const bigb=$("n3big");if(bigb)bigb.onclick=()=>{const port=innerHeight>innerWidth,Wv=port?innerHeight:innerWidth,Hv=port?innerWidth:innerHeight;
+    const ov=document.createElement("div");ov.className="bigov";
+    ov.innerHTML=`<div class="bigin" style="width:${Wv}px;height:${Hv}px;${port?`transform:translateX(${innerWidth}px) rotate(90deg);transform-origin:top left;`:""}"><div class="bighd"><b>国家队每天买了多少</b><span><button type="button" class="bigx">✕ 关闭</button></span></div><svg class="chart" style="width:100%;height:${Hv-96}px"></svg><p class="note" style="margin:2px 8px;font-size:13px"></p></div>`;
+    document.body.appendChild(ov);const ofl=document.body.style.overflow;document.body.style.overflow="hidden";
+    const close=()=>{ov.remove();document.body.style.overflow=ofl;removeEventListener("resize",close)};ov.querySelector(".bigx").onclick=close;addEventListener("resize",close);
+    const sv=ov.querySelector("svg"),W2=1400,H2=Math.round(W2*(Hv-96)/(Wv-24));sv.setAttribute("viewBox",`0 0 ${W2} ${H2}`);
+    requestAnimationFrame(()=>drawTo(sv,W2,H2,ov.querySelector("p")))};
   bar.onclick=e=>{const b=e.target.closest("button");if(!b)return;mode=b.dataset.n;bar.querySelectorAll("button").forEach(z=>z.setAttribute("aria-pressed",z===b));draw()};
   draw();if(!svg.__rz){svg.__rz=1;addEventListener("resize",()=>svg.__draw&&svg.__draw())}svg.__draw=draw;
 }
@@ -1259,7 +1268,7 @@ function loadEtf300(root,HL){
       bands:[{from:80,to:100,fill:"var(--grow-soft)"},{from:0,to:20,fill:"var(--mark-soft)"}],
       left:[{v:S.map(r=>r[2]),c:"var(--ink)",w:1.8}],right:{v:S.map(r=>r[4]),c:"var(--mark)"},tip});
     loadNtf();
-    sec.querySelectorAll(".bigbtn").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
+    sec.querySelectorAll(".bigbtn[data-big]").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
     sec.querySelectorAll("details").forEach(x=>x.addEventListener("toggle",()=>dispatchEvent(new Event("resize"))));
     if((d.quarterly||[]).length){const Q=d.quarterly,qm=new Map(Q.map(r=>[r[0],r]));
       LineChart($("etf_c3"),{W:720,H:200,fixedY:[0,Math.ceil(Math.max(...Q.map(r=>r[1])))],ticks:Array.from({length:Math.ceil(Math.max(...Q.map(r=>r[1])))+1},(_,i)=>i)}).set(Q.map(r=>[r[0],r[1]]),{tip:(dt,v)=>`${dt}<br>占流通市值 <b>${v.toFixed(2)}%</b><br>规模 ${qm.get(dt)[2].toLocaleString()} 亿<br>沪深300 ${qm.get(dt)[3].toFixed(0)}`})}
@@ -1284,7 +1293,7 @@ function loadNtf(){
         <div><div class="label">近 5 日占沪深300 市值</div><div class="v">${L.rush&&L.rush.r5!=null?(L.rush.r5>0?"+":"")+(L.rush.r5*1000).toFixed(2)+"‰":"—"}</div><div class="s">≥1.5‰ 算急买（只提醒）</div></div>
         <div><div class="label">上一段集中大买</div><div class="v" style="font-size:17px">${L.episode?L.episode.date:"—"}</div><div class="s">${L.episode&&L.episode.fwd["60"]!=null?"之后 60 日 "+sg(L.episode.fwd["60"]):""}</div></div>
 </div>
-      <h3 style="font-size:14px;margin:16px 0 4px">国家队每天买了多少（一图看懂）</h3>
+      <h3 style="font-size:14px;margin:16px 0 4px">国家队每天买了多少（一图看懂）<button type="button" class="bigbtn" id="n3big">⤢ 横屏看大图</button></h3>
       <p class="note" style="margin:0 0 6px">从上到下：① 沪深300 走势；② 买得多不多（近 20 天净买入占沪深300 市值，过了 2‰ 就是"集中大买"，宽基加仓）；③ 每天净买入多少亿（分大盘 / 成长 / 中小盘三类叠起来，或只看沪深300；柱子上是当天合计）。点图看当天数字。</p>
       <div class="ranges" id="n3r" style="margin-bottom:4px"><button type="button" data-n="66" aria-pressed="true">3个月</button><button type="button" data-n="130">半年</button><button type="button" data-n="ytd">今年</button><button type="button" data-n="250">1年</button><button type="button" data-n="all">全部</button></div>
       <div class="ranges" id="n3g" style="margin-bottom:4px"><button type="button" data-g="all" aria-pressed="true">分三类看</button><button type="button" data-g="hs">只看沪深300</button></div>
@@ -1320,7 +1329,7 @@ function loadNtf(){
       bands:[{from:90,to:100,fill:"var(--grow-soft)"},{from:0,to:10,fill:"var(--mark-soft)"}],
       left:[{v:S.map(r=>r[2]),c:"var(--ink)",w:1.6}],right:{v:S.map(r=>r[4]),c:"var(--mark)"},marks,
       tip:i=>`${dates[i]}<br>加速度 <b>${S[i][1]==null?"—":S[i][1]+" 亿/天"}</b>`+(S[i][2]!=null?`<br>近一年分位 ${S[i][2]}%`:"")+`<br>近 20 日净申购 ${S[i][3]} 亿<br>沪深300 ${S[i][4].toFixed(0)}`});
-    box.querySelectorAll(".bigbtn").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
+    box.querySelectorAll(".bigbtn[data-big]").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
     box.querySelectorAll("details").forEach(x=>x.addEventListener("toggle",()=>dispatchEvent(new Event("resize"))));
   }).catch(()=>{});
 }
@@ -1368,7 +1377,7 @@ function loadTop(){
     DualChart($("tl_c2"),{W:720,H:220,dates,leftRange:[20,55],leftTicks:[20,30,40,45,50],leftFmt:v=>v+"%",bands:[{from:45,to:55,fill:"var(--mark-soft)"}],
       left:[{v:cv,c:"var(--div)",w:1.8}],right:{v:cl,c:"var(--ink)"},
       tip:i=>`${dates[i].slice(0,7)}<br>前 5% 个股占成交额 <b>${cv[i]==null?"—":cv[i].toFixed(1)+"%"}</b><br>沪深300 ${cl[i].toFixed(0)}`});
-    sec.querySelectorAll(".bigbtn").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
+    sec.querySelectorAll(".bigbtn[data-big]").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
   }).catch(e=>{sec.innerHTML=`<h2>见顶信号灯</h2><p class="note">${e.message}</p>`});
 }
 // ---------------- 页签
