@@ -245,6 +245,9 @@ def run():
                    "vol_last": lv, "vol_recent": vol_recent, "pull": pull, "rush": rush},
         "rush_eps": reps,
         "groups": groups + [total],
+        # 各指数每天净申购（亿元），最近 300 个交易日，给"国家队每天买了多少"图分指数堆叠用
+        "gflow": {"from": days[max(0, n - 300)], "names": list(GROUPS),
+                  "v": {g: [round(sum(flow[c][k] for c in cs), 1) for k in range(max(0, n - 300), n)] for g, cs in GROUPS.items()}},
         "episodes": eps, "vols": vols, "stats": stats,
         "series": [[days[k], None if acc[k] is None else round(acc[k], 1), None if pct[k] is None else round(pct[k] * 100),
                     round(sum(f4[max(0, k - 19):k + 1])), hs[hk[max(0, bisect.bisect_right(hk, days[k]) - 1)]], round(f4[k], 1), None if cap[k] is None else round(cap[k])] for k in range(n)],
