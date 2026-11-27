@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-28 03:15",
+ "updated": "2026-11-28 03:59",
  "ok": true,
  "items": {
   "cyb50": {
@@ -326,10 +326,10 @@
    "name": "美国 10 年期实际利率",
    "source": "美国财政部",
    "mode": "增量",
-   "last": "2026-11-25",
-   "days": 4227,
+   "last": "2026-11-27",
+   "days": 4228,
    "failed": [],
-   "stale_days": 3,
+   "stale_days": 1,
    "ref": true
   },
   "spdr": {
