@@ -307,8 +307,19 @@
       <p class="note" id="dBatch" style="margin:6px 0 0;font-weight:600"></p>
       <p class="note" id="dPct"></p>
       <p class="note" id="dPos" style="display:none;margin-top:4px"></p>
+      <p class="note" id="dFlow" style="display:none;margin-top:4px"></p>
     </div>
   </div>
+</section>
+
+<section class="panel" id="dfPanel" hidden>
+  <h2>红利 ETF 资金：有没有人在买 <span class="exptag">实验</span></h2>
+  <p class="concl" id="dfNow"></p>
+  <div class="ranges" role="group" aria-label="按周还是按天" data-for="dfG"><button type="button" data-g="w" aria-pressed="true">每周</button><button type="button" data-g="d">每天</button></div>
+  <div class="ranges" role="group" aria-label="时间范围" data-for="dfChart"><button type="button" data-r="60">3个月</button><button type="button" data-r="250">近1年</button><button type="button" data-r="0" aria-pressed="true">全部</button><button type="button" class="bigbtn" data-big="dfChart" data-title="红利 ETF 每周净流入与红利低波100">⤢ 横屏看大图</button></div>
+  <div class="chartwrap"><svg class="chart" id="dfChart" viewBox="0 0 720 260" role="img" style="touch-action:pan-y" aria-label="红利ETF每周净流入和红利低波100"></svg><div class="tip" hidden></div></div>
+  <div class="legend"><span><i style="border-color:var(--grow)"></i><b id="dfLg" style="font-weight:400">每周净流入（亿元，左轴）</b></span><span><i style="border-color:var(--mark)"></i>净流出</span><span><i style="border-color:var(--div)"></i>红利低波100（右轴）</span></div>
+  <p class="note">A 股红利类 ETF（名字带"红利"，不含港股、海外）每天份额变化 × 当天净值，按周加总。<b>只作参考，不改买卖</b>：2023 年起看是越跌越买、越涨越卖（2026-06 红利见底、科创见顶时一个月净流入约 140 亿，7~8 月反弹时流出），所以流入不是买点，只说明"跌的时候有人在接"。<span id="dfCover"></span></p>
 </section>
 
 <section class="panel">
@@ -366,15 +377,6 @@
   <p class="note">红利位置 = 股息率、股债利差（股息率 − 十年国债）各自在近 5 年里高于多少比例的日子，取平均；越高越便宜。表格是 2012 年底以来每一档之后红利低波100 全收益指数的平均表现（涨的概率 = 一年后上涨的比例；再跌 = 一年内平均最多再跌多少），随数据自动更新。<b>只作参考，不改买卖：评分说不买（空仓）时照样不买</b>；它只回答「规则让买的时候，该坚定还是该收着」。两者看的东西不同：评分一半看技术面（最近涨多了没有），位置只看股息和利差，所以有时会不一致（2018 年以来约 14% 的周是评分空仓、位置偏便宜）。历史数据里段数不多、相邻日子高度重叠，表格只看大致方向。</p>
 </section>
 
-<section class="panel" id="dfPanel" hidden>
-  <h2>红利 ETF 资金：有没有人在买 <span class="exptag">实验</span></h2>
-  <p class="concl" id="dfNow"></p>
-  <div class="ranges" role="group" aria-label="按周还是按天" data-for="dfG"><button type="button" data-g="w" aria-pressed="true">每周</button><button type="button" data-g="d">每天</button></div>
-  <div class="ranges" role="group" aria-label="时间范围" data-for="dfChart"><button type="button" data-r="60">3个月</button><button type="button" data-r="250">近1年</button><button type="button" data-r="0" aria-pressed="true">全部</button><button type="button" class="bigbtn" data-big="dfChart" data-title="红利 ETF 每周净流入与红利低波100">⤢ 横屏看大图</button></div>
-  <div class="chartwrap"><svg class="chart" id="dfChart" viewBox="0 0 720 260" role="img" style="touch-action:pan-y" aria-label="红利ETF每周净流入和红利低波100"></svg><div class="tip" hidden></div></div>
-  <div class="legend"><span><i style="border-color:var(--grow)"></i><b id="dfLg" style="font-weight:400">每周净流入（亿元，左轴）</b></span><span><i style="border-color:var(--mark)"></i>净流出</span><span><i style="border-color:var(--div)"></i>红利低波100（右轴）</span></div>
-  <p class="note">A 股红利类 ETF（名字带"红利"，不含港股、海外）每天份额变化 × 当天净值，按周加总。<b>只作参考，不改买卖</b>：2023 年起看是越跌越买、越涨越卖（2026-06 红利见底、科创见顶时一个月净流入约 140 亿，7~8 月反弹时流出），所以流入不是买点，只说明"跌的时候有人在接"。<span id="dfCover"></span></p>
-</section>
 
 <details class="panel fold"><summary>规则：每天记多少、什么时候买卖</summary><div class="pbody">
   <h3 class="h3">规则速查</h3>
@@ -1617,6 +1619,7 @@ function renderDiv(d){
     }
     // 实验：红利 ETF 资金
     getJ("divflow.json").then(F=>{if(!F||!F.dates)return;const L2=F.latest,yi=v=>`${v>0?"+":""}${Math.round(v).toLocaleString()} 亿`;$("dfPanel").hidden=false;
+      $("dFlow").innerHTML=`红利 ETF 资金（实验）：近 20 天 <b>${yi(L2.f20)}</b> → ${L2.tag} <a href="#dfPanel">看图 ›</a>`;$("dFlow").style.display="";
       $("dfNow").innerHTML=`近 20 个交易日（到 ${L2.date}）：${L2.n} 只红利 ETF 合计净流入 <b>${yi(L2.f20)}</b>（规模 ${L2.size.toLocaleString()} 亿的 ${L2.pct20>0?"+":""}${L2.pct20}%），红利低波100 ${L2.h20>0?"+":""}${L2.h20}% → <b>${L2.tag}</b>：${L2.text}。`;
       $("dfCover").textContent=L2.cover<.95?`历史数据还在补（已补 ${Math.round(L2.cover*100)}%，平时每周只有一天的数，每次更新补一批），没补的那几天的进出算在下一个有数的日子里。`:"";
       // 按周加总：每周最后一个交易日放这一周的合计
