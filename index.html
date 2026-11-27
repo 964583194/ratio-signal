@@ -73,7 +73,7 @@
 <section class="panel" id="t_m"><h2>见底信号灯</h2><div id="t_bot"><div class="note">加载中</div></div></section>
 <section class="panel" id="tl"><h2>见顶信号灯</h2><p class="note">加载中</p></section>
 <section class="panel" id="t_dir"><h2>方向：底部在不在确认</h2><div id="t_dirBody"><div class="note">加载中</div></div></section>
-<section class="panel" id="etfh"><h2>托底资金（国家队）</h2><p class="note">加载中</p></section>
+<section class="panel" id="etfh"><h2>国家队资金</h2><p class="note">加载中</p></section>
 </div>
 
 <div id="viewRot" hidden>
@@ -1170,7 +1170,7 @@ function etfJudge(zone,cheap,pbHot){
 function loadEtf300(root,HL){
   let sec=document.getElementById("etfh");
   if(!sec){sec=document.createElement("section");sec.className="panel";sec.id="etfh";root.appendChild(sec)}
-  sec.innerHTML=`<h2>托底资金（国家队）</h2><p class="note">加载中</p>`;
+  sec.innerHTML=`<h2>国家队资金</h2><p class="note">加载中</p>`;
   Promise.all([fetch("data/etf300.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error(r.status===404?"还没有生成数据，下次自动更新后会出现":"HTTP "+r.status);return r.json()}),
     fetch("data/market.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)]).then(([d,mk])=>{
     const cheap=HL&&HL.cheap!=null?HL.cheap:null,judge=etfJudge(d.latest.zone,cheap,mk&&mk.pb_hot);
@@ -1226,7 +1226,7 @@ function loadEtf300(root,HL){
     sec.querySelectorAll("details").forEach(x=>x.addEventListener("toggle",()=>dispatchEvent(new Event("resize"))));
     if((d.quarterly||[]).length){const Q=d.quarterly,qm=new Map(Q.map(r=>[r[0],r]));
       LineChart($("etf_c3"),{W:720,H:200,fixedY:[0,Math.ceil(Math.max(...Q.map(r=>r[1])))],ticks:Array.from({length:Math.ceil(Math.max(...Q.map(r=>r[1])))+1},(_,i)=>i)}).set(Q.map(r=>[r[0],r[1]]),{tip:(dt,v)=>`${dt}<br>占流通市值 <b>${v.toFixed(2)}%</b><br>规模 ${qm.get(dt)[2].toLocaleString()} 亿<br>沪深300 ${qm.get(dt)[3].toFixed(0)}`})}
-  }).catch(e=>{sec.innerHTML=`<h2>托底资金（国家队）</h2><p class="note">${e.message}</p>`});
+  }).catch(e=>{sec.innerHTML=`<h2>国家队资金</h2><p class="note">${e.message}</p>`});
 }
 
 // ---------------- 国家队流向加速度 + 放量托底日 + 分指数（托底资金区块里）：只作提醒
