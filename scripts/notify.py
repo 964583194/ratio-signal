@@ -155,7 +155,11 @@ def ntfscene(d):
                             if st else "没有集中买卖")
     s = (d.get("stats") or {}).get(L["key"]) or {}
     bt = f"；同类节点之后 60 天平均 {s['f60']['avg']:+.1f}%，{s['f60']['n']} 次里涨 {s['f60']['up']} 次" if s.get("f60") else ""
-    return L["name"], now + bt, f"{L['act']}【实验，只作参考，不改倍数】", "temp"
+    pv = L.get("pos") or {}, L.get("vol") or {}
+    side = f"；手里的量近一年排 {pv[0]['rank']:.0f}（{pv[0]['tag']}）" if pv[0].get("rank") is not None else ""
+    side += f"，成交是近半年的 {pv[1]['q']:.2f} 倍（{pv[1]['tag']}）" if pv[1].get("q") else ""
+    hint = "。".join(L.get("hint") or [])
+    return L["name"], now + side + bt, L['act'].replace('；', '，') + (f"。{hint}" if hint else "") + "【实验，只作参考，不改倍数】", "temp"
 
 
 def ntfshort(d):

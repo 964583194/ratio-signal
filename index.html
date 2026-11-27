@@ -926,7 +926,10 @@ function ntfScene(Z,box){
     if(st.waves.length){h+=`<br>一小波一小波：${st.waves.map(w=>`<b>${w.tag}</b> ${w.from.slice(5)}~${w.to.slice(5)} ${w.sum.toFixed(1)}‰`).join(" → ")}`;
       const lw=st.waves[st.waves.length-1],mx=Math.max(...st.waves.slice(0,-1).map(w=>w.sum),0),gap=(new Date(L.date)-new Date(lw.to))/864e5;
       if(st.waves.length>1&&lw.tag!=="加码"&&gap<=7)h+=`。<b>这一小波还在进行，累计超过 ${mx.toFixed(1)}‰（还差 ${(mx-lw.sum).toFixed(1)}‰）就变成 ⚠ 加码</b>`;}}
-  h+=`<br><span class="note" style="margin:0">同类节点${S1(L.key)}。样本少，只作参考。</span>`;
+  const ps=L.pos||{},vl=L.vol||{};
+  if(ps.rank!=null||vl.q!=null)h+=`<br>持仓 · 成交：手里的量近一年排 ${ps.rank!=null?Math.round(ps.rank):"—"}（${ps.tag||"—"}）· 成交是近半年平均的 ${vl.q!=null?vl.q.toFixed(2):"—"} 倍（${vl.tag||"—"}）`;
+  if((L.hint||[]).length)h+=`<br><b>提示：</b>${L.hint.join("；")}。`;
+  h+=`<br><span class="note" style="margin:0">同类节点${S1(L.key)}。样本少，只作参考。持仓排名 ≥80 算重仓、≤20 算轻仓；成交 ≥1.1 倍算放量、≤0.9 倍算缩量。</span>`;
   const sh=L.short,ss=Z.short.stats;
   h+=`<br><b>短线（实验，用手里仓位做 T）：</b><span class="lv ${/^加仓|^卖回/.test(sh.state)?"d2":"c0"}">${sh.state.split("|")[0]}</span> ${sh.act}。<span class="note" style="margin:0">条件：5 天跌 ≥2.5% + 国家队当天买 ≥ 市值 0.1‰ + 成交不缩量（今天成交额是前 20 天平均的 ${L.vr.toFixed(2)} 倍）+ 不在高位。2023 年起 ${ss.n} 次，赚 ${ss.win} 次，平均每次 ${pc(ss.avg)}。</span>`;
   const tb=Object.entries(Z.scen).filter(([k])=>k!=="none").map(([k,v])=>`<tr><td><span class="lv ${SCN_CLS[k]}">${v.name}</span></td><td>${v.act}</td><td>${S1(k)}</td><td>${v.level==="重点"?"⚠ 重点":v.level||"不发"}</td></tr>`).join("");
@@ -1076,7 +1079,7 @@ function homeNtf(){
     const R=ntfJudgeCalc(N.series,E,TT);if(!R)return;
     a.innerHTML=`<small>国家队</small><b class="lv ${R.J[1]}">${R.J[0]}</b><small>${R.J[2]} ›</small>`;a.hidden=false;
     getJ("ntfstage.json").then(Z=>{if(!Z)return;const L=Z.latest,b=document.createElement("a");b.className=a.className;b.href=a.getAttribute("href")||"#temp";
-      b.innerHTML=`<small>国家队场景</small><b class="lv ${SCN_CLS[L.key]||"c0"}">${L.loc} · ${L.name}</b><small>${L.act}${/^加仓|^卖回/.test(L.short.state)?`；短线：${L.short.act}`:""} ›</small>`;a.after(b)})});
+      b.innerHTML=`<small>国家队场景</small><b class="lv ${SCN_CLS[L.key]||"c0"}">${L.loc} · ${L.name}</b><small>${L.act}${(L.hint||[]).length?"；"+L.hint[0]:""}${/^加仓|^卖回/.test(L.short.state)?`；短线：${L.short.act}`:""} ›</small>`;a.after(b)})});
 }
 function keyChips(){
   Promise.all([getJ("state.json"),getJ("temp.json"),getJ("ntf.json")]).then(([st,T,N])=>{const box=$("vdChips");if(!box||!st)return;

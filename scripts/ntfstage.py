@@ -288,10 +288,39 @@ def run():
         stage["rank"] = sorted(sizes, reverse=True).index(abs(tot)) + 1 if abs(tot) in sizes else None
         stage["n_seg"] = len(sizes)
     name, act, lvl = SCEN[key]
+    # 持仓（图③：手里的量在近一年排第几）和成交（两市成交额近 20 天 ÷ 近 120 天）：只加一句提示，不改场景
+    rk = None
+    try:
+        ES = _load("etf300.json")["series"]
+        rk = next((r[2] for r in reversed(ES) if r[0] <= D[i] and r[2] is not None), None)
+    except Exception:  # noqa: BLE001
+        pass
+    q = None
+    j = bisect.bisect_right(ak, D[i]) - 1
+    if j >= 119:
+        q = (sum(A[ak[t]] for t in range(j - 19, j + 1)) / 20) / (sum(A[ak[t]] for t in range(j - 119, j + 1)) / 120)
+    pos = None if rk is None else "重仓" if rk >= 80 else "轻仓" if rk <= 20 else "中等"
+    vol = None if q is None else "放量" if q >= 1.1 else "缩量" if q <= 0.9 else "平量"
+    hint = []
+    if key == "buy_first" and pos:
+        hint.append("刚开始建仓，第一波之后常还要跌，小跟" if pos != "重仓" else "已经重仓，可以正常跟")
+    if key in ("buy_small", "none") and pos == "重仓":
+        hint.append("国家队重仓但没在加，可能还要磨：照规则慢慢买，别用备用金")
+    if key == "hi_buy" and pos == "轻仓":
+        hint.append("轻仓护盘更弱，别追")
+    if key in ("buy_first", "buy_up", "buy_slow") and vol == "缩量":
+        hint.append("缩量：没人买、国家队在买，历史上最好的一种（之后 60 天几乎都涨），照规则买，加码别犹豫")
+    if key == "buy_slow" and vol == "放量":
+        hint.append("放量后放缓：多半已经涨过一波，别追，照规则慢慢买")
+    if key in ("sell_up", "sell_first", "sell_slow") and vol == "放量":
+        hint.append("放量出货，不追加")
+    if key == "hi_buy" and vol == "缩量":
+        hint.append("高位缩量护盘，最差的一种（之后 60 天平均 −14%），别追")
     zi = zone(D[i])
     data = {
         "updated": dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M"),
         "latest": {"date": D[i], "key": key, "name": name, "loc": LOC[zi], "act": act, "level": lvl, "info": info,
+                   "pos": {"rank": rk, "tag": pos}, "vol": {"q": round(q, 2) if q else None, "tag": vol}, "hint": hint,
                    "stage": stage, "x": round(x[i], 2), "r20": round(r20[i], 2), "vr": round(vr(D[i]) or 0, 2),
                    "short": {"state": sstate, "act": sact, "hold": hold and {"sig": hold["sig"], "buy": D[hold["b"]] if hold["b"] < L else None}}},
         "scen": {k_: {"name": v[0], "act": v[1], "level": v[2]} for k_, v in SCEN.items()},
