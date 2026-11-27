@@ -97,6 +97,14 @@ def run():
         exp.append(row("国家队大买后回落", f"5 日 {p['d5']:+,} 亿", p["level"], cls,
                        (f"已连续 {p['days']} 天（{p['since']} 起），满 2 天发邮件提醒。" if p.get("days") else "") +
                        f"近 20 日 {p['d20']:+,} 亿。" + p["note"] + ("。想减仓的话这时减比较合适（参考：减 1/3、60 天后买回，回测不稳定）" if p.get("days", 0) >= 2 else ""), "temp", NT["latest"]["date"]))
+    if NT and NT["latest"].get("rush"):
+        r = NT["latest"]["rush"]
+        s1 = r["stats"]["急买第一天"]
+        exp.append(row("国家队急买", f"占成交额 {(r['r5'] or 0)*100:.2f}%", "急买中" if r["on"] else "没有", "g1" if r["on"] else "c0",
+                       (f"已连续 {r['days']} 天（{r['since']} 起）。" if r["on"] else "") +
+                       f"4 只沪深300 ETF 近 5 日净申购 {r['d5']:+,} 亿，占两市近 5 日成交额的 1% 以上算急买（门槛随市场大小自动变）。"
+                       + (f"2023 年起 {s1['n']} 段，已满 60 天的 {s1['60']['n']} 段之后 60 日沪深300 平均 {s1['60']['avg']*100:+.1f}%（{s1['60']['up']*100:.0f}% 上涨）。" if s1.get("60") else "")
+                       + "样本少，只作提醒，不改倍数", "temp", NT["latest"]["date"]))
     BK = _load("bank.json")
     if BK:
         L = BK["latest"]

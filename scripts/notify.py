@@ -127,6 +127,19 @@ def ntf(d):
     return L["key"], now, L["action"] + "（只作提醒，不改倍数）", "temp"
 
 
+def ntf_rush(d):
+    """国家队急买（实验）：近 5 日净申购 ≥ 两市近 5 日成交额的 1%，第一天发提醒；只作参考，不改倍数"""
+    r = d["latest"].get("rush") or {}
+    if not r:
+        return "无", "无数据", "没有急买", "temp"
+    on = r.get("on")
+    state = f"急买|{r.get('since')}" if on else "无"
+    now = (f"4 只沪深300 ETF 近 5 日净申购 {r.get('d5', 0):+,} 亿，占两市成交额 {pc(r.get('r5') or 0, 2)}（≥{pc(r['th'], 0)} 算急买）"
+           + (f"，已连续 {r['days']} 天（{r['since']} 起）" if on else ""))
+    act = ("国家队几天内突然大买：历史上之后 60 日沪深300 多半上涨。按规则买，不额外加钱【实验】" if on else "没有急买")
+    return state, now, act, "temp"
+
+
 def ntf_pull(d):
     """国家队大买后回落（实验）：连续 2 天以上才提醒；只作参考，不改倍数"""
     p = d["latest"].get("pull") or {}
@@ -200,6 +213,7 @@ def collect(prev):
              ("托底资金（国家队）", "etf300.json", etf300),
              ("国家队流向", "ntf.json", ntf),
              ("国家队回落（实验）", "ntf.json", ntf_pull),
+             ("国家队急买（实验）", "ntf.json", ntf_rush),
              ("见顶信号灯", "topsig.json", topsig)]
     for name, f, fn in pairs:
         d = load(f)
@@ -441,6 +455,10 @@ def main():
     auto = sent != wk and ((bj.weekday() == 3 and bj.hour >= 17 and (hs.get("latest") or {}).get("date", "") >= thu) or bj.weekday() == 4)
     report = (os.environ.get("REPORT") == "1" or auto) and not first and sent != wk
     late = report and bj.weekday() == 4 and bj.hour >= 15
+    if not report:   # 平时只为"要做的事"发邮件：红利只在下单 / 减仓时；急买只在开始时（结束、攒着↔暂停这种不发）
+        changes = [(n, a, b) for n, a, b in changes
+                   if not (n == "红利打分" and not b.startswith(("下单", "减仓")))
+                   and not (n == "国家队急买（实验）" and b == "无")]
     G = change_lines(changes, cur, prev, report) if changes else {}
     chg = "\n\n".join(f"**{k}**\n\n" + "\n".join(v) for k, v in G.items() if v)
     dues = "\n\n".join(f"### {r['title']}\n\n{r['body']}" for r in due)

@@ -33,6 +33,7 @@ FOUR = GROUPS["沪深300"]
 AMT = ("510300", "510310", "510330")
 CODES = [c for v in GROUPS.values() for c in v]
 SHORT, LONG, WIN, HI, LO, VOL = 20, 60, 250, 0.90, 0.10, 2.5
+RUSH = 0.01    # 急买：近 5 日净申购 ≥ 两市近 5 日成交额的 1%
 FRESH = 20     # 新的一段加速流入出现后 20 个交易日内，算“刚出现”
 
 
@@ -121,6 +122,7 @@ def run():
     acc = [None] * n
     for i in range(LONG - 1, n):
         acc[i] = sum(f4[i - SHORT + 1:i + 1]) / SHORT - sum(f4[i - LONG + 1:i + 1]) / LONG
+    d20 = [sum(f4[max(0, k - 19):k + 1]) for k in range(n)]
     pct, state = [None] * n, [None] * n
     for i in range(n):
         if acc[i] is None:
@@ -129,14 +131,16 @@ def run():
         if len(w) < 60:
             continue
         pct[i] = sum(x <= acc[i] for x in w) / len(w)
-        state[i] = "流入在加速" if pct[i] >= HI else "流出在加速" if pct[i] <= LO else "平稳"
+        # 2026-11-27：加速流入还要求近 20 日确实净流入。原来只比速度，大卖之后"不卖了"也会被算成加速流入（2026-03 误报过）
+        state[i] = "流入在加速" if pct[i] >= HI and d20[i] > 0 else "流出在加速" if pct[i] <= LO else "平稳"
     close = [px[d] for d in days]
 
     def fwd(i):
         return {str(h): round(close[i + h] / close[i] - 1, 4) if i + h < n else None for h in (20, 60, 120)}
     # 加速流入的每一段：第一天
+    # 前 20 个交易日里已经加速过的不算新的一段（加了"近 20 日净流入"条件后，一段里可能断开一两天又接上，不能重复提醒加仓）
     eps = [{"date": days[i], "acc": round(acc[i], 1), "fwd": fwd(i)} for i in range(1, n)
-           if state[i] == "流入在加速" and state[i - 1] != "流入在加速"]
+           if state[i] == "流入在加速" and "流入在加速" not in state[max(0, i - FRESH):i]]
     # 放量托底日
     A = [sum((amt.get(d) or {}).get(c, 0) for c in AMT) for d in days]
     vols = []
@@ -165,7 +169,6 @@ def run():
     # 现在
     # 大买之后的回落（实验，只作提醒）：近 20 天里 20 日净申购排进近一年最高 10%（大买过），现在近 5 日净赎回、20 日仍净流入
     d5 = [sum(f4[max(0, k - 4):k + 1]) for k in range(n)]
-    d20 = [sum(f4[max(0, k - 19):k + 1]) for k in range(n)]
     p20 = [sum(x <= d20[k] for x in d20[max(0, k - 250):k + 1]) / len(d20[max(0, k - 250):k + 1]) for k in range(n)]
 
     def pull_of(k):
@@ -186,6 +189,33 @@ def run():
             "note": {"轻度回落": "国家队大买后开始小幅赎回：短期偏弱（之后 60 日沪深300 平均约 −2%），按规则买，不额外加钱",
                      "明显回落": "国家队大买后赎回较多（超过近 20 日流入的 1/4）：短期偏弱（之后 60 日平均约 −5%），按规则买，不额外加钱"}.get(pnow, "没有大买后回落"),
             "stats": pstats}
+    # 国家队急买（实验，只作提醒）：4 只沪深300 ETF 近 5 日净申购 ≥ 两市近 5 日成交额的 1%。用相对成交额，不用固定金额，门槛随市场大小自动变
+    try:
+        mk = S.get_series("mkt_amt")[0]
+    except Exception as e:  # noqa: BLE001
+        print(f"两市成交额读取失败：{e}，用缓存")
+        mk = S.load_cache("mkt_amt")
+    mkk = sorted(mk)
+    def amt5(k):
+        j = bisect.bisect_right(mkk, days[k]) - 1
+        if j < 4 or mkk[j] != days[k]:
+            return None
+        return sum(mk[mkk[x]] for x in range(j - 4, j + 1))
+    r5 = []
+    for k in range(n):
+        a = amt5(k)
+        r5.append(d5[k] / a if a else None)
+    rush_on = [x is not None and x >= RUSH for x in r5]
+    reps = [{"date": days[k], "r5": round(r5[k], 4), "d5": round(d5[k]), "fwd": fwd(k)}
+            for k in range(1, n) if rush_on[k] and not any(rush_on[max(0, k - 20):k])]
+    rrun = 0
+    for k in range(n - 1, -1, -1):
+        if not rush_on[k]:
+            break
+        rrun += 1
+    rush = {"on": rush_on[-1], "r5": None if r5[-1] is None else round(r5[-1], 4), "d5": round(d5[-1]), "th": RUSH,
+            "days": rrun, "since": days[n - rrun] if rrun else None, "last": reps[-1] if reps else None,
+            "stats": {"急买第一天": agg([e["fwd"] for e in reps]), "任意一天": pstats["任意一天"]}}
     i = n - 1
     s = state[i]
     last_ep = eps[-1] if eps else None
@@ -212,7 +242,8 @@ def run():
         "updated": dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M"),
         "latest": {"date": days[-1], "state": s, "acc": round(acc[i], 1), "pct": round(pct[i], 3), "f4_20": round(sum(f4[-20:])),
                    "action": act, "cls": cls, "key": key, "episode": last_ep, "fresh": fresh, "hot": hot,
-                   "vol_last": lv, "vol_recent": vol_recent, "pull": pull},
+                   "vol_last": lv, "vol_recent": vol_recent, "pull": pull, "rush": rush},
+        "rush_eps": reps,
         "groups": groups + [total],
         "episodes": eps, "vols": vols, "stats": stats,
         "series": [[days[k], None if acc[k] is None else round(acc[k], 1), None if pct[k] is None else round(pct[k] * 100),
