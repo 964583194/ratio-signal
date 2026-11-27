@@ -840,7 +840,6 @@ function loadGold(){
     const l4=tk(Math.min(...ry.filter(v=>v!=null)),Math.max(...ry.filter(v=>v!=null)));
     DualChart($("gd_c4"),{W:720,H:200,dates,leftRange:[l4[0],l4[l4.length-1]],leftTicks:l4,leftFmt:v=>v.toFixed(1)+"%",
       left:[{v:ry,c:"var(--div)",w:1.5}],right:{v:px,c:"var(--ink)"},tip:i=>`${dates[i]}<br>实际利率 <b>${ry[i]==null?"—":ry[i].toFixed(2)+"%"}</b><br>黄金ETF ${px[i].toFixed(3)}`});
-    root.querySelectorAll(".bigbtn[data-big]").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
     foldHist("viewG");
   });
 }
@@ -1202,7 +1201,6 @@ function loadTemp(){
   Promise.all([getJ("temp.json"),getJ("market.json")]).then(([T,m])=>{
     if(!T){["t_zoneBody","t_dirBody","t_bot"].forEach(id=>$(id).innerHTML=`<div class="note">还没有生成数据</div>`);return}
     renderZone(T);renderDir(T);renderBot(T,m);
-    document.querySelectorAll("#t_zone .bigbtn,#t_dir .bigbtn,#t_m .bigbtn").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
   });
 }
 const big=(id,t)=>`<button type="button" class="bigbtn" data-big="${id}" data-title="${t}">⤢ 横屏看大图</button>`;
@@ -1327,7 +1325,6 @@ function loadEtf300(root,HL){
     const tip=i=>`${dates[i]}<br>占流通市值 <b>${S[i][1].toFixed(2)}%</b>`+(S[i][2]!=null?`<br>252 日分位 ${S[i][2].toFixed(0)}%`:"")+`<br>合计 ${S[i][3].toFixed(0)} 亿份<br>沪深300 ${S[i][4].toFixed(0)}`;
     const hiR=Math.max(...S.map(r=>r[1])),step=hiR>2?0.5:hiR>1?0.25:0.1,lt=[];for(let v=0;;v+=step){lt.push(+v.toFixed(2));if(v>=hiR)break}
     loadNtf();
-    sec.querySelectorAll(".bigbtn[data-big]").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
     sec.querySelectorAll("details").forEach(x=>x.addEventListener("toggle",()=>dispatchEvent(new Event("resize"))));
     if((d.quarterly||[]).length){const Q=d.quarterly,qm=new Map(Q.map(r=>[r[0],r]));
       LineChart($("etf_c3"),{W:720,H:200,fixedY:[0,Math.ceil(Math.max(...Q.map(r=>r[1])))],ticks:Array.from({length:Math.ceil(Math.max(...Q.map(r=>r[1])))+1},(_,i)=>i)}).set(Q.map(r=>[r[0],r[1]]),{tip:(dt,v)=>`${dt}<br>占流通市值 <b>${v.toFixed(2)}%</b><br>规模 ${qm.get(dt)[2].toLocaleString()} 亿<br>沪深300 ${qm.get(dt)[3].toFixed(0)}`})}
@@ -1364,10 +1361,6 @@ function loadNtf(){
 </div>
       <h3 style="font-size:14px;margin:14px 0 4px">各指数：一波比一波多吗，买得勤不勤</h3>
       <div id="ntfIdx"></div>
-      <details class="sub"><summary>看老图：加速度排名与沪深300（2023 年起） ▾</summary>
-      <h3 style="font-size:14px;margin:14px 0 4px">加速度分位与沪深300<button type="button" class="bigbtn" data-big="ntf_c1" data-title="流入加速度的近一年分位（左轴 %）与沪深300（右轴）">⤢ 横屏看大图</button></h3>
-      <p class="note" style="margin:0 0 6px"><span style="color:var(--ink);font-weight:700">——</span> 分位（%，左轴；绿色 ≥90% 加速流入，红色 ≤10% 加速流出）　<span style="color:var(--mark);font-weight:700">——</span> 沪深300（右轴）　竖线：<span style="color:var(--grow)">加速流入第一天</span></p>
-      <div class="chartwrap"><svg class="chart" id="ntf_c1" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div></details>
       <p class="concl"><b>结论：</b>${a60&&b60?`集中大买出现后 60 个交易日，沪深300 平均 ${sg(a60.avg)}（上涨 ${pc(a60.up,0)}），平时是 ${sg(b60.avg)}。`:""}但出现后 20 天内常常还在跌（国家队是在下跌里托底），<b>→ 出现时宽基额外买 4 周的量，分 2~4 周买完，拿着不用卖；同一段只加一次，市场偏热 / 顶部区不加。</b>集中大卖只在高位时要警惕（见总览"组合信号"的高位撤离）。2023 年起只有 ${d.episodes.length} 段，所以加的量有上限。<span class="note">（2026-11-27 起：原来看"加速度排名"，买得越久越稳定反而显示不在加速，还会把"大卖后不卖了"误判成加速，改成直接看近 20 日净申购占市值。）</span></p>
       <details class="sub"><summary>其他提醒（实验）：急买、大买后回落 ▾</summary>
       ${L.pull?`<div style="margin:10px 0 0;padding:8px 10px;border:1px dashed var(--div);border-radius:8px"><span class="exptag">实验</span> <b>大买后回落：${L.pull.level}</b>（近 5 日 ${L.pull.d5>0?"+":""}${L.pull.d5.toLocaleString()} 亿，近 20 日 ${L.pull.d20>0?"+":""}${L.pull.d20.toLocaleString()} 亿）<br><small>${L.pull.note}。2023 年起：轻度回落之后 60 日 ${sg(L.pull.stats["轻度回落"]["60"].avg)}（${L.pull.stats["轻度回落"].n} 天），明显回落 ${sg(L.pull.stats["明显回落"]["60"].avg)}（${L.pull.stats["明显回落"].n} 天），任意一天 ${sg(L.pull.stats["任意一天"]["60"].avg)}。样本少，只作提醒。</small></div>`:""}
@@ -1385,12 +1378,6 @@ function loadNtf(){
         ${[...d.episodes.map(e=>({...e,k:"集中大买"}))].sort((a,b)=>a.date<b.date?1:-1).map(e=>`<tr><td class="num">${e.date}</td><td>${e.k}</td><td class="r num">${fr(e.fwd["20"])}</td><td class="r num">${fr(e.fwd["60"])}</td><td class="r num">${fr(e.fwd["120"])}</td></tr>`).join("")}</tbody></table></div>
       <p class="note">2023 年起。净申购 = 份额变化 × 单位净值；加速度只看 4 只沪深300 ETF（换成 20 只宽基 ETF 回测更差）；放量 = 3 只上交所沪深300 ETF 成交额 ≥ 前 20 日均值 ${d.rule.vol} 倍且当天下跌。</p></details>`;
     Promise.all([getJ("etf300.json"),getJ("temp.json")]).then(([E,TT])=>{ntf3(S,d.gflow,E);ntfJudge(S,E,TT,d.gflow)});
-    const dates=S.map(r=>r[0]),marks=d.episodes.map(e=>({d:e.date,c:"var(--grow)",t:""}));
-    DualChart($("ntf_c1"),{W:720,H:220,dates,leftRange:[0,100],leftTicks:[0,10,50,90,100],leftFmt:v=>v,
-      bands:[{from:90,to:100,fill:"var(--grow-soft)"},{from:0,to:10,fill:"var(--mark-soft)"}],
-      left:[{v:S.map(r=>r[2]),c:"var(--ink)",w:1.6}],right:{v:S.map(r=>r[4]),c:"var(--mark)"},marks,
-      tip:i=>`${dates[i]}<br>加速度 <b>${S[i][1]==null?"—":S[i][1]+" 亿/天"}</b>`+(S[i][2]!=null?`<br>近一年分位 ${S[i][2]}%`:"")+`<br>近 20 日净申购 ${S[i][3]} 亿<br>沪深300 ${S[i][4].toFixed(0)}`});
-    box.querySelectorAll(".bigbtn[data-big]").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
     box.querySelectorAll("details").forEach(x=>x.addEventListener("toggle",()=>dispatchEvent(new Event("resize"))));
   }).catch(()=>{});
 }
@@ -1438,7 +1425,6 @@ function loadTop(){
     DualChart($("tl_c2"),{W:720,H:220,dates,leftRange:[20,55],leftTicks:[20,30,40,45,50],leftFmt:v=>v+"%",bands:[{from:45,to:55,fill:"var(--mark-soft)"}],
       left:[{v:cv,c:"var(--div)",w:1.8}],right:{v:cl,c:"var(--ink)"},
       tip:i=>`${dates[i].slice(0,7)}<br>前 5% 个股占成交额 <b>${cv[i]==null?"—":cv[i].toFixed(1)+"%"}</b><br>沪深300 ${cl[i].toFixed(0)}`});
-    sec.querySelectorAll(".bigbtn[data-big]").forEach(b=>b.addEventListener("click",()=>openBig(b.dataset.big,b.dataset.title)));
   }).catch(e=>{sec.innerHTML=`<h2>见顶信号灯</h2><p class="note">${e.message}</p>`});
 }
 // ---------------- 页签

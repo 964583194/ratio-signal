@@ -6,7 +6,7 @@ function LineChart(svg,opt){
   const wrap=svg.parentNode,tip=wrap.querySelector(".tip");
   const bar=document.querySelector(`.ranges[data-for="${svg.id}"]`);
   if(bar&&!opt.noBig){   // 每张单线图都可以横屏看大图
-    const bb=document.createElement("button");bb.type="button";bb.className="bigbtn";bb.textContent="⤢ 大图";bb.style.marginLeft="auto";
+    const bb=document.createElement("button");bb.type="button";bb.className="bigbtn";bb.dataset.big=svg.id;bb.textContent="⤢ 横屏看大图";bb.style.marginLeft="auto";
     bb.addEventListener("click",e=>{e.stopPropagation();const sec=svg.closest("section"),h=sec&&sec.querySelector("h3,h2");
       openBig(svg.id,((h&&h.textContent)||"").replace(/⤢.*$/,"").trim())});
     bar.appendChild(bb)}
@@ -175,15 +175,17 @@ function openBig(id, title) {
 // 规矩：每张图都要能横屏看大图。没有按钮的图自动在它上面最近的标题里补一个（以后新加的图也自动有）
 function autoBig() {
   document.querySelectorAll("svg.chart[id]").forEach(sv => {
-    if (sv.closest(".bigov") || sv.id === "ntf3" || document.querySelector(`.bigbtn[data-big="${sv.id}"]`)) return;
+    if (sv.closest(".bigov") || sv.id === "ntf3" || document.getElementById(sv.id + "big") || document.querySelector(`.bigbtn[data-big="${sv.id}"]`)) return;
     const sec = sv.closest("section,.panel,details") || sv.parentElement;
     const h = [...sec.querySelectorAll("h2,h3")].filter(x => x.compareDocumentPosition(sv) & Node.DOCUMENT_POSITION_FOLLOWING).pop();
     if (!h) return;
     const b = document.createElement("button"); b.type = "button"; b.className = "bigbtn"; b.dataset.big = sv.id;
     b.dataset.title = h.textContent.replace(/⤢.*$/, "").trim(); b.textContent = "⤢ 横屏看大图";
-    b.addEventListener("click", () => openBig(sv.id, b.dataset.title)); h.appendChild(b);
+    h.appendChild(b);
   });
 }
+// 所有 data-big 按钮统一在这里处理（各页面不用再单独绑）
+document.addEventListener("click", e => { const b = e.target.closest(".bigbtn[data-big]"); if (b) openBig(b.dataset.big, b.dataset.title || b.closest("h2,h3")?.textContent.replace(/⤢.*$/, "").trim() || "") });
 (() => { let t = 0; const run = () => { clearTimeout(t); t = setTimeout(autoBig, 300) };
   if (document.readyState === "loading") addEventListener("DOMContentLoaded", run); else run();
   new MutationObserver(run).observe(document.documentElement, { childList: true, subtree: true }) })();
