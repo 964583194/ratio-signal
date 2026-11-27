@@ -45,6 +45,9 @@
 <div class="ranges grp" role="group" aria-label="切换" id="grpSw" hidden></div>
 
 <div id="viewO">
+<section class="panel" id="vdSec" hidden><h2>现在怎么做 <span class="exptag">实验</span></h2>
+  <div id="vdBody"><div class="note">加载中</div></div>
+</section>
 <section class="panel"><h2>本周这么做<button type="button" class="bigbtn" onclick="shareImg('week')">生成分享图</button></h2>
   <div class="todo" id="o_rows"><div class="note">加载中</div></div>
   <p class="note" id="o_note"></p>
@@ -934,6 +937,35 @@ function ntf3(S){
   draw();if(!svg.__rz){svg.__rz=1;addEventListener("resize",()=>svg.__draw&&svg.__draw())}svg.__draw=draw;
 }
 // 关键指标（总览）：data/keyind.json，分 规则 / 提醒 / 实验
+// 综合信号（实验）：data/verdict.json，一句话"现在怎么做"，点开看原因和回测
+function loadVerdict(){
+  getJ("verdict.json").then(d=>{if(!d)return;$("vdSec").hidden=false;
+    const L=d.latest,C={"大胆买":"var(--grow)","放心买":"var(--grow)","照常买":"var(--ink)","别加钱":"var(--div)","准备卖":"var(--mark)"},
+      BG={"大胆买":"var(--grow-soft)","放心买":"color-mix(in srgb,var(--grow-soft) 45%,transparent)","照常买":"","别加钱":"var(--div-soft)","准备卖":"var(--mark-soft)"},
+      f=x=>x==null?"—":`${x.avg>0?"+":""}${(x.avg*100).toFixed(1)}%<br><small>${Math.round(x.up*100)}% 上涨</small>`;
+    const row=(s,lv)=>{const x=d.stats[s][lv];return `<tr${lv===L.level?' style="font-weight:700;background:var(--mid)"':""}><td style="color:${C[lv]||"inherit"}">${lv}</td><td class="r num">${x.days}</td><td class="r num">${f(x["60"])}</td><td class="r num">${f(x["120"])}</td><td class="r num">${f(x["250"])}</td></tr>`};
+    const tb=s=>`<div class="scroll"><table><thead><tr><th>${s} 年起</th><th class="r">天数</th><th class="r">60 天后</th><th class="r">半年后</th><th class="r">一年后</th></tr></thead><tbody>${[...d.levels,"任意一天"].map(lv=>row(s,lv)).join("")}</tbody></table></div>`;
+    const ladder=d.levels.map(lv=>`<span style="flex:1;text-align:center;padding:6px 2px;border-radius:6px;font-size:13px;${lv===L.level?`background:${C[lv]};color:var(--bg);font-weight:700`:`background:var(--mid);color:var(--muted)`}">${lv}</span>`).join("");
+    $("vdBody").innerHTML=`<div style="font-size:30px;font-weight:800;color:${C[L.level]};line-height:1.2">${L.level}</div>
+      <div style="font-size:16px;margin:4px 0 10px;color:var(--ink)">${L.action}</div>
+      <div style="display:flex;gap:4px;margin-bottom:6px">${ladder}</div>
+      <div class="note" style="margin:0">${L.date} · ${L.since} 起进入这一档 · 只作提醒，不改任何倍数</div>
+      <details class="sub" style="margin-top:8px"><summary>为什么是"${L.level}"、准不准 ▾</summary>
+        <div style="margin:8px 0">${L.why.map(w=>`<div style="padding:5px 0;border-bottom:1px solid var(--line)"><b style="color:${w.ok?"var(--grow)":w.bad?"var(--mark)":"var(--muted)"}">${w.ok?"✓":w.bad?"✗":"·"}</b> <b>${w.name}</b>：${w.text}</div>`).join("")}</div>
+        <p class="note">怎么判断（从上往下，先满足的算）：<b>准备卖</b> 市场温度顶部，或偏热 + 国家队撤出；<b>别加钱</b> 偏热，或国家队撤出，或见顶灯 ≥2；<b>大胆买</b> 底部 / 偏冷，且近 20 天有国家队急买或方向全部回升；<b>放心买</b> 底部 / 偏冷；<b>照常买</b> 其他。</p>
+        <h3 class="h3">各档之后沪深300 怎么走</h3>${tb("2013")}${tb("2023")}
+        <p class="note">"放心买"之后 60 天常常还在跌（便宜了还会更便宜），但一年后大多上涨；"大胆买"是便宜 + 有人大举进场，短期也更好。国家队急买 2023 年才有数据，之前只按方向判断。样本有限，只作参考，2027-05 半年复盘再决定要不要进规则。</p>
+        <h3 class="h3">沪深300 与各档（背景色）</h3>
+        <p class="note" style="margin:0 0 6px">背景：<span style="color:var(--grow)">深绿 大胆买</span> · <span style="color:var(--grow)">浅绿 放心买</span> · <span style="color:var(--div)">黄 别加钱</span> · <span style="color:var(--mark)">红 准备卖</span></p>
+        <div class="chartwrap"><svg class="chart" id="vd_c1" viewBox="0 0 720 220" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+        <p class="note">最近几次变化：${d.changes.slice(-6).reverse().map(c=>`${c[0]} <b style="color:${C[c[1]]}">${c[1]}</b>`).join(" ← ")}</p>
+      </details>`;
+    const S=d.series.filter(r=>r[0]>="2019-01-01"),dates=S.map(r=>r[0]);
+    const draw=()=>DualChart($("vd_c1"),{W:720,H:220,dates,leftTicks:[],leftFmt:v=>v,left:[],right:{v:S.map(r=>r[2]),c:"var(--ink)"},
+      bg:S.map(r=>BG[d.levels[r[1]]]||""),tip:i=>`${dates[i]}<br><b>${d.levels[S[i][1]]}</b><br>沪深300 ${Math.round(S[i][2])}`});
+    $("vdBody").querySelector("details").addEventListener("toggle",e=>{if(e.target.open)requestAnimationFrame(draw)});
+  });
+}
 function loadKeyInd(){
   getJ("keyind.json").then(d=>{if(!d){$("kiSec").hidden=true;return}
     $("kiBody").innerHTML=d.groups.map(g=>`<div class="kig">${g.key==="exp"?'<span class="exptag">实验</span>':g.title}<small>${g.desc}</small></div>`+
@@ -980,7 +1012,7 @@ function loadOverview(){
       return `<a href="#${v.tab}"><div class="n">${n}</div><div class="a"><span class="lv ${OCLS(v.state)}">${v.state.split("|")[0]}</span>${main}${rest?`<small>${rest}</small>`:""}</div><span class="chev">›</span></a>`}).join("");
     $("o_note").textContent=`和周报邮件一致（周四收盘后发，周五 15:00 前下单）。点一行看原因和阈值。数据日期 ${[...dates].sort().pop()||"—"}。`;
   }).catch(e=>{$("o_rows").innerHTML=`<div class="note">读取失败，请稍后刷新（${e.message}）</div>`});
-  renderTemp($("o_temp"),true);loadPlan();loadKeyInd();
+  renderTemp($("o_temp"),true);loadPlan();loadKeyInd();loadVerdict();
   getJ("health.json").then(h=>{if(h&&h.updated)$("o_data").textContent=h.updated.slice(5).replace("-","月").replace(" ","日 ")});
   getJ("myfunds.json").then(d=>{if(d){const c=d.count,L=d.labels;$("o_my").textContent=`${d.funds.length} 只：`+Object.keys(L).filter(k=>c[k]).map(k=>L[k][0]+" "+c[k]).join("、")}});
 }
