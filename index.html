@@ -1039,11 +1039,17 @@ function ntf3(S,G,E){
   // 横屏看大图：和其他图的大图一样，手机竖着拿时整张转 90°；按钮、时间范围跟着页面上选的
   const bigb=$("n3big");if(bigb)bigb.onclick=()=>{const port=innerHeight>innerWidth,Wv=port?innerHeight:innerWidth,Hv=port?innerWidth:innerHeight;
     const ov=document.createElement("div");ov.className="bigov";
-    ov.innerHTML=`<div class="bigin" style="width:${Wv}px;height:${Hv}px;${port?`transform:translateX(${innerWidth}px) rotate(90deg);transform-origin:top left;`:""}"><div class="bighd"><b>国家队每天买了多少</b><span><button type="button" class="bigx">✕ 关闭</button></span></div><svg class="chart" style="width:100%;height:${Hv-96}px"></svg><p class="note" style="margin:2px 8px;font-size:13px"></p></div>`;
+    ov.innerHTML=`<div class="bigin" style="width:${Wv}px;height:${Hv}px;${port?`transform:translateX(${innerWidth}px) rotate(90deg);transform-origin:top left;`:""}"><div class="bighd"><b>国家队每天买了多少</b><span><button type="button" class="bigx">✕ 关闭</button></span></div><div class="n3opt" style="display:flex;flex-wrap:wrap;gap:4px 12px;padding:0 8px"></div><svg class="chart" style="width:100%;height:${Hv-96}px"></svg><p class="note" style="margin:2px 8px;font-size:13px"></p></div>`;
     document.body.appendChild(ov);const ofl=document.body.style.overflow;document.body.style.overflow="hidden";
     const close=()=>{ov.remove();document.body.style.overflow=ofl;removeEventListener("resize",close)};ov.querySelector(".bigx").onclick=close;addEventListener("resize",close);
-    const sv=ov.querySelector("svg"),W2=1400,H2=Math.round(W2*(Hv-96)/(Wv-24));sv.setAttribute("viewBox",`0 0 ${W2} ${H2}`);
-    requestAnimationFrame(()=>drawTo(sv,W2,H2,ov.querySelector("p")))};
+    // 页面上的三组选项（时间范围 / ② 看哪个 / ③ 分三类）复制一份放进大图，点了同时改页面和大图
+    const opt=ov.querySelector(".n3opt");[bar,mb,gb].forEach(g=>{if(!g||g.hidden)return;const c=g.cloneNode(true);c.removeAttribute("id");c.style.margin="0";c.querySelectorAll("button").forEach(b=>b.style.padding="3px 10px");c.dataset.src=g.id;opt.appendChild(c)});
+    const sv=ov.querySelector("svg");let W2=1400,H2=0;
+    const redraw=()=>{const h=Hv-ov.querySelector(".bighd").offsetHeight-opt.offsetHeight-40;sv.style.height=h+"px";H2=Math.round(W2*h/(Wv-24));sv.setAttribute("viewBox",`0 0 ${W2} ${H2}`);drawTo(sv,W2,H2,ov.querySelector("p"))};
+    opt.onclick=e=>{const b=e.target.closest("button");if(!b)return;const g=b.closest("[data-src]"),src=$(g.dataset.src),k=["n","m","g"].find(x=>b.dataset[x]!=null);
+      const orig=[...src.querySelectorAll("button")].find(z=>z.dataset[k]===b.dataset[k]);if(orig)orig.click();
+      g.querySelectorAll("button").forEach(z=>z.setAttribute("aria-pressed",z===b));redraw()};
+    requestAnimationFrame(redraw)};
   bar.onclick=e=>{const b=e.target.closest("button");if(!b)return;mode=b.dataset.n;bar.querySelectorAll("button").forEach(z=>z.setAttribute("aria-pressed",z===b));draw()};
   draw();if(!svg.__rz){svg.__rz=1;addEventListener("resize",()=>svg.__draw&&svg.__draw())}svg.__draw=draw;
 }
