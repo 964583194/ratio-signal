@@ -1,15 +1,15 @@
 {
- "updated": "2026-11-27 03:23",
+ "updated": "2026-11-27 17:06",
  "ok": true,
  "items": {
   "cyb50": {
    "name": "创业板50 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 4005,
+   "last": "2026-11-27",
+   "days": 4006,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "hl100": {
@@ -46,30 +46,30 @@
    "name": "科创50 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 1679,
+   "last": "2026-11-27",
+   "days": 1680,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "a500": {
    "name": "中证A500 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 4108,
+   "last": "2026-11-27",
+   "days": 4109,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "hs300": {
    "name": "沪深300 收盘",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 5324,
+   "last": "2026-11-27",
+   "days": 5325,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": false
   },
   "pe300": {
@@ -124,14 +124,12 @@
   },
   "gold": {
    "name": "黄金ETF 518880 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 3241,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 1,
+   "last": "2026-11-27",
+   "days": 3242,
+   "failed": [],
+   "stale_days": 0,
    "ref": false
   },
   "pb_below": {
@@ -148,32 +146,30 @@
    "name": "两市融资余额",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-25",
-   "days": 4045,
+   "last": "2026-11-26",
+   "days": 4046,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "margin_ratio": {
    "name": "融资余额占流通市值",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-25",
-   "days": 4045,
+   "last": "2026-11-26",
+   "days": 4046,
    "failed": [],
-   "stale_days": 2,
+   "stale_days": 1,
    "ref": true
   },
   "mkt_amt": {
    "name": "两市成交额",
-   "source": "本地缓存",
-   "mode": "缓存",
-   "last": "2026-11-26",
-   "days": 4103,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 1,
+   "source": "东方财富",
+   "mode": "增量",
+   "last": "2026-11-27",
+   "days": 4104,
+   "failed": [],
+   "stale_days": 0,
    "ref": true
   },
   "pe_cyb": {
@@ -280,10 +276,10 @@
    "name": "沪深300 流通市值",
    "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 16,
+   "last": "2026-11-27",
+   "days": 17,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "buffett": {
@@ -345,22 +341,20 @@
    "name": "白银期货主力",
    "source": "新浪",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 3540,
+   "last": "2026-11-27",
+   "days": 3541,
    "failed": [],
-   "stale_days": 1,
+   "stale_days": 0,
    "ref": true
   },
   "etf513100": {
    "name": "纳指ETF 513100 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 654,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 1,
+   "last": "2026-11-27",
+   "days": 655,
+   "failed": [],
+   "stale_days": 0,
    "ref": false
   },
   "nav513100": {
@@ -375,14 +369,12 @@
   },
   "bank": {
    "name": "中证银行 收盘",
-   "source": "中证指数官网",
+   "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 2807,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 1,
+   "last": "2026-11-27",
+   "days": 2808,
+   "failed": [],
+   "stale_days": 0,
    "ref": true
   },
   "bank_pe": {
@@ -447,14 +439,12 @@
   },
   "etf159687": {
    "name": "亚太精选ETF 159687 收盘",
-   "source": "腾讯",
+   "source": "东方财富",
    "mode": "增量",
-   "last": "2026-11-26",
-   "days": 941,
-   "failed": [
-    "东方财富：RemoteDisconnected Remote end closed connection without response"
-   ],
-   "stale_days": 1,
+   "last": "2026-11-27",
+   "days": 942,
+   "failed": [],
+   "stale_days": 0,
    "ref": true
   },
   "nav159687": {
