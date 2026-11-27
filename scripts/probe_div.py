@@ -11,9 +11,13 @@ import sources as S  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "data", "raw", "div_etf.json")
 names, sh, nav = {}, {}, {}
-days = S._wdays("2023-01-03")
+alld = S._wdays("2023-01-03")
+days = [d for d in alld if dt.date.fromisoformat(d).weekday() == 4 or "2026-05-01" <= d <= "2026-08-31" or d >= "2026-11-01"]
 t0 = time.time()
-for i, d in enumerate(days):
+from concurrent.futures import ThreadPoolExecutor  # noqa: E402
+
+
+def one(d):
     u = ("https://query.sse.com.cn/commonQuery.do?jsonCallBack=jsonpCallback1&isPagination=true&pageHelp.pageSize=10000"
          "&pageHelp.pageNo=1&pageHelp.beginPage=1&pageHelp.cacheSize=1&pageHelp.endPage=1"
          f"&sqlId=COMMON_SSE_ZQPZ_ETFZL_XXPL_ETFGM_SEARCH_L&STAT_DATE={d}&_={int(time.time() * 1000)}")
@@ -24,7 +28,14 @@ for i, d in enumerate(days):
         rows = (j.get("pageHelp") or {}).get("data") or j.get("result") or []
     except Exception as e:  # noqa: BLE001
         print("sse", d, e)
-        continue
+        return d, []
+    return d, rows
+
+
+with ThreadPoolExecutor(8) as ex:
+    res = list(ex.map(one, days))
+print("SSE 用时", f"{time.time() - t0:.0f}s", len(days), "天", flush=True)
+for i, (d, rows) in enumerate(res):
     if i == 0 and rows:
         print("SSE 字段：", list(rows[0]))
     for r in rows:
@@ -32,8 +43,6 @@ for i, d in enumerate(days):
         if "红利" in nm and r.get("TOT_VOL"):
             names[r["SEC_CODE"]] = nm
             sh.setdefault(r["SEC_CODE"], {})[d] = float(r["TOT_VOL"]) * 1e4
-    if i % 100 == 0:
-        print(d, len(names), f"{time.time() - t0:.0f}s", flush=True)
 try:
     import akshare as ak  # noqa: PLC0415
     m = dt.date(2023, 1, 1)
