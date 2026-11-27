@@ -891,7 +891,7 @@ function ntf3(S){
   let mode="66";
   const draw=()=>{
     let R=mode==="ytd"?S.filter(r=>r[0]>=S[S.length-1][0].slice(0,4)+"-01-01"):S.slice(-(+mode));
-    R=R.filter(r=>r[5]!=null);const n=R.length;if(n<2)return;
+    R=R.filter(r=>r[5]!=null);const n=R.length;if(n<2){svg.innerHTML="";$("ntf3t").textContent="每天净买入的数据还没生成，下一次数据更新后显示。";return}
     const W=720,L=58,Rr=14,w=W-L-Rr,x=i=>L+w*(i+.5)/n,bw=Math.max(1.5,w/n*.72);
     const P=[[34,110],[186,100],[330,190]];      // 三层：[顶, 高]
     const cw=svg.clientWidth||W,fs=Math.min(17,Math.max(10,8.6*W/cw));
