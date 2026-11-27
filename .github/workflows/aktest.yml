@@ -1,0 +1,21 @@
+name: aktest
+on:
+  push:
+    branches: [ak-rename]
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q akshare
+      - run: |
+          cd scripts && python - <<'EOF'
+          import sources as S
+          for name,f in [("M1 东财",S.ak_money("货币(M1)-同比增长")),("M1 新浪",S.ak_m1_b),("SPDR",S.ak_spdr),("国债10年",S.ak_cn10y)]:
+              try:
+                  d=f("2026-01-01");k=sorted(d);print(name,"OK",len(d),k[-1],d[k[-1]])
+              except Exception as e:
+                  print(name,"FAIL",type(e).__name__,str(e)[:300])
+          EOF
