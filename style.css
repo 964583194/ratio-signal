@@ -231,4 +231,5 @@ details.sub{margin-top:10px}details.sub>summary{cursor:pointer;font-size:13px;co
 
 /* 债基 · 银行：银行部分的小标题 */
 .bankh{margin:26px 2px 10px;font-size:20px}.bankh small{font-weight:400;color:var(--muted);font-size:13px}.bankh .expv{font-size:12px;border:1px dashed var(--div)}
-.topcard{border-left:4px solid var(--grow)}.topcard .tc-main{font-size:21px;font-weight:800;line-height:1.35;margin:4px 0 8px;color:var(--ink)}
+.topcard{border-left:4px solid var(--grow)}.tc-main{font-size:21px;font-weight:800;line-height:1.35;margin:4px 0 8px;color:var(--ink)}
+.kchips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:4px 0 6px}.kchips .kc{display:flex;flex-direction:column;gap:3px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:inherit}.kchips .kc small{color:var(--muted);font-size:11.5px}.kchips .kc .lv{align-self:flex-start;white-space:normal}

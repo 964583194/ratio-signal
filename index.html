@@ -46,23 +46,23 @@
 <section class="panel topcard" id="topCard" hidden></section>
 
 <div id="viewO">
-<section class="panel topcard" id="todayCard"><div class="note">加载中</div></section>
-<section class="panel" id="vdSec" hidden><h2>组合信号 <span class="exptag">实验</span></h2>
+<section class="panel topcard" id="vdSec" hidden><h2>现在的关键信息</h2>
   <div id="vdBody"><div class="note">加载中</div></div>
+</section>
+<section class="panel" id="kiSec"><h2>规则指标<a class="hmore" href="#temp">市场温度详情 ›</a></h2>
+  <p class="note" style="margin:-6px 0 8px">直接决定买卖的几个数，点名字进对应页签。提醒和实验指标都收进了上面的"组合信号"，点"为什么"能看到。具体怎么买、买多少在下面。</p>
+  <div id="kiBody"><div class="note">加载中</div></div>
 </section>
 <section class="panel"><h2>本周这么做<button type="button" class="bigbtn" onclick="shareImg('week')">生成分享图</button></h2>
   <div class="todo" id="o_rows"><div class="note">加载中</div></div>
   <p class="note" id="o_note"></p>
 </section>
+<section class="panel" id="todayCard"><div class="note">加载中</div></section>
 <details class="panel fold" id="planSec"><summary>本周下单清单<small id="planSum">加载中</small></summary><div class="pbody">
   <div class="budget">每周预算 <input type="number" id="budget" inputmode="numeric" min="0" step="100" aria-label="每周预算（元）"> 元<span class="note" style="margin:0 0 0 6px">只存在这台手机上</span></div>
   <div class="todo" id="planRows"><div class="note">加载中</div></div>
   <p class="note" id="planNote"></p>
 </div></details>
-<section class="panel" id="kiSec"><h2>规则指标<a class="hmore" href="#temp">市场温度详情 ›</a></h2>
-  <p class="note" style="margin:-6px 0 8px">直接决定买卖的几个数，点名字进对应页签。提醒和实验指标都收进了上面的"组合信号"，点"为什么"能看到。</p>
-  <div id="kiBody"><div class="note">加载中</div></div>
-</section>
 <div id="o_temp" hidden></div>
 <a class="panel oneline" href="funds.html"><b>我的基金</b><span class="note" id="o_my">每只能不能加，含海外小仓位</span><span class="chev">›</span></a>
 </div>
@@ -876,11 +876,11 @@ function todayCard(P,k,tot,b){
     const sell=st?Object.entries(st).filter(([nm,v])=>/卖出|减仓|卖一部分|止盈：卖/.test((v.act||"").split("；")[0])&&!/不卖|没有/.test(v.act)).map(([nm])=>nm):[];
     const dv=st&&st["红利打分"],dvTxt=dv?(dv.state==="下单"?dv.act:dv.state==="暂停"?"红利评分空仓，暂不攒新钱":"红利评分 "+dv.act.split("（")[0]):"";
     const C={g2:"var(--grow)",g1:"var(--grow)",c0:"var(--ink)",h1:"var(--div)",r1:"var(--mark)"},L=vd&&vd.latest;
-    box.innerHTML=`<div class="label">这周怎么做 · ${late?"已过周五 15:00，下周一 15:00 前补买":"周五 15:00 前下单"} · 每周 ${b.toLocaleString()} 元</div>
+    box.innerHTML=`<h2 style="margin-bottom:4px">这周买多少</h2><div class="label">${late?"已过周五 15:00，下周一 15:00 前补买":"周五 15:00 前下单"} · 每周 ${b.toLocaleString()} 元</div>
       <div class="tc-main">买 ${tot.toLocaleString()} 元</div>
       <div style="line-height:1.9;font-size:15px">${items||"本周不用买"}</div>
       <div class="note" style="margin:6px 0 0">${sell.length?`<b style="color:var(--mark)">要卖：${sell.join("、")}（看下面那一行）</b>`:"不用卖"}${dvTxt?" · "+dvTxt:""}${(P.side||[]).length?" · 纳指另外小额定投":""}</div>
-      ${L?`<div class="note" style="margin:6px 0 0">组合信号：<b style="color:${C[L.cls]}">${L.title}</b> · ${L.act}</div>`:""}`;
+      <div class="note" style="margin:6px 0 0">按下面"下单清单"里填的预算换算，展开看每一行的说明。</div>`;
   });
 }
 function loadPlan(){
@@ -956,8 +956,10 @@ function loadVerdict(){
     const lit=d.signals.filter(s=>s.on);
     const rows=d.signals.map(s=>`<tr${s.on?' style="background:var(--mid)"':""}><td><b style="color:${C[s.cls]}">${s.name}</b>${s.on?' <span class="lv g1" style="font-size:11px">现在亮</span>':""}<br><small style="color:var(--muted);white-space:normal;display:block">${s.rule}</small></td><td class="r num">${s.eps.length} 段<br><small>${s.since} 起</small></td><td class="r num">${f(s.stats["60"])}</td><td class="r num">${f(s.stats["250"])}</td></tr>`).join("");
     const base=s=>`<tr><td style="color:var(--muted);white-space:normal">随便哪天（${s} 起）</td><td></td><td class="r num">${f(d.base[s]["60"])}</td><td class="r num">${f(d.base[s]["250"])}</td></tr>`;
-    $("vdBody").innerHTML=`<div style="font-size:30px;font-weight:800;color:${C[L.cls]};line-height:1.2">${L.title}</div>
+    $("vdBody").innerHTML=`<div class="label">组合信号 <span class="exptag">实验</span></div>
+      <div style="font-size:30px;font-weight:800;color:${C[L.cls]};line-height:1.2">${L.title}</div>
       <div style="font-size:16px;margin:4px 0 8px;color:var(--ink)">${L.act}</div>
+      <div class="kchips" id="vdChips"></div>
       ${lit.length>1?`<div class="note" style="margin:0 0 4px">同时亮着：${lit.map(s=>`<b style="color:${C[s.cls]}">${s.name}</b>`).join("、")}</div>`:""}
       <div class="note" style="margin:0">${L.date}${lit[0]&&lit[0].from?` · ${lit[0].from} 起亮`:""} · 只作提醒，不改任何倍数，具体买多少还是看下面"本周这么做"</div>
       <details class="sub" style="margin-top:8px"><summary>为什么、准不准 ▾</summary>
@@ -968,6 +970,16 @@ function loadVerdict(){
         <p class="note">同时亮多个时，按表里从上到下取第一个当标题。"跟进买入"会盖过"磨底等待"：同样是便宜还在跌，有国家队急买时之后 60 天明显更好（见上表"跟进买入"和"磨底等待"）。国家队买卖都用同一把尺子：净申购 ÷ 沪深300 流通市值。国家队急买 2023 年才有数据。每个组合只出现过 3~8 段，样本少，只作参考，2027-05 半年复盘再决定要不要进规则。</p>
         <p class="note">历次出现：${d.signals.map(s=>`<b>${s.name}</b> ${s.eps.slice(-4).join("、")||"—"}`).join("；")}</p>
       </details>`;
+    keyChips();
+  });
+}
+function keyChips(){
+  Promise.all([getJ("state.json"),getJ("temp.json"),getJ("ntf.json")]).then(([st,T,N])=>{const box=$("vdChips");if(!box||!st)return;
+    const chip=(k,v,cls,href)=>`<a class="kc" href="${href}"><small>${k}</small><span class="lv ${cls}">${v}</span></a>`;
+    const sell=Object.entries(st).filter(([nm,v])=>/卖出|减仓|卖一部分|止盈：卖/.test((v.act||"").split("；")[0])&&!/不卖|没有/.test(v.act)).map(([nm])=>nm);
+    const dv=st["红利打分"],nt=N&&N.latest,tl=T&&T.latest;
+    box.innerHTML=[tl&&chip("市场温度",tl.zone,tl.cls,"#temp"),nt&&chip("国家队",nt.state,nt.cls==="g1"?"g1":nt.state==="集中大买"?"g1":nt.state==="集中大卖"?"h1":"c0","#temp"),
+      chip("要卖",sell.length?sell.join("、"):"不用卖",sell.length?"r1":"c0","#overview"),dv&&chip("红利",dv.state.split("|")[0],OCLS(dv.state),"#dividend")].filter(Boolean).join("");
   });
 }
 function loadKeyInd(){
