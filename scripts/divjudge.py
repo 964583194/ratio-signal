@@ -71,6 +71,7 @@ def run():
         x = [fl[k] / sz[k] * 100 if sz[k] else 0 for k in range(len(fl))]
         f20 = sum(x[max(0, i - 19):i + 1])
         burst = max(x[max(0, i - 2):i + 1])            # 近 3 天单日最大流入
+        dump = min(x[max(0, i - 2):i + 1])             # 近 3 天单日最大流出
         bigd = sum(1 for v in x[max(0, i - 19):i + 1] if v >= 0.3)
         # 每天国家队是不是在买（ntfstage 的每日场景），用来找这一段"突发大额 + 国家队"从哪天开始
         ZD = (Z or {}).get("days") or {}
@@ -102,6 +103,27 @@ def run():
                 ft = "⚠ 突发大额流入 + 国家队在买（像 2026-10-23）：及时看，照评分买，评分到加码时别犹豫"
         elif burst >= 0.8:
             fk, ft, fl_lv = "burst", "有人突击大额买入，别追，看后面是不是持续", None
+        elif dump <= -0.8:
+            # 大额流出（单日 ≤ 规模 −0.8%）：这一段（相隔 ≤10 天算同一段）里每次单日流出创新高 = 一笔比一笔大
+            a, k = i, i
+            while k > 0 and k > i - 60:
+                k -= 1
+                if x[k] <= -0.8:
+                    a = k
+                elif a - k > 10:
+                    break
+            low = 0
+            for k in range(a, i + 1):
+                if x[k] <= -0.8 and x[k] < low:
+                    low = x[k]
+                    ups.append((F["dates"][k], round(x[k], 2)))
+            more = f"（又一笔更大的：{ups[-1][0][5:]} 单日 {ups[-1][1]}%，之前最大 {ups[-2][1]}%）" if len(ups) > 1 and ups[-1][0] >= F["dates"][max(0, i - 2)] else ""
+            if nt_sell:
+                fk, fl_lv = "dump_nt", "普通"
+                ft = f"大额流出{more} + 国家队在卖：偏弱，别额外加钱（2023 起同类之后 20 天多数跌）"
+            else:
+                fk, fl_lv = "dump", "普通"
+                ft = f"大额流出{more}，没人要：不用慌，照评分慢慢买（2023 起一笔比一笔大的流出，之后 60 天 6 次 5 次涨）"
         elif bigd >= 5 and f20 > 0:
             fk, ft, fl_lv = "chase", "近 20 天一直大额流入，追的人多：别追，照评分买", None
         elif nt_sell and f20 <= -2:
@@ -112,7 +134,7 @@ def run():
             fk, ft, fl_lv = "out", "资金在流出，红利暂时没人追", None
         else:
             fk, ft, fl_lv = "steady", "资金进出平稳，持续关注", None
-        flow = {"key": fk, "text": ft, "level": fl_lv, "ups": ups, "f20": round(f20, 1), "burst": round(burst, 2), "big_days": bigd, "date": F["dates"][i]}
+        flow = {"key": fk, "text": ft, "level": fl_lv, "ups": ups, "dump": round(dump, 2), "f20": round(f20, 1), "burst": round(burst, 2), "big_days": bigd, "date": F["dates"][i]}
     # 标题：右侧 > 资金⚠ > 很便宜
     if right:
         head, hcls, level = "跌透转头", "g2", "重点"
@@ -122,6 +144,9 @@ def run():
         head, hcls, level, act = "突发大额 + 国家队" + (f"（第 {len(flow['ups'])} 笔更大的）" if len(flow["ups"]) > 1 else ""), "g2", "重点", flow["text"]
     elif n >= 4:
         head, hcls, level, act = lv, cls, "重点", txt
+    elif flow and flow["key"] in ("dump", "dump_nt"):
+        nm = "大额流出 + 国家队在卖" if flow["key"] == "dump_nt" else "大额流出，没人要"
+        head, hcls, level, act = nm + (f"（第 {len(flow['ups'])} 笔更大的）" if len(flow["ups"]) > 1 else ""), "r1" if flow["key"] == "dump_nt" else "g1", "普通", flow["text"]
     elif flow and flow["level"] == "普通":
         head, hcls, level, act = "偏弱", "r1", "普通", flow["text"]
     else:
