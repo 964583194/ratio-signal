@@ -535,7 +535,7 @@ def main():
                    and not (n == "组合信号（实验）" and b not in ("跟进买入", "见底加码", "高位撤离", "高位护盘"))
                    and not (n == "国家队场景（实验）" and not SCN_LV.get(b))
                    and not (n == "短线（实验）" and not b.startswith(("加仓", "卖回")))
-                   and not (n == "红利综合判断（实验）" and not (b in ("跌透转头", "很便宜", "偏弱") or b.startswith(("突发大额 + 国家队", "大额流出"))))]
+                   and not (n == "红利综合判断（实验）" and not (b in ("跌透转头", "很便宜", "偏弱") or b.startswith(("突发大额 + 国家队", "大额流出", "红利流出 + 国家队买大盘", "大盘资金躲进红利"))))]
     G = change_lines(changes, cur, prev, report) if changes else {}
     chg = "\n\n".join(f"**{k}**\n\n" + "\n".join(v) for k, v in G.items() if v)
     dues = "\n\n".join(f"### {r['title']}\n\n{r['body']}" for r in due)

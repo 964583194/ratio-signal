@@ -71,7 +71,7 @@ def run():
         x = [fl[k] / sz[k] * 100 if sz[k] else 0 for k in range(len(fl))]
         f20 = sum(x[max(0, i - 19):i + 1])
         burst = max(x[max(0, i - 2):i + 1])            # 近 3 天单日最大流入
-        dump = min(x[max(0, i - 2):i + 1])             # 近 3 天单日最大流出
+        dump = min(x[max(0, i - 4):i + 1])             # 近 5 天单日最大流出（流出"注意几天"：5 天内都算，免得隔天进进出出）
         bigd = sum(1 for v in x[max(0, i - 19):i + 1] if v >= 0.3)
         # 每天国家队是不是在买（ntfstage 的每日场景），用来找这一段"突发大额 + 国家队"从哪天开始
         ZD = (Z or {}).get("days") or {}
@@ -101,6 +101,10 @@ def run():
                 ft = f"⚠ 又一笔更大的流入（{ups[-1][0][5:]} 单日 {ups[-1][1]}%，之前最大 {ups[-2][1]}%）+ 国家队在买：一笔比一笔大，着重留意，照评分买，评分到加码时别犹豫"
             else:
                 ft = "⚠ 突发大额流入 + 国家队在买（像 2026-10-23）：及时看，照评分买，评分到加码时别犹豫"
+        elif nt_sell and f20 >= 2:
+            # 红利一直在流入 + 国家队一直在卖沪深300：资金从大盘躲进红利（2023 起之后 60 天沪深300 −4.6%、13% 上涨，红利 −1.3%；2026-04~06 就是这样）
+            fk, fl_lv = "hide", "重点"
+            ft = f"⚠ 红利一直在流入（近 20 天 +{f20:.1f}%）+ 国家队一直在卖沪深300：资金从大盘躲进红利，大盘偏弱，宽基别额外加钱，红利也别追（照评分买）"
         elif burst >= 0.8:
             fk, ft, fl_lv = "burst", "有人突击大额买入，别追，看后面是不是持续", None
         elif dump <= -0.8:
@@ -117,13 +121,20 @@ def run():
                 if x[k] <= -0.8 and x[k] < low:
                     low = x[k]
                     ups.append((F["dates"][k], round(x[k], 2)))
-            more = f"（又一笔更大的：{ups[-1][0][5:]} 单日 {ups[-1][1]}%，之前最大 {ups[-2][1]}%）" if len(ups) > 1 and ups[-1][0] >= F["dates"][max(0, i - 2)] else ""
-            if nt_sell:
+            more = f"（又一笔更大的：{ups[-1][0][5:]} 单日 {ups[-1][1]}%，之前最大 {ups[-2][1]}%）" if len(ups) > 1 and ups[-1][0] >= F["dates"][max(0, i - 4)] else ""
+            if nk.startswith(("buy_first", "buy_up", "buy_slow")):
+                # 红利大额流出 + 国家队在低位 / 中间集中买沪深300：钱在从红利换到大盘（2024-02、2025-05 之后 60 天沪深300 +5%）
+                fk, fl_lv = "rotate", "重点"
+                ft = f"⚠ 红利大额流出{more} + 国家队在大额买沪深300：资金在从红利换到大盘，宽基规则让加仓时别犹豫，红利照评分买"
+            elif nk.startswith("hi_buy"):
+                fk, fl_lv = "dump_hi", "普通"
+                ft = f"红利大额流出{more} + 国家队在高位护盘：别追大盘（2026-08 之后 60 天沪深300 −13%），红利照评分买，注意几天"
+            elif nt_sell:
                 fk, fl_lv = "dump_nt", "普通"
-                ft = f"大额流出{more} + 国家队在卖：偏弱，别额外加钱（2023 起同类之后 20 天多数跌）"
+                ft = f"红利大额流出{more} + 国家队在卖：偏弱，别额外加钱，注意几天（2023 起同类之后 20 天多数跌）"
             else:
                 fk, fl_lv = "dump", "普通"
-                ft = f"大额流出{more}，没人要：不用慌，照评分慢慢买（2023 起一笔比一笔大的流出，之后 60 天 6 次 5 次涨）"
+                ft = f"红利大额流出{more}：注意几天，不用慌，照评分慢慢买（2023 起一笔比一笔大的流出，之后 60 天 6 次 5 次涨）"
         elif bigd >= 5 and f20 > 0:
             fk, ft, fl_lv = "chase", "近 20 天一直大额流入，追的人多：别追，照评分买", None
         elif nt_sell and f20 <= -2:
@@ -139,14 +150,18 @@ def run():
     if right:
         head, hcls, level = "跌透转头", "g2", "重点"
         act = "⚠ 红利跌透后开始往上走（评分到过 14、位置便宜、站上 20 日线）：规则让加码时坚定加码，现金池里的闲钱可以分几周买进红利"
+    elif flow and flow["key"] == "rotate":
+        head, hcls, level, act = "红利流出 + 国家队买大盘" + (f"（第 {len(flow['ups'])} 笔更大的）" if len(flow["ups"]) > 1 else ""), "g2", "重点", flow["text"]
+    elif flow and flow["key"] == "hide":
+        head, hcls, level, act = "大盘资金躲进红利", "r1", "重点", flow["text"]
     elif flow and flow["level"] == "重点":
         # 第几笔更大的：邮件按"变了才发"，所以每多一笔更大的流入就会再发一封
         head, hcls, level, act = "突发大额 + 国家队" + (f"（第 {len(flow['ups'])} 笔更大的）" if len(flow["ups"]) > 1 else ""), "g2", "重点", flow["text"]
     elif n >= 4:
         head, hcls, level, act = lv, cls, "重点", txt
-    elif flow and flow["key"] in ("dump", "dump_nt"):
-        nm = "大额流出 + 国家队在卖" if flow["key"] == "dump_nt" else "大额流出，没人要"
-        head, hcls, level, act = nm + (f"（第 {len(flow['ups'])} 笔更大的）" if len(flow["ups"]) > 1 else ""), "r1" if flow["key"] == "dump_nt" else "g1", "普通", flow["text"]
+    elif flow and flow["key"] in ("dump", "dump_nt", "dump_hi"):
+        nm = {"dump_nt": "大额流出 + 国家队在卖", "dump_hi": "大额流出 + 高位护盘", "dump": "大额流出"}[flow["key"]]
+        head, hcls, level, act = nm, "r1" if flow["key"] != "dump" else "g1", "普通", flow["text"]
     elif flow and flow["level"] == "普通":
         head, hcls, level, act = "偏弱", "r1", "普通", flow["text"]
     else:
