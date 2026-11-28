@@ -72,8 +72,34 @@ def run():
         f20 = sum(x[max(0, i - 19):i + 1])
         burst = max(x[max(0, i - 2):i + 1])            # 近 3 天单日最大流入
         bigd = sum(1 for v in x[max(0, i - 19):i + 1] if v >= 0.3)
+        # 每天国家队是不是在买（ntfstage 的每日场景），用来找这一段"突发大额 + 国家队"从哪天开始
+        ZD = (Z or {}).get("days") or {}
+        zk = ZD.get("keys") or []
+        zday = {}
+        if ZD:
+            NS = (_load("ntf.json") or {}).get("series") or []
+            nd = [r[0] for r in NS]
+            if ZD.get("from") in nd:
+                d0 = nd.index(ZD["from"])
+                zday = {nd[d0 + k]: zk[v] for k, v in enumerate(ZD["v"]) if d0 + k < len(nd)}
+
+        def cond(k):
+            return max(x[max(0, k - 2):k + 1]) >= 0.8 and zday.get(F["dates"][k], nk if k == i else "").startswith(("buy", "hi_buy"))
+        ups, top = [], 0
         if burst >= 0.8 and nt_buy:
-            fk, ft, fl_lv = "burst_nt", "⚠ 突发大额流入 + 国家队在买（像 2026-10-23）：及时看，照评分买，评分到加码时别犹豫", "重点"
+            a = i
+            while a > 0 and cond(a - 1):
+                a -= 1
+            for k in range(max(0, a - 2), i + 1):     # 这一段里每次单日流入创新高，算一次"一笔比一笔大"
+                if x[k] >= 0.8 and x[k] > top:
+                    top = x[k]
+                    ups.append((F["dates"][k], round(x[k], 2)))
+        if burst >= 0.8 and nt_buy:
+            fk, fl_lv = "burst_nt", "重点"
+            if len(ups) > 1 and ups[-1][0] >= F["dates"][max(0, i - 2)]:
+                ft = f"⚠ 又一笔更大的流入（{ups[-1][0][5:]} 单日 {ups[-1][1]}%，之前最大 {ups[-2][1]}%）+ 国家队在买：一笔比一笔大，着重留意，照评分买，评分到加码时别犹豫"
+            else:
+                ft = "⚠ 突发大额流入 + 国家队在买（像 2026-10-23）：及时看，照评分买，评分到加码时别犹豫"
         elif burst >= 0.8:
             fk, ft, fl_lv = "burst", "有人突击大额买入，别追，看后面是不是持续", None
         elif bigd >= 5 and f20 > 0:
@@ -86,13 +112,14 @@ def run():
             fk, ft, fl_lv = "out", "资金在流出，红利暂时没人追", None
         else:
             fk, ft, fl_lv = "steady", "资金进出平稳，持续关注", None
-        flow = {"key": fk, "text": ft, "level": fl_lv, "f20": round(f20, 1), "burst": round(burst, 2), "big_days": bigd, "date": F["dates"][i]}
+        flow = {"key": fk, "text": ft, "level": fl_lv, "ups": ups, "f20": round(f20, 1), "burst": round(burst, 2), "big_days": bigd, "date": F["dates"][i]}
     # 标题：右侧 > 资金⚠ > 很便宜
     if right:
         head, hcls, level = "跌透转头", "g2", "重点"
         act = "⚠ 红利跌透后开始往上走（评分到过 14、位置便宜、站上 20 日线）：规则让加码时坚定加码，现金池里的闲钱可以分几周买进红利"
     elif flow and flow["level"] == "重点":
-        head, hcls, level, act = "突发大额 + 国家队", "g2", "重点", flow["text"]
+        # 第几笔更大的：邮件按"变了才发"，所以每多一笔更大的流入就会再发一封
+        head, hcls, level, act = "突发大额 + 国家队" + (f"（第 {len(flow['ups'])} 笔更大的）" if len(flow["ups"]) > 1 else ""), "g2", "重点", flow["text"]
     elif n >= 4:
         head, hcls, level, act = lv, cls, "重点", txt
     elif flow and flow["level"] == "普通":
