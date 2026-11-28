@@ -13,7 +13,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 import sources as S
-from divflow import _sse, _timed
+from divflow import _sse, _timed, _szse_backup, nav_hist
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(ROOT, "data", "raw", "sec_etf.json")
@@ -120,6 +120,7 @@ def fetch(Z):
                     n0 += 1
                 Z["szse_last"] = str(df["日期"].max())[:10]
                 print(f"  深交所：{d0} 起 {n0} 条，到 {Z['szse_last']}")
+    _szse_backup(Z, lambda nm: group_of(nm) is not None)
     # 每组份额最大的几只拿净值
     top = _tops(Z)
     last = max((max(v) for v in sh.values() if v), default="")
@@ -128,14 +129,14 @@ def fetch(Z):
         if nav.get(c) and max(nav[c]) >= last:
             return c, None
         try:
-            return c, {d: v for d, v in S.em_pzd(c).items() if d >= "2025-05-01"}
+            return c, nav_hist(c, "2025-05-01", bool(nav.get(c)))
         except Exception as e:  # noqa: BLE001
             print("  净值", c, e)
             return c, None
     with ThreadPoolExecutor(3) as ex:
         for c, v in ex.map(one, [c for cs in top.values() for c in cs]):
             if v:
-                nav[c] = v
+                nav[c] = {**nav.get(c, {}), **v}
 
 
 def _tops(Z):

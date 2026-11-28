@@ -26,7 +26,61 @@ def _a_share(nm):
     return "红利" in nm and not any(b in nm for b in BAD)
 
 
+def _sse_ak(d):
+    """备用：AKShare 的上交所 ETF 规模（列名不固定，按含义找）；份额统一成"万份"，和主接口一样"""
+    import akshare as ak  # noqa: PLC0415
+    df = _timed(lambda: ak.fund_etf_scale_sse(date=d.replace("-", "")), 60)
+    if df is None or not len(df):
+        return []
+    col = lambda *ks: next(c for c in df.columns if any(k in str(c) for k in ks))  # noqa: E731
+    cc, cn, cv = col("代码"), col("简称", "名称"), col("份额")
+    vals = df[cv].astype(float)
+    scale = 1e-4 if vals.median() > 1e6 else 1.0          # 份 → 万份
+    return [{"SEC_CODE": str(r[cc]).zfill(6), "SEC_NAME": str(r[cn]), "TOT_VOL": float(r[cv]) * scale} for _, r in df.iterrows()]
+
+
 def _sse(d):
+    """上交所某天全部 ETF 的份额：先用上交所接口，不行再用 AKShare 备用"""
+    if not os.environ.get("FORCE_BACKUP"):
+        r = _sse_main(d)
+        if r[1] is not None:
+            return r
+    try:
+        rows = _sse_ak(d)
+        print("  上交所备用（AKShare）", d, len(rows), "只")
+        return d, rows
+    except Exception as e:  # noqa: BLE001
+        print("  上交所备用也失败", d, e)
+        return d, None
+
+
+def szse_now():
+    """备用：深交所 ETF 列表里的"当前规模(份)"（只有上一个交易日一天），{代码: (简称, 份额)}"""
+    import io as _io  # noqa: PLC0415
+    import pandas as pd  # noqa: PLC0415
+    b = S.http("https://www.szse.cn/api/report/ShowReport?SHOWTYPE=xlsx&CATALOGID=1945&TABKEY=tab1", "https://www.szse.cn/", raw=True)
+    df = pd.read_excel(_io.BytesIO(b), dtype={"证券代码": str})
+    d = dt.date.today() - dt.timedelta(days=1)
+    while d.weekday() >= 5:
+        d -= dt.timedelta(days=1)
+    return d.isoformat(), {str(r["证券代码"]).zfill(6): (str(r["证券简称"]), float(str(r["当前规模(份)"]).replace(",", ""))) for _, r in df.iterrows()}
+
+
+def nav_hist(code, since, have=False):
+    """单位净值：天天基金 → 东方财富 → 新浪，哪个能用用哪个"""
+    for nm, fn in (("天天基金", lambda: S.em_pzd(code)), ("东方财富", lambda: S.em_lsjz(code, 3 if have else 40)), ("新浪", lambda: S.sina_nav(code, 30 if have else 600))):
+        if os.environ.get("FORCE_BACKUP") and nm == "天天基金":
+            continue
+        try:
+            v = {d: x for d, x in fn().items() if d >= since}
+            if v:
+                return v
+        except Exception:  # noqa: BLE001
+            pass
+    raise RuntimeError("净值三个接口都失败")
+
+
+def _sse_main(d):
     u = ("https://query.sse.com.cn/commonQuery.do?jsonCallBack=jsonpCallback1&isPagination=true&pageHelp.pageSize=10000"
          "&pageHelp.pageNo=1&pageHelp.beginPage=1&pageHelp.cacheSize=1&pageHelp.endPage=1"
          f"&sqlId=COMMON_SSE_ZQPZ_ETFZL_XXPL_ETFGM_SEARCH_L&STAT_DATE={d}&_={int(time.time() * 1000)}")
@@ -48,6 +102,27 @@ def _timed(fn, sec):
     th.start()
     th.join(sec)
     return box.get("v")
+
+
+def _szse_backup(Z, keep):
+    """深交所备用：AKShare 没取到最近一天时，用深交所列表的"当前规模"补上（只有一天，但够每天往前走）"""
+    names, sh = Z.setdefault("names", {}), Z.setdefault("shares", {})
+    sz = [c for c in names if c.startswith("1")]
+    last = max((max(sh[c]) for c in sz if sh.get(c)), default="")
+    try:
+        d, rows = szse_now()
+    except Exception as e:  # noqa: BLE001
+        print("  深交所备用失败", e)
+        return
+    if last >= d and not os.environ.get("FORCE_BACKUP"):
+        return
+    n = 0
+    for c, (nm, v) in rows.items():
+        if keep(nm):
+            names[c] = nm
+            sh.setdefault(c, {})[d] = v
+            n += 1
+    print(f"  深交所备用（当前规模）{d} {n} 只")
 
 
 def fetch(Z):
@@ -108,20 +183,21 @@ def fetch(Z):
             except Exception as e:  # noqa: BLE001
                 print("  深交所", m, e)
         Z["szse_months"] = sorted(mdone)
+    _szse_backup(Z, _a_share)
     last = max((max(v) for v in sh.values() if v), default="")
 
     def one(c):
         if nav.get(c) and max(nav[c]) >= last:
             return c, None
         try:
-            return c, {d: v for d, v in S.em_pzd(c).items() if d >= "2022-12-01"}
+            return c, nav_hist(c, "2022-12-01", bool(nav.get(c)))
         except Exception as e:  # noqa: BLE001
             print("  净值", c, e)
             return c, None
     with ThreadPoolExecutor(3) as ex:
         for c, v in ex.map(one, list(names)):
             if v:
-                nav[c] = v
+                nav[c] = {**nav.get(c, {}), **v}
 
 
 def run():
