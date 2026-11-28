@@ -23,6 +23,7 @@
   <p id="subRot" hidden>数据每个交易日更新，按周操作（每周五按周四收盘的信号下单）· 更新于 <span class="num" id="updated">—</span></p>
   <p id="subKc" hidden>数据每个交易日更新，按周操作（每周五按周四收盘的信号下单）· 更新于 <span class="num" id="k_updated">—</span></p>
   <p id="subO"><b class="num" id="o_clock" style="color:var(--ink)"></b><br>本周要做什么 · 数据 <span class="num" id="o_data">—</span> 更新 · <span id="o_next"></span></p>
+  <p id="subF" hidden>钱最近流到哪个板块、国家队和红利谁在进谁在出 · 只作参考 · 数据 <span class="num" id="f_date">—</span></p>
   <p id="subT" hidden>现在在哪个区间、往哪个方向走 · 只作提醒，不改定投规则 · 数据 <span class="num" id="t_date">—</span></p>
   <p id="subH" hidden>沪深300（000300）· 2005 年以来真实行情 · 估值：市盈率与十年国债 · 数据更新于 <span class="num" id="h_updated">—</span></p>
   <p id="subA" hidden>价格：中证A500（000510）· 估值：沪深300 市盈率与十年国债 · 数据更新于 <span class="num" id="a_updated">—</span></p>
@@ -35,6 +36,7 @@
 <div class="tabwrap"><nav class="tabs" role="tablist" aria-label="切换策略">
   <button type="button" role="tab" id="tabO" data-view="overview" aria-selected="true">总览</button>
   <button type="button" role="tab" id="tabT" data-view="temp" aria-selected="false">市场温度</button>
+  <button type="button" role="tab" id="tabF" data-view="flow" aria-selected="false">资金</button>
   <button type="button" role="tab" id="tabRot" data-view="rotation" aria-selected="false">轮动</button>
   <button type="button" role="tab" id="tabDiv" data-view="dividend" aria-selected="false">红利</button>
   <button type="button" role="tab" id="tabBroad" data-view="broad" aria-selected="false">宽基</button>
@@ -49,21 +51,7 @@
 <section class="panel topcard" id="vdSec" hidden><h2>现在的关键信息</h2>
   <div id="vdBody"><div class="note">加载中</div></div>
 </section>
-<section class="panel" id="ovFlow" hidden>
-  <h2>资金：国家队 vs 红利 <span class="exptag">实验</span></h2>
-  <p class="concl" id="ovFt"></p>
-  <div class="ranges" role="group" aria-label="时间范围" data-for="ovFlow"><button type="button" data-n="13">3个月</button><button type="button" data-n="26" aria-pressed="true">半年</button><button type="button" data-n="0">1年</button></div>
-  <h3 class="h3">国家队每周净买入（7 个指数，亿元）与沪深300</h3>
-  <div class="chartwrap"><svg class="chart" id="ovC1" viewBox="0 0 720 170" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
-  <h3 class="h3">红利 ETF 每周净流入（亿元）与红利低波100</h3>
-  <div class="chartwrap"><svg class="chart" id="ovC2" viewBox="0 0 720 170" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
-  <div class="legend"><span><i style="border-color:var(--grow)"></i>净买入</span><span><i style="border-color:var(--mark)"></i>净卖出</span><span><i style="border-color:var(--ink)"></i>沪深300 / 红利低波100（右轴）</span></div>
-  <h3 class="h3">资金流到哪（ETF 净流入 ÷ 这一类的规模）</h3>
-  <div class="ranges" role="group" aria-label="看多久" data-for="secW"><button type="button" data-w="w1">近1周</button><button type="button" data-w="w4" aria-pressed="true">近4周</button><button type="button" data-w="w13">近3个月</button></div>
-  <div class="ranges" role="group" aria-label="看哪类" data-for="secK"><button type="button" data-k="" aria-pressed="true">全部</button><button type="button" data-k="宽基">宽基</button><button type="button" data-k="行业">行业</button></div>
-  <div id="secBars"></div>
-  <details class="sub"><summary>怎么看 ▾</summary><p class="note">"资金流到哪"：上交所、深交所 ETF 每天份额 × 净值，按名字分成宽基 7 类、红利、行业 20 类（港股、海外、债券、货币不算），每类取最大的 5 只；条的长短是净流入占这一类 ETF 规模的比例（相对值），后面是金额。只作参考。两张图同一组日期。国家队在买、红利在流出 = 钱从红利换到大盘；国家队在卖、红利在流入 = 钱躲进红利（2026-04~06）。只作参考，详细在<a href="#temp">市场温度</a>和<a href="#dividend">红利</a>页。</p></details>
-</section>
+<a class="panel oneline" href="#flow" id="ovFlowLine" hidden><b>资金流向</b><span class="note" id="ovFlowTxt"></span><span class="chev">›</span></a>
 <section class="panel"><h2>本周这么做<button type="button" class="bigbtn" onclick="shareImg('week')">生成分享图</button></h2>
   <div class="todo" id="o_rows"><div class="note">加载中</div></div>
   <p class="note" id="o_note"></p>
@@ -290,6 +278,26 @@
 <div id="viewB" hidden></div>
 <div id="viewN" hidden></div>
 
+<div id="viewF" hidden>
+<section class="panel"><h2>钱流到哪个板块 <span class="exptag">实验</span></h2>
+  <p class="concl" id="secNow"></p>
+  <div class="ranges" role="group" aria-label="看多久" data-for="secW"><button type="button" data-w="w1">近1周</button><button type="button" data-w="w4" aria-pressed="true">近4周</button><button type="button" data-w="w13">近3个月</button></div>
+  <div class="ranges" role="group" aria-label="看哪类" data-for="secK"><button type="button" data-k="" aria-pressed="true">全部</button><button type="button" data-k="宽基">宽基</button><button type="button" data-k="行业">行业</button></div>
+  <div id="secBars"></div>
+  <details class="sub"><summary>怎么算的 ▾</summary><p class="note">上交所、深交所 ETF 每天份额 × 净值 = 净流入。按名字分成宽基 8 类、红利、行业 20 类（港股、海外、债券、货币不算），每类取最大的 5 只；条的长短是净流入占这一类 ETF 规模的比例（相对值，大小板块能直接比），后面是金额。只作参考，不改任何买卖。</p></details>
+</section>
+<section class="panel" id="ovFlow">
+  <h2>国家队 vs 红利 <span class="exptag">实验</span></h2>
+  <p class="concl" id="ovFt"></p>
+  <div class="ranges" role="group" aria-label="时间范围" data-for="ovFlow"><button type="button" data-n="13">3个月</button><button type="button" data-n="26" aria-pressed="true">半年</button><button type="button" data-n="0">1年</button></div>
+  <h3 class="h3">国家队每周净买入（7 个指数，亿元）与沪深300</h3>
+  <div class="chartwrap"><svg class="chart" id="ovC1" viewBox="0 0 720 170" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+  <h3 class="h3">红利 ETF 每周净流入（亿元）与红利低波100</h3>
+  <div class="chartwrap"><svg class="chart" id="ovC2" viewBox="0 0 720 170" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+  <div class="legend"><span><i style="border-color:var(--grow)"></i>净买入</span><span><i style="border-color:var(--mark)"></i>净卖出</span><span><i style="border-color:var(--ink)"></i>沪深300 / 红利低波100（右轴）</span></div>
+  <details class="sub"><summary>怎么看 ▾</summary><p class="note">两张图同一组日期。国家队在买、红利在流出 = 钱从红利换到大盘；国家队在卖、红利在流入 = 钱躲进红利（2026-04~06）。只作参考，详细在<a href="#temp">市场温度</a>和<a href="#dividend">红利</a>页。</p></details>
+</section>
+</div>
 <div id="viewDiv" hidden>
 <section class="panel err" id="dErr" hidden>
   <h2>读取红利打分数据失败</h2>
@@ -1108,7 +1116,13 @@ function loadOverall(){
       <p class="note">每项 +1 / 0 / −1 加起来：≥+3 进攻，≤−2 防守。2023 起 +3 以上之后一年都涨、−4 以下之后 60 天都跌；只当总结，具体怎么做看各板块规则。</p>
       <h3 class="h3">宽基加码灯 ${kn}/4 · 减速灯 ${kd}/3</h3>
       <p class="note">${K.ups.map(x=>`${x.on?"●":"○"} ${x.name}`).join("　")}<br>${K.downs.map(x=>`${x.on?"●":"○"} ${x.name}`).join("　")}<br>国家队在低位买 + 至少 1 个别的灯 → 快速加大（10 天每天多买 0.4 周，3 个以上翻倍）；只有便宜 + 见底 → 慢慢加（4 个周五各多 1 周）；减速灯 ≥2 → 暂停。2023 起宽基真实规则回测 4.61% → 6.23%。要不要多买由你定，下单清单不变。</p>`;
-    const Fw=O.flows;if(!Fw||!Fw.weeks.length)return;$("ovFlow").hidden=false;$("ovFt").textContent=O.ftext;
+    getJ("secflow.json").then(Q=>{const ln=$("ovFlowLine");if(!ln)return;const top=Q&&Q.rows?Q.rows.slice().sort((a,b)=>b.w4p-a.w4p):[];
+      $("ovFlowTxt").textContent=O.ftext.replace(/^近 4 周：/,"近 4 周 ")+(top.length?`；流入最多：${top.slice(0,3).map(r=>r.name).join("、")}，流出最多：${top.slice(-2).map(r=>r.name).join("、")}`:"");ln.hidden=false});
+  });
+}
+function loadFlow(){
+  getJ("overall.json").then(O=>{if(!O)return;
+    const Fw=O.flows;if(!Fw||!Fw.weeks.length)return;$("ovFt").textContent=O.ftext;$("f_date").textContent=O.date;
     const bar=document.querySelector('.ranges[data-for="ovFlow"]');let nn=26;
     const one=(id,v,line,nm,ln)=>{const k=nn?Math.max(0,Fw.weeks.length-nn):0,ds=Fw.weeks.slice(k),bv=v.slice(k),lv=line.slice(k),mx=Math.max(...bv.map(Math.abs),1);
       const st=niceStep(mx*3.5),lt=[];for(let x=-Math.ceil(mx/st)*st;x<=mx+st/2;x+=st)lt.push(x);
@@ -1118,6 +1132,8 @@ function loadOverall(){
     const draw=()=>{one("ovC1",Fw.nt,Fw.hs,"国家队净买入","沪深300");one("ovC2",Fw.div,Fw.hl,"红利 ETF 净流入","红利低波100")};
     // 资金流到哪：横条（相对值），流入前 8、流出前 5，点"全部"展开
     getJ("secflow.json").then(Q=>{if(!Q||!Q.rows)return;let w="w4",kd="",all=false;
+      const S4=Q.rows.slice().sort((a,b)=>b.w4p-a.w4p),ind=S4.filter(r=>r.kind!=="宽基");
+      $("secNow").innerHTML=`近 4 周（到 ${Q.date}）：流入最多 <b>${S4.slice(0,3).map(r=>`${r.name} ${r.w4p>0?"+":""}${r.w4p}%`).join("、")}</b>；行业里流入最多 <b>${ind.slice(0,2).map(r=>`${r.name} ${r.w4p>0?"+":""}${r.w4p}%`).join("、")}</b>，流出最多 <b>${ind.slice(-2).map(r=>`${r.name} ${r.w4p}%`).join("、")}</b>。`;
       const box=$("secBars"),wb=document.querySelector('.ranges[data-for="secW"]'),kb=document.querySelector('.ranges[data-for="secK"]');
       const paint=()=>{const R=Q.rows.filter(r=>!kd||r.kind===kd||(kd==="行业"&&r.kind==="红利")).slice().sort((a,b)=>b[w+"p"]-a[w+"p"]);
         const show=all?R:R.filter((r,i)=>i<8||i>=R.length-5),mx=Math.max(...R.map(r=>Math.abs(r[w+"p"])),1);
@@ -1512,6 +1528,7 @@ function loadTop(){
 // ---------------- 页签
 const VIEWS={overview:["viewO","tabO","subO","交易系统"],
              temp:["viewT","tabT","subT","市场温度 · 现在冷还是热"],
+             flow:["viewF","tabF","subF","资金 · 钱流到哪"],
              rotation:["viewRot","tabRot","subRot","创业板 · 轮动信号"],
              kc:["viewKc","tabRot","subKc","科创板 · 轮动信号"],
              dividend:["viewDiv","tabDiv","subDiv","红利低波100 · 每日定投打分"],
@@ -1522,7 +1539,7 @@ const VIEWS={overview:["viewO","tabO","subO","交易系统"],
 // 轮动页签里有两个子页：创业板 / 科创板
 const GROUPS={rotation:[["rotation","创业板50"],["kc","科创50"]]};
 GROUPS.kc=GROUPS.rotation;
-const LOADERS={overview:loadOverview,temp:loadTemp,rotation:rotView.load,kc:kcView.load,dividend:loadDiv,ndx:nView.load,gold:loadGold,bond:()=>{bView.load();loadBank()}},LOADED={};
+const LOADERS={overview:loadOverview,flow:loadFlow,temp:loadTemp,rotation:rotView.load,kc:kcView.load,dividend:loadDiv,ndx:nView.load,gold:loadGold,bond:()=>{bView.load();loadBank()}},LOADED={};
 // A500 / 沪深300 合并成一个页签；旧链接 #a500、#hs300 仍然能打开对应的那一个
 let BROAD="a500";const BLOADED={};
 function setBroad(b){
