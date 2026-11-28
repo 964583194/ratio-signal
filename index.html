@@ -312,6 +312,17 @@
   </div>
 </section>
 
+<section class="panel" id="djPanel" hidden>
+  <h2>红利综合判断：便宜灯 + 资金 <span class="exptag">实验</span></h2>
+  <p class="concl" id="djNow"></p>
+  <div id="djLights" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:13px;margin-top:8px"></div>
+  <p class="note" id="djFlow" style="margin-top:8px"></p>
+  <details style="margin-top:6px"><summary>亮几个灯，之后怎么样（回测）</summary>
+    <div class="scroll"><table id="djTab"><thead><tr><th>亮几个灯</th><th class="r">一年后</th><th class="r">一年后上涨</th><th class="r">再跌 平均/最坏</th><th class="r">跌超10%</th></tr></thead><tbody></tbody></table></div>
+    <p class="note">2018-05 起，红利低波100 全收益；前后两段（2018~2022-07、2022-07 起）都成立。灯多说明便宜、之后少跌，但拿来调倍数赢不了随机，所以<b>只作判断，不改倍数</b>：灯多时放心按规则买、规则让加码时坚定加码；灯少时别额外加钱。资金情况（2023 起样本少）：突发大额流入 + 国家队在买 → ⚠ 及时看；一直大额流入 → 追的人多，别追；资金流出 + 位置便宜 → 没人要，照评分慢慢买；国家队在卖 + 资金流出 → 偏弱。跌透转头（近 20 天评分到过 14 + 位置便宜 + 站上 20 日线 + 比低点高 3%）2018 起 5 次，之后 120 天都涨。只在 ⚠ 和"偏弱"时发邮件。</p>
+  </details>
+</section>
+
 <section class="panel" id="dfPanel" hidden>
   <h2>红利 ETF 资金：有没有人在买 <span class="exptag">实验</span></h2>
   <p class="concl" id="dfNow"></p>
@@ -1617,9 +1628,16 @@ function renderDiv(d){
         pb.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));pm=b.dataset.m;draw(pm)}));
         addEventListener("resize",()=>draw(pm))}
     }
+    // 实验：红利综合判断
+    getJ("divjudge.json").then(J=>{if(!J)return;$("djPanel").hidden=false;
+      $("djNow").innerHTML=`<span class="lv ${J.cls}">${J.head}</span> <b>${J.act}</b>`;
+      $("djLights").innerHTML=`<div style="grid-column:1/-1"><b>便宜灯 ${J.n} / 6 亮</b>（${J.lv}）</div>`+J.lights.map(x=>`<div style="${x.on?"":"color:var(--muted)"}"><b style="color:${x.on?"var(--grow)":"var(--muted)"}">${x.on?"●":"○"}</b> ${x.on?`<b>${x.name}</b>`:x.name}<br><small class="note" style="margin:0">${x.text}</small></div>`).join("");
+      $("djFlow").innerHTML=J.flow?`红利 ETF 资金：近 20 天净流入占规模 ${J.flow.f20>0?"+":""}${J.flow.f20}%${J.flow.burst>=.3?`，近 3 天单日最多流入 ${J.flow.burst}%`:""} → ${J.flow.text}。${J.right?"":""}`:"";
+      $("djTab").tBodies[0].innerHTML=J.stats.map(s=>`<tr><td>${s.n}</td><td class="r num">+${s.y1}%</td><td class="r num">${s.up}%</td><td class="r num">${s.dd}% / ${s.worst}%</td><td class="r num">${s.p10}%</td></tr>`).join("");
+      $("dFlow").innerHTML=`综合判断（实验）：便宜灯 <b>${J.n}/6</b> → ${J.head} <a href="#djPanel">看 ›</a>`;$("dFlow").style.display=""});
     // 实验：红利 ETF 资金
     getJ("divflow.json").then(F=>{if(!F||!F.dates)return;const L2=F.latest,yi=v=>`${v>0?"+":""}${Math.round(v).toLocaleString()} 亿`;$("dfPanel").hidden=false;
-      $("dFlow").innerHTML=`红利 ETF 资金（实验）：近 20 天 <b>${yi(L2.f20)}</b> → ${L2.tag} <a href="#dfPanel">看图 ›</a>`;$("dFlow").style.display="";
+
       $("dfNow").innerHTML=`近 20 个交易日（到 ${L2.date}）：${L2.n} 只红利 ETF 合计净流入 <b>${yi(L2.f20)}</b>（规模 ${L2.size.toLocaleString()} 亿的 ${L2.pct20>0?"+":""}${L2.pct20}%），红利低波100 ${L2.h20>0?"+":""}${L2.h20}% → <b>${L2.tag}</b>：${L2.text}。`;
       $("dfCover").textContent=L2.cover<.95?`历史数据还在补（已补 ${Math.round(L2.cover*100)}%，平时每周只有一天的数，每次更新补一批），没补的那几天的进出算在下一个有数的日子里。`:"";
       // 按周加总：每周最后一个交易日放这一周的合计

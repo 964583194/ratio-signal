@@ -169,6 +169,14 @@ def ntfshort(d):
     return s["state"], now, s["act"] + "【实验，小钱试】", "temp"
 
 
+def divjudge(d):
+    """红利综合判断（实验）：便宜灯 + 红利 ETF 资金 + 国家队；只在 ⚠ 重点 / 偏弱 时发"""
+    on = [x["name"] for x in d["lights"] if x["on"]]
+    fl = d.get("flow") or {}
+    now = f"便宜灯 {d['n']}/6（{'、'.join(on) or '都没亮'}）；红利 ETF 资金近 20 天 {fl.get('f20', 0):+.1f}%（占规模）：{fl.get('text', '—')}"
+    return d["head"], now, d["act"].replace("；", "，") + "【实验，只作参考，不改倍数】", "dividend"
+
+
 def ntf_pull(d):
     """国家队大买后回落（实验）：连续 2 天以上才提醒；只作参考，不改倍数"""
     p = d["latest"].get("pull") or {}
@@ -243,6 +251,7 @@ def collect(prev):
              ("组合信号（实验）", "verdict.json", verdict),
              ("国家队场景（实验）", "ntfstage.json", ntfscene),
              ("短线（实验）", "ntfstage.json", ntfshort),
+             ("红利综合判断（实验）", "divjudge.json", divjudge),
              ("见顶信号灯", "topsig.json", topsig)]
     for name, f, fn in pairs:
         d = load(f)
@@ -525,7 +534,8 @@ def main():
                    if not (n == "红利打分" and not b.startswith(("下单", "减仓")))
                    and not (n == "组合信号（实验）" and b not in ("跟进买入", "见底加码", "高位撤离", "高位护盘"))
                    and not (n == "国家队场景（实验）" and not SCN_LV.get(b))
-                   and not (n == "短线（实验）" and not b.startswith(("加仓", "卖回")))]
+                   and not (n == "短线（实验）" and not b.startswith(("加仓", "卖回")))
+                   and not (n == "红利综合判断（实验）" and b not in ("跌透转头", "突发大额 + 国家队", "很便宜", "偏弱"))]
     G = change_lines(changes, cur, prev, report) if changes else {}
     chg = "\n\n".join(f"**{k}**\n\n" + "\n".join(v) for k, v in G.items() if v)
     dues = "\n\n".join(f"### {r['title']}\n\n{r['body']}" for r in due)
