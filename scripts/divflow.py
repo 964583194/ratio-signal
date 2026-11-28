@@ -69,10 +69,12 @@ def fetch(Z):
         time.sleep(0.3)
     ok = 0
     for d, rows in res:
+        if rows is None:
+            continue
+        done.add(d)                                    # 返回空的是节假日，也算抓过了，下次不再抓
         if not rows:
             continue
         ok += 1
-        done.add(d)
         for r in rows:
             nm = r.get("SEC_NAME") or ""
             if _a_share(nm) and r.get("TOT_VOL"):
