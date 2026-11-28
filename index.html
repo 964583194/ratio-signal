@@ -1102,7 +1102,7 @@ function loadOverall(){
     const Fw=O.flows;if(!Fw||!Fw.weeks.length)return;$("ovFlow").hidden=false;$("ovFt").textContent=O.ftext;
     const bar=document.querySelector('.ranges[data-for="ovFlow"]');let nn=26;
     const one=(id,v,line,nm,ln)=>{const k=nn?Math.max(0,Fw.weeks.length-nn):0,ds=Fw.weeks.slice(k),bv=v.slice(k),lv=line.slice(k),mx=Math.max(...bv.map(Math.abs),1);
-      const st=niceStep(mx*1.6),lt=[];for(let x=-Math.ceil(mx/st)*st;x<=mx+st/2;x+=st)lt.push(x);
+      const st=niceStep(mx*3.5),lt=[];for(let x=-Math.ceil(mx/st)*st;x<=mx+st/2;x+=st)lt.push(x);
       DualChart($(id),{W:720,H:200,dates:ds,leftRange:[lt[0],lt[lt.length-1]],leftTicks:lt,leftFmt:x=>Math.round(x).toLocaleString(),left:[],
         bars:{v:bv,pos:"var(--grow)",neg:"var(--mark)",w:.8},right:{v:lv,c:"var(--ink)"},
         tip:i=>`${ds[i]} 这一周<br>${nm} <b>${bv[i]>0?"+":""}${Math.round(bv[i]).toLocaleString()} 亿</b><br>${ln} ${lv[i]!=null?Math.round(lv[i]).toLocaleString():"—"}`})};
