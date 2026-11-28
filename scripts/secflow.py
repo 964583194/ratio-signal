@@ -95,24 +95,30 @@ def fetch(Z):
     except Exception:  # noqa: BLE001
         ak = None
     if ak:
-        # 深交所按周取（按月一次取太大容易超时）；先取最近的，再往回补
-        mdone = set(Z.setdefault("szse_weeks", []))
-        mons = sorted({(dt.date.fromisoformat(d) - dt.timedelta(days=dt.date.fromisoformat(d).weekday())).isoformat() for d in wd})
-        todo_w = mons[-2:] + [m for m in reversed(mons[:-2]) if m not in mdone][:int(os.environ.get("SEC_SZ_PER_RUN", 8))]
-        for m in todo_w:
-            a = dt.date.fromisoformat(m)
-            b = min(dt.date.today(), a + dt.timedelta(days=4))
-            df = _timed(lambda: ak.fund_scale_daily_szse(start_date=a.strftime("%Y%m%d"), end_date=b.strftime("%Y%m%d")), 60)
+        # 深交所：一次取最近半年（和国家队那只 159919 用的是同一个接口，它能取到）；接口偶尔断，多试两次
+        last_sz = Z.get("szse_last", "")
+        if last_sz < (dt.date.today() - dt.timedelta(days=1)).isoformat():
+            d0 = max(dt.date.fromisoformat(SINCE), dt.date.today() - dt.timedelta(days=175))
+            if last_sz:
+                d0 = max(d0, dt.date.fromisoformat(last_sz) - dt.timedelta(days=7))
+            df = None
+            for k in range(3):
+                df = _timed(lambda: ak.fund_scale_daily_szse(start_date=d0.strftime("%Y%m%d"), end_date=dt.date.today().strftime("%Y%m%d")), 240)
+                if df is not None:
+                    break
+                time.sleep(5 * (k + 1))
             if df is None:
-                print("  深交所", m, "超时，下次再补")
-                break
-            col = "基金简称" if "基金简称" in df.columns else [c for c in df.columns if "简称" in c][0]
-            for _, r in df[df[col].astype(str).map(lambda x: group_of(x) is not None)].iterrows():
-                c = str(r["基金代码"]).zfill(6)
-                names[c] = str(r[col])
-                sh.setdefault(c, {})[str(r["日期"])[:10]] = float(r["基金份额"])
-            mdone.add(m)
-        Z["szse_weeks"] = sorted(mdone)
+                print("  深交所：取不到，下次再补")
+            else:
+                col = "基金简称" if "基金简称" in df.columns else [c for c in df.columns if "简称" in c][0]
+                n0 = 0
+                for _, r in df[df[col].astype(str).map(lambda x: group_of(x) is not None)].iterrows():
+                    c = str(r["基金代码"]).zfill(6)
+                    names[c] = str(r[col])
+                    sh.setdefault(c, {})[str(r["日期"])[:10]] = float(r["基金份额"])
+                    n0 += 1
+                Z["szse_last"] = str(df["日期"].max())[:10]
+                print(f"  深交所：{d0} 起 {n0} 条，到 {Z['szse_last']}")
     # 每组份额最大的几只拿净值
     top = _tops(Z)
     last = max((max(v) for v in sh.values() if v), default="")
