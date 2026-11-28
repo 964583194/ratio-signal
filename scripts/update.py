@@ -259,6 +259,7 @@ def main():
         ("黄金分析", lambda: __import__("goldmodel").run()),   # 要读 gold.json
         ("我的基金", lambda: __import__("myfunds").run()),     # 要读 temp.json 和各页签结果，放最后
         ("关键指标", lambda: __import__("keyind").run()),     # 汇总各页签结果，放最后
+        ("大方向 / 宽基加大暂停（实验）", lambda: __import__("overall").run()),  # 要读 temp / hs300 / ntfstage / divflow
     ]
     for name, job in jobs:
         try:

@@ -47,11 +47,19 @@
 
 <div id="viewO">
 <section class="panel topcard" id="vdSec" hidden><h2>现在的关键信息</h2>
+  <div id="ovDir"></div>
   <div id="vdBody"><div class="note">加载中</div></div>
 </section>
-<section class="panel" id="kiSec"><h2>规则指标<a class="hmore" href="#temp">市场温度详情 ›</a></h2>
-  <p class="note" style="margin:-6px 0 8px">直接决定买卖的几个数，点名字进对应页签。提醒和实验指标都收进了上面的"组合信号"，点"为什么"能看到。具体怎么买、买多少在下面。</p>
-  <div id="kiBody"><div class="note">加载中</div></div>
+<section class="panel" id="ovFlow" hidden>
+  <h2>资金：国家队 vs 红利 <span class="exptag">实验</span></h2>
+  <p class="concl" id="ovFt"></p>
+  <div class="ranges" role="group" aria-label="时间范围" data-for="ovFlow"><button type="button" data-n="13">3个月</button><button type="button" data-n="26" aria-pressed="true">半年</button><button type="button" data-n="0">1年</button></div>
+  <h3 class="h3">国家队每周净买入（7 个指数，亿元）与沪深300</h3>
+  <div class="chartwrap"><svg class="chart" id="ovC1" viewBox="0 0 720 200" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+  <h3 class="h3">红利 ETF 每周净流入（亿元）与红利低波100</h3>
+  <div class="chartwrap"><svg class="chart" id="ovC2" viewBox="0 0 720 200" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+  <div class="legend"><span><i style="border-color:var(--grow)"></i>净买入</span><span><i style="border-color:var(--mark)"></i>净卖出</span><span><i style="border-color:var(--ink)"></i>沪深300 / 红利低波100（右轴）</span></div>
+  <p class="note">两张图同一组日期。国家队在买、红利在流出 = 钱从红利换到大盘；国家队在卖、红利在流入 = 钱躲进红利（2026-04~06）。只作参考，详细在<a href="#temp">市场温度</a>和<a href="#dividend">红利</a>页。</p>
 </section>
 <section class="panel"><h2>本周这么做<button type="button" class="bigbtn" onclick="shareImg('week')">生成分享图</button></h2>
   <div class="todo" id="o_rows"><div class="note">加载中</div></div>
@@ -63,6 +71,10 @@
   <div class="todo" id="planRows"><div class="note">加载中</div></div>
   <p class="note" id="planNote"></p>
 </div></details>
+<section class="panel" id="kiSec"><h2>规则指标<a class="hmore" href="#temp">市场温度详情 ›</a></h2>
+  <p class="note" style="margin:-6px 0 8px">直接决定买卖的几个数，点名字进对应页签。提醒和实验指标都收进了最上面的"组合信号"，点"为什么"能看到。</p>
+  <div id="kiBody"><div class="note">加载中</div></div>
+</section>
 <div id="o_temp" hidden></div>
 <a class="panel oneline" href="funds.html"><b>我的基金</b><span class="note" id="o_my">每只能不能加，含海外小仓位</span><span class="chev">›</span></a>
 </div>
@@ -1077,6 +1089,27 @@ function ntf3(S,G,E){
 }
 // 关键指标（总览）：data/keyind.json，分 规则 / 提醒 / 实验
 // 组合信号（实验）：data/verdict.json。几个指标同时出现才算的组合，一句话怎么做；点开看原因和回测
+// 大方向 + 宽基加大 / 暂停 + 国家队 vs 红利资金（data/overall.json，实验）
+function loadOverall(){
+  getJ("overall.json").then(O=>{if(!O)return;
+    const it=O.items.map(x=>`<span class="kc"><small>${x.name}</small><b class="lv ${x.v>0?"g1":x.v<0?"r1":"c0"}">${x.v>0?"+1":x.v<0?"−1":"0"}</b><small>${x.text}</small></span>`).join("");
+    const K=O.kuanji,bud=(()=>{try{return +localStorage.getItem("weeklyBudget")||1000}catch(e){return 1000}})(),wk=Math.round(bud*0.125);
+    const kx=/0\.8 倍/.test(K.act)?Math.round(wk*0.8):/0\.4 倍/.test(K.act)?Math.round(wk*0.4):/多买 1 周/.test(K.act)?wk:0;
+    $("ovDir").innerHTML=`<p class="concl" style="margin-top:0"><b>大方向（实验）：</b><span class="lv ${O.dcls}">${O.dir}</span> 合计 ${O.score>0?"+":""}${O.score} · ${O.dtext}</p>
+      <details style="margin:-4px 0 8px"><summary class="note" style="margin:0">怎么算的</summary><div class="kchips">${it}</div>
+      <p class="note">每项 +1 / 0 / −1 加起来：≥+3 进攻，≤−2 防守。2023 起 +3 以上之后一年都涨、−4 以下之后 60 天都跌；只当总结，具体怎么做看各板块规则。</p></details>
+      <p class="note" style="margin:0 0 8px"><b>宽基（实验）：</b>${K.act}${kx?`（按每周预算 ${bud} 元，宽基周额约 ${wk} 元 → 每次多买约 <b>${kx}</b> 元）`:""}。加码灯 ${K.ups.filter(x=>x.on).length}/4：${K.ups.map(x=>`${x.on?"●":"○"}${x.name}`).join(" ")}；减速灯 ${K.downs.filter(x=>x.on).length}/3：${K.downs.map(x=>`${x.on?"●":"○"}${x.name}`).join(" ")}</p>`;
+    const Fw=O.flows;if(!Fw||!Fw.weeks.length)return;$("ovFlow").hidden=false;$("ovFt").textContent=O.ftext;
+    const bar=document.querySelector('.ranges[data-for="ovFlow"]');let nn=26;
+    const one=(id,v,line,nm,ln)=>{const k=nn?Math.max(0,Fw.weeks.length-nn):0,ds=Fw.weeks.slice(k),bv=v.slice(k),lv=line.slice(k),mx=Math.max(...bv.map(Math.abs),1);
+      const st=niceStep(mx*1.6),lt=[];for(let x=-Math.ceil(mx/st)*st;x<=mx+st/2;x+=st)lt.push(x);
+      DualChart($(id),{W:720,H:200,dates:ds,leftRange:[lt[0],lt[lt.length-1]],leftTicks:lt,leftFmt:x=>Math.round(x).toLocaleString(),left:[],
+        bars:{v:bv,pos:"var(--grow)",neg:"var(--mark)",w:.8},right:{v:lv,c:"var(--ink)"},
+        tip:i=>`${ds[i]} 这一周<br>${nm} <b>${bv[i]>0?"+":""}${Math.round(bv[i]).toLocaleString()} 亿</b><br>${ln} ${lv[i]!=null?Math.round(lv[i]).toLocaleString():"—"}`})};
+    const draw=()=>{one("ovC1",Fw.nt,Fw.hs,"国家队净买入","沪深300");one("ovC2",Fw.div,Fw.hl,"红利 ETF 净流入","红利低波100")};
+    draw();if(!bar.__on){bar.__on=1;bar.querySelectorAll("button[data-n]").forEach(b=>b.addEventListener("click",()=>{bar.querySelectorAll("button[data-n]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));nn=+b.dataset.n;draw()}));addEventListener("resize",draw)}
+  });
+}
 function loadVerdict(){
   getJ("verdict.json").then(d=>{if(!d||!d.signals)return;$("vdSec").hidden=false;
     const L=d.latest,C={g2:"var(--grow)",g1:"var(--grow)",c0:"var(--ink)",h1:"var(--div)",r1:"var(--mark)"},
@@ -1164,7 +1197,7 @@ function loadOverview(){
       return `<a href="#${v.tab}"><div class="n">${n}</div><div class="a"><span class="lv ${OCLS(v.state)}">${v.state.split("|")[0]}</span>${main}${rest?`<small>${rest}</small>`:""}</div><span class="chev">›</span></a>`}).join("");
     $("o_note").textContent=`和周报邮件一致（周四收盘后发，周五 15:00 前下单）。点一行看原因和阈值。数据日期 ${[...dates].sort().pop()||"—"}。`;
   }).catch(e=>{$("o_rows").innerHTML=`<div class="note">读取失败，请稍后刷新（${e.message}）</div>`});
-  renderTemp($("o_temp"),true);loadPlan();loadKeyInd();loadVerdict();
+  renderTemp($("o_temp"),true);loadPlan();loadKeyInd();loadVerdict();loadOverall();
   getJ("health.json").then(h=>{if(h&&h.updated)$("o_data").textContent=h.updated.slice(5).replace("-","月").replace(" ","日 ")});
   getJ("myfunds.json").then(d=>{if(d){const c=d.count,L=d.labels;$("o_my").textContent=`${d.funds.length} 只：`+Object.keys(L).filter(k=>c[k]).map(k=>L[k][0]+" "+c[k]).join("、")}});
 }

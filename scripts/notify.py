@@ -177,6 +177,15 @@ def divjudge(d):
     return d["head"], now, d["act"].replace("；", "，") + "【实验，只作参考，不改倍数】", "dividend"
 
 
+def kuanji_x(d):
+    """宽基加大 / 暂停（实验）：只在快速加大、慢慢加、暂停时发"""
+    K = d["kuanji"]
+    on = [x["name"] for x in K["ups"] if x["on"]]
+    off = [x["name"] for x in K["downs"] if x["on"]]
+    now = f"大方向 {d['dir']}（{d['score']:+d}）；加码灯 {len(on)}/4（{'、'.join(on) or '无'}）；减速灯 {len(off)}/3（{'、'.join(off) or '无'}）"
+    return K["key"], now, K["act"].replace("；", "，") + "【实验：要不要多买由你定，下单清单不变】", "broad"
+
+
 def ntf_pull(d):
     """国家队大买后回落（实验）：连续 2 天以上才提醒；只作参考，不改倍数"""
     p = d["latest"].get("pull") or {}
@@ -252,6 +261,7 @@ def collect(prev):
              ("国家队场景（实验）", "ntfstage.json", ntfscene),
              ("短线（实验）", "ntfstage.json", ntfshort),
              ("红利综合判断（实验）", "divjudge.json", divjudge),
+             ("宽基加大 / 暂停（实验）", "overall.json", kuanji_x),
              ("见顶信号灯", "topsig.json", topsig)]
     for name, f, fn in pairs:
         d = load(f)
@@ -535,6 +545,7 @@ def main():
                    and not (n == "组合信号（实验）" and b not in ("跟进买入", "见底加码", "高位撤离", "高位护盘"))
                    and not (n == "国家队场景（实验）" and not SCN_LV.get(b))
                    and not (n == "短线（实验）" and not b.startswith(("加仓", "卖回")))
+                   and not (n == "宽基加大 / 暂停（实验）" and b == "照常")
                    and not (n == "红利综合判断（实验）" and not (b in ("跌透转头", "很便宜", "偏弱") or b.startswith(("突发大额 + 国家队", "大额流出", "红利流出 + 国家队买大盘", "大盘资金躲进红利"))))]
     G = change_lines(changes, cur, prev, report) if changes else {}
     chg = "\n\n".join(f"**{k}**\n\n" + "\n".join(v) for k, v in G.items() if v)
