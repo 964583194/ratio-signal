@@ -58,7 +58,11 @@
   <h3 class="h3">红利 ETF 每周净流入（亿元）与红利低波100</h3>
   <div class="chartwrap"><svg class="chart" id="ovC2" viewBox="0 0 720 170" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
   <div class="legend"><span><i style="border-color:var(--grow)"></i>净买入</span><span><i style="border-color:var(--mark)"></i>净卖出</span><span><i style="border-color:var(--ink)"></i>沪深300 / 红利低波100（右轴）</span></div>
-  <details class="sub"><summary>怎么看 ▾</summary><p class="note">两张图同一组日期。国家队在买、红利在流出 = 钱从红利换到大盘；国家队在卖、红利在流入 = 钱躲进红利（2026-04~06）。只作参考，详细在<a href="#temp">市场温度</a>和<a href="#dividend">红利</a>页。</p></details>
+  <h3 class="h3">资金流到哪（ETF 净流入 ÷ 这一类的规模）</h3>
+  <div class="ranges" role="group" aria-label="看多久" data-for="secW"><button type="button" data-w="w1">近1周</button><button type="button" data-w="w4" aria-pressed="true">近4周</button><button type="button" data-w="w13">近3个月</button></div>
+  <div class="ranges" role="group" aria-label="看哪类" data-for="secK"><button type="button" data-k="" aria-pressed="true">全部</button><button type="button" data-k="宽基">宽基</button><button type="button" data-k="行业">行业</button></div>
+  <div id="secBars"></div>
+  <details class="sub"><summary>怎么看 ▾</summary><p class="note">"资金流到哪"：上交所、深交所 ETF 每天份额 × 净值，按名字分成宽基 7 类、红利、行业 20 类（港股、海外、债券、货币不算），每类取最大的 5 只；条的长短是净流入占这一类 ETF 规模的比例（相对值），后面是金额。只作参考。两张图同一组日期。国家队在买、红利在流出 = 钱从红利换到大盘；国家队在卖、红利在流入 = 钱躲进红利（2026-04~06）。只作参考，详细在<a href="#temp">市场温度</a>和<a href="#dividend">红利</a>页。</p></details>
 </section>
 <section class="panel"><h2>本周这么做<button type="button" class="bigbtn" onclick="shareImg('week')">生成分享图</button></h2>
   <div class="todo" id="o_rows"><div class="note">加载中</div></div>
@@ -1112,6 +1116,20 @@ function loadOverall(){
         bars:{v:bv,pos:"var(--grow)",neg:"var(--mark)",w:.8},right:{v:lv,c:"var(--ink)"},
         tip:i=>`${ds[i]} 这一周<br>${nm} <b>${bv[i]>0?"+":""}${Math.round(bv[i]).toLocaleString()} 亿</b><br>${ln} ${lv[i]!=null?Math.round(lv[i]).toLocaleString():"—"}`})};
     const draw=()=>{one("ovC1",Fw.nt,Fw.hs,"国家队净买入","沪深300");one("ovC2",Fw.div,Fw.hl,"红利 ETF 净流入","红利低波100")};
+    // 资金流到哪：横条（相对值），流入前 8、流出前 5，点"全部"展开
+    getJ("secflow.json").then(Q=>{if(!Q||!Q.rows)return;let w="w4",kd="",all=false;
+      const box=$("secBars"),wb=document.querySelector('.ranges[data-for="secW"]'),kb=document.querySelector('.ranges[data-for="secK"]');
+      const paint=()=>{const R=Q.rows.filter(r=>!kd||r.kind===kd||(kd==="行业"&&r.kind==="红利")).slice().sort((a,b)=>b[w+"p"]-a[w+"p"]);
+        const show=all?R:R.filter((r,i)=>i<8||i>=R.length-5),mx=Math.max(...R.map(r=>Math.abs(r[w+"p"])),1);
+        box.innerHTML=show.map((r,i)=>{const v=r[w+"p"],a=r[w],wd=Math.max(1,Math.abs(v)/mx*50);
+          return `${!all&&i===8&&R.length>13?'<div class="note" style="text-align:center;margin:2px 0">⋯</div>':""}<div style="display:grid;grid-template-columns:6.4em 1fr 8.4em;gap:6px;align-items:center;font-size:13px;padding:2px 0" title="${r.etfs.join("、")}">
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${r.kind==="宽基"?"font-weight:600":""}">${r.name}</span>
+            <span style="position:relative;height:12px;background:var(--mid);border-radius:3px"><i style="position:absolute;top:0;bottom:0;${v>=0?"left:50%":"right:50%"};width:${wd}%;background:${v>=0?"var(--grow)":"var(--mark)"};border-radius:3px"></i><i style="position:absolute;left:50%;top:-2px;bottom:-2px;border-left:1px solid var(--muted)"></i></span>
+            <span class="num" style="text-align:right;white-space:nowrap">${v>0?"+":""}${v.toFixed(1)}% <small style="color:var(--muted)">${a>0?"+":""}${Math.round(a).toLocaleString()}亿</small></span></div>`}).join("")
+          +`<p class="note" style="margin:4px 0 0">${Q.date} · ${R.length} 类（粗体是宽基）· <a href="javascript:void 0" id="secAll">${all?"收起":"看全部"}</a>${Q.cover<.95?" · 历史还在补，近 3 个月可能不全":""}</p>`;
+        $("secAll").onclick=()=>{all=!all;paint()}};
+      paint();
+      [[wb,"w",x=>w=x],[kb,"k",x=>kd=x]].forEach(([bar,attr,set])=>bar.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{bar.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));set(b.dataset[attr]);paint()})))});
     draw();if(!bar.__on){bar.__on=1;bar.querySelectorAll("button[data-n]").forEach(b=>b.addEventListener("click",()=>{bar.querySelectorAll("button[data-n]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));nn=+b.dataset.n;draw()}));addEventListener("resize",draw)}
   });
 }

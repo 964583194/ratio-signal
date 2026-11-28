@@ -229,6 +229,12 @@ def main():
                     __import__("divflow").run()
         except Exception as e:  # noqa: BLE001
             print("红利 ETF 补数失败：", e)
+        try:   # 行业 ETF 历史也一样
+            with open(os.path.join(ROOT, "data", "secflow.json"), encoding="utf-8") as fh:
+                if json.load(fh).get("cover", 1) < 0.95:
+                    __import__("secflow").run()
+        except Exception as e:  # noqa: BLE001
+            print("行业 ETF 补数失败：", e)
         return
 
     tr = lambda: S.get_series("hl100_tr")[0]  # noqa: E731
@@ -247,6 +253,7 @@ def main():
         ("国家队场景 / 短线（实验）", lambda: __import__("ntfstage").run()),  # 要读 ntf / temp
         ("红利打分", lambda: __import__("dividend").run(S.get_series("cyb50")[0])),
         ("红利 ETF 资金（实验）", lambda: __import__("divflow").run()),  # 要读 hl100 缓存
+        ("行业 ETF 资金（实验）", lambda: __import__("secflow").run()),
         ("红利综合判断（实验）", lambda: __import__("divjudge").run()),  # 要读 dividend / divflow / ntfstage
         ("创业板50 轮动", lambda: build(*S.get_series("cyb50"), *S.get_series("hl100"), OUT, LO, HI, SELLS, DIV_CYB,
                                        f"{START[:4]}-{START[4:6]}-{START[6:]}", "创业板50", tr(), div_score())),
