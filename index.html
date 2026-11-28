@@ -47,7 +47,6 @@
 
 <div id="viewO">
 <section class="panel topcard" id="vdSec" hidden><h2>现在的关键信息</h2>
-  <div id="ovDir"></div>
   <div id="vdBody"><div class="note">加载中</div></div>
 </section>
 <section class="panel" id="ovFlow" hidden>
@@ -55,11 +54,11 @@
   <p class="concl" id="ovFt"></p>
   <div class="ranges" role="group" aria-label="时间范围" data-for="ovFlow"><button type="button" data-n="13">3个月</button><button type="button" data-n="26" aria-pressed="true">半年</button><button type="button" data-n="0">1年</button></div>
   <h3 class="h3">国家队每周净买入（7 个指数，亿元）与沪深300</h3>
-  <div class="chartwrap"><svg class="chart" id="ovC1" viewBox="0 0 720 200" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+  <div class="chartwrap"><svg class="chart" id="ovC1" viewBox="0 0 720 170" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
   <h3 class="h3">红利 ETF 每周净流入（亿元）与红利低波100</h3>
-  <div class="chartwrap"><svg class="chart" id="ovC2" viewBox="0 0 720 200" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
+  <div class="chartwrap"><svg class="chart" id="ovC2" viewBox="0 0 720 170" role="img" style="touch-action:pan-y"></svg><div class="tip" hidden></div></div>
   <div class="legend"><span><i style="border-color:var(--grow)"></i>净买入</span><span><i style="border-color:var(--mark)"></i>净卖出</span><span><i style="border-color:var(--ink)"></i>沪深300 / 红利低波100（右轴）</span></div>
-  <p class="note">两张图同一组日期。国家队在买、红利在流出 = 钱从红利换到大盘；国家队在卖、红利在流入 = 钱躲进红利（2026-04~06）。只作参考，详细在<a href="#temp">市场温度</a>和<a href="#dividend">红利</a>页。</p>
+  <details class="sub"><summary>怎么看 ▾</summary><p class="note">两张图同一组日期。国家队在买、红利在流出 = 钱从红利换到大盘；国家队在卖、红利在流入 = 钱躲进红利（2026-04~06）。只作参考，详细在<a href="#temp">市场温度</a>和<a href="#dividend">红利</a>页。</p></details>
 </section>
 <section class="panel"><h2>本周这么做<button type="button" class="bigbtn" onclick="shareImg('week')">生成分享图</button></h2>
   <div class="todo" id="o_rows"><div class="note">加载中</div></div>
@@ -1095,15 +1094,21 @@ function loadOverall(){
     const it=O.items.map(x=>`<span class="kc"><small>${x.name}</small><b class="lv ${x.v>0?"g1":x.v<0?"r1":"c0"}">${x.v>0?"+1":x.v<0?"−1":"0"}</b><small>${x.text}</small></span>`).join("");
     const K=O.kuanji,bud=(()=>{try{return +localStorage.getItem("weeklyBudget")||1000}catch(e){return 1000}})(),wk=Math.round(bud*0.125);
     const kx=/0\.8 倍/.test(K.act)?Math.round(wk*0.8):/0\.4 倍/.test(K.act)?Math.round(wk*0.4):/多买 1 周/.test(K.act)?wk:0;
-    $("ovDir").innerHTML=`<p class="concl" style="margin-top:0"><b>大方向（实验）：</b><span class="lv ${O.dcls}">${O.dir}</span> 合计 ${O.score>0?"+":""}${O.score} · ${O.dtext}</p>
-      <details style="margin:-4px 0 8px"><summary class="note" style="margin:0">怎么算的</summary><div class="kchips">${it}</div>
-      <p class="note">每项 +1 / 0 / −1 加起来：≥+3 进攻，≤−2 防守。2023 起 +3 以上之后一年都涨、−4 以下之后 60 天都跌；只当总结，具体怎么做看各板块规则。</p></details>
-      <p class="note" style="margin:0 0 8px"><b>宽基（实验）：</b>${K.act}${kx?`（按每周预算 ${bud} 元，宽基周额约 ${wk} 元 → 每次多买约 <b>${kx}</b> 元）`:""}。加码灯 ${K.ups.filter(x=>x.on).length}/4：${K.ups.map(x=>`${x.on?"●":"○"}${x.name}`).join(" ")}；减速灯 ${K.downs.filter(x=>x.on).length}/3：${K.downs.map(x=>`${x.on?"●":"○"}${x.name}`).join(" ")}</p>`;
+    const C2={g2:"var(--grow)",g1:"var(--grow)",c0:"var(--ink)",r1:"var(--mark)"};
+    if($("ovHead"))$("ovHead").innerHTML=`<div class="label">大方向 <span class="exptag">实验</span></div>
+      <div style="font-size:30px;font-weight:800;color:${C2[O.dcls]};line-height:1.2">${O.dir} <small style="font-size:15px;font-weight:600;color:var(--muted)">合计 ${O.score>0?"+":""}${O.score}</small></div>
+      <div style="font-size:16px;margin:4px 0 8px">${O.dtext}</div>`;
+    const kj=$("ln_kj"),kn=K.ups.filter(x=>x.on).length,kd=K.downs.filter(x=>x.on).length;
+    if(kj)kj.outerHTML=`<a href="#broad" id="ln_kj"><span class="n">宽基</span><span class="a"><span class="lv ${K.key==="暂停"?"r1":K.key==="照常"?"c0":"g2"}">${K.key}</span><small>${K.act.replace(/^⚠ /,"")}${kx?`；每次多买约 <b>${kx}</b> 元（按每周预算 ${bud} 元）`:""}</small></span><span class="chev">›</span></a>`;
+    if($("ovWhy"))$("ovWhy").innerHTML=`<h3 class="h3">大方向怎么算</h3><div class="kchips">${it}</div>
+      <p class="note">每项 +1 / 0 / −1 加起来：≥+3 进攻，≤−2 防守。2023 起 +3 以上之后一年都涨、−4 以下之后 60 天都跌；只当总结，具体怎么做看各板块规则。</p>
+      <h3 class="h3">宽基加码灯 ${kn}/4 · 减速灯 ${kd}/3</h3>
+      <p class="note">${K.ups.map(x=>`${x.on?"●":"○"} ${x.name}`).join("　")}<br>${K.downs.map(x=>`${x.on?"●":"○"} ${x.name}`).join("　")}<br>国家队在低位买 + 至少 1 个别的灯 → 快速加大（10 天每天多买 0.4 周，3 个以上翻倍）；只有便宜 + 见底 → 慢慢加（4 个周五各多 1 周）；减速灯 ≥2 → 暂停。2023 起宽基真实规则回测 4.61% → 6.23%。要不要多买由你定，下单清单不变。</p>`;
     const Fw=O.flows;if(!Fw||!Fw.weeks.length)return;$("ovFlow").hidden=false;$("ovFt").textContent=O.ftext;
     const bar=document.querySelector('.ranges[data-for="ovFlow"]');let nn=26;
     const one=(id,v,line,nm,ln)=>{const k=nn?Math.max(0,Fw.weeks.length-nn):0,ds=Fw.weeks.slice(k),bv=v.slice(k),lv=line.slice(k),mx=Math.max(...bv.map(Math.abs),1);
       const st=niceStep(mx*3.5),lt=[];for(let x=-Math.ceil(mx/st)*st;x<=mx+st/2;x+=st)lt.push(x);
-      DualChart($(id),{W:720,H:200,dates:ds,leftRange:[lt[0],lt[lt.length-1]],leftTicks:lt,leftFmt:x=>Math.round(x).toLocaleString(),left:[],
+      DualChart($(id),{W:720,H:170,dates:ds,leftRange:[lt[0],lt[lt.length-1]],leftTicks:lt,leftFmt:x=>Math.round(x).toLocaleString(),left:[],
         bars:{v:bv,pos:"var(--grow)",neg:"var(--mark)",w:.8},right:{v:lv,c:"var(--ink)"},
         tip:i=>`${ds[i]} 这一周<br>${nm} <b>${bv[i]>0?"+":""}${Math.round(bv[i]).toLocaleString()} 亿</b><br>${ln} ${lv[i]!=null?Math.round(lv[i]).toLocaleString():"—"}`})};
     const draw=()=>{one("ovC1",Fw.nt,Fw.hs,"国家队净买入","沪深300");one("ovC2",Fw.div,Fw.hl,"红利 ETF 净流入","红利低波100")};
@@ -1117,14 +1122,13 @@ function loadVerdict(){
     const lit=d.signals.filter(s=>s.on);
     const rows=d.signals.map(s=>`<tr${s.on?' style="background:var(--mid)"':""}><td><b style="color:${C[s.cls]}">${s.name}</b>${s.on?' <span class="lv g1" style="font-size:11px">现在亮</span>':""}<br><small style="color:var(--muted);white-space:normal;display:block">${s.rule}</small></td><td class="r num">${s.eps.length} 段<br><small>${s.since} 起</small></td><td class="r num">${f(s.stats["60"])}</td><td class="r num">${f(s.stats["250"])}</td></tr>`).join("");
     const base=s=>`<tr><td style="color:var(--muted);white-space:normal">随便哪天（${s} 起）</td><td></td><td class="r num">${f(d.base[s]["60"])}</td><td class="r num">${f(d.base[s]["250"])}</td></tr>`;
-    $("vdBody").innerHTML=`<div class="label">组合信号 <span class="exptag">实验</span></div>
-      <div style="font-size:30px;font-weight:800;color:${C[L.cls]};line-height:1.2">${L.title}</div>
-      <div style="font-size:16px;margin:4px 0 8px;color:var(--ink)">${L.act}</div>
+    const row=(id,n,lv,cls,a,href)=>`<a href="${href}" id="${id}"><span class="n">${n}</span><span class="a"><span class="lv ${cls}">${lv}</span>${a}</span><span class="chev">›</span></a>`;
+    $("vdBody").innerHTML=`<div id="ovHead"></div>
       <div class="kchips" id="vdChips"></div>
-      <a href="#temp" id="vdNtf" class="ntfline" hidden></a>
-      ${lit.length>1?`<div class="note" style="margin:0 0 4px">同时亮着：${lit.map(s=>`<b style="color:${C[s.cls]}">${s.name}</b>`).join("、")}</div>`:""}
-      <div class="note" style="margin:0">${L.date}${lit[0]&&lit[0].from?` · ${lit[0].from} 起亮`:""} · 只作提醒，不改任何倍数，具体买多少还是看下面"本周这么做"</div>
-      <details class="sub" style="margin-top:8px"><summary>为什么、准不准 ▾</summary>
+      <div class="todo" id="vdLines">${row("ln_vd","组合信号",L.title,L.cls,`<small>${L.act}</small>`,"#temp")}<a id="ln_nt" hidden></a><a id="ln_kj" hidden></a><a id="ln_dv" hidden></a></div>
+      <details class="sub" style="margin-top:6px"><summary>为什么、准不准 ▾</summary>
+        <div id="ovWhy"></div>
+        <p class="note">${L.date}${lit[0]&&lit[0].from?` · 组合信号 ${lit[0].from} 起亮`:""}${lit.length>1?` · 同时亮着：${lit.map(s=>s.name).join("、")}`:""} · 都只作提醒，不改任何倍数，具体买多少看下面"本周这么做"。</p>
         <h3 class="h3">现在各指标</h3>
         <div style="margin:4px 0 10px">${L.facts.map(x=>`<div style="padding:5px 0;border-bottom:1px solid var(--line)"><b>${x.name}</b> <span class="lv c0" style="font-size:11px">${x.tag}</span> ${x.text}</div>`).join("")}</div>
         <h3 class="h3">所有组合（亮着时之后沪深300 怎么走）</h3>
@@ -1132,15 +1136,14 @@ function loadVerdict(){
         <p class="note">同时亮多个时，按表里从上到下取第一个当标题。"跟进买入"会盖过"磨底等待"：同样是便宜还在跌，有国家队急买时之后 60 天明显更好（见上表"跟进买入"和"磨底等待"）。国家队买卖都用同一把尺子：净申购 ÷ 沪深300 流通市值。国家队急买 2023 年才有数据。每个组合只出现过 3~8 段，样本少，只作参考，2027-05 半年复盘再决定要不要进规则。</p>
         <p class="note">历次出现：${d.signals.map(s=>`<b>${s.name}</b> ${s.eps.slice(-4).join("、")||"—"}`).join("；")}</p>
       </details>`;
-    keyChips();homeNtf();
+    keyChips();homeNtf();loadOverall();
   });
 }
 function homeNtf(){
-  Promise.all([getJ("ntf.json"),getJ("etf300.json"),getJ("temp.json")]).then(([N,E,TT])=>{const a=$("vdNtf");if(!a||!N)return;
-    const R=ntfJudgeCalc(N.series,E,TT);if(!R)return;
-    a.innerHTML=`<small>国家队</small><b class="lv ${R.J[1]}">${R.J[0]}</b><small>${R.J[2]} ›</small>`;a.hidden=false;
-    getJ("ntfstage.json").then(Z=>{if(!Z)return;const L=Z.latest,b=document.createElement("a");b.className=a.className;b.href=a.getAttribute("href")||"#temp";
-      b.innerHTML=`<small>国家队场景</small><b class="lv ${SCN_CLS[L.key]||"c0"}">${L.loc} · ${L.name}</b><small>${L.act}${(L.hint||[]).length?"；"+L.hint[0]:""}${/^加仓|^卖回/.test(L.short.state)?`；短线：${L.short.act}`:""} ›</small>`;a.after(b)})});
+  getJ("ntfstage.json").then(Z=>{const a=$("ln_nt");if(!a||!Z)return;const L=Z.latest;
+    a.outerHTML=`<a href="#temp" id="ln_nt"><span class="n">国家队</span><span class="a"><span class="lv ${SCN_CLS[L.key]||"c0"}">${L.loc} · ${L.name}</span><small>${L.act}${/^加仓|^卖回/.test(L.short.state)?`；短线：${L.short.act}`:""}</small></span><span class="chev">›</span></a>`});
+  getJ("divjudge.json").then(J=>{const a=$("ln_dv");if(!a||!J)return;
+    a.outerHTML=`<a href="#dividend" id="ln_dv"><span class="n">红利</span><span class="a"><span class="lv ${J.cls}">${J.head}</span><small>便宜灯 ${J.n}/6 · ${J.act}</small></span><span class="chev">›</span></a>`});
 }
 function keyChips(){
   Promise.all([getJ("state.json"),getJ("temp.json"),getJ("ntf.json")]).then(([st,T,N])=>{const box=$("vdChips");if(!box||!st)return;
@@ -1197,7 +1200,7 @@ function loadOverview(){
       return `<a href="#${v.tab}"><div class="n">${n}</div><div class="a"><span class="lv ${OCLS(v.state)}">${v.state.split("|")[0]}</span>${main}${rest?`<small>${rest}</small>`:""}</div><span class="chev">›</span></a>`}).join("");
     $("o_note").textContent=`和周报邮件一致（周四收盘后发，周五 15:00 前下单）。点一行看原因和阈值。数据日期 ${[...dates].sort().pop()||"—"}。`;
   }).catch(e=>{$("o_rows").innerHTML=`<div class="note">读取失败，请稍后刷新（${e.message}）</div>`});
-  renderTemp($("o_temp"),true);loadPlan();loadKeyInd();loadVerdict();loadOverall();
+  renderTemp($("o_temp"),true);loadPlan();loadKeyInd();loadVerdict();
   getJ("health.json").then(h=>{if(h&&h.updated)$("o_data").textContent=h.updated.slice(5).replace("-","月").replace(" ","日 ")});
   getJ("myfunds.json").then(d=>{if(d){const c=d.count,L=d.labels;$("o_my").textContent=`${d.funds.length} 只：`+Object.keys(L).filter(k=>c[k]).map(k=>L[k][0]+" "+c[k]).join("、")}});
 }

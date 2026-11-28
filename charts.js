@@ -97,7 +97,7 @@ function DualChart(svg, o) {
   if (o.bg) { let j0 = 0; for (let i = 1; i <= n; i++) if (i === n || o.bg[i] !== o.bg[j0]) { if (o.bg[j0]) s += `<rect x="${X(Math.max(0, j0 - .5))}" y="${pt}" width="${Math.max(1, X(Math.min(n - 1, i - .5)) - X(Math.max(0, j0 - .5)))}" height="${H - pt - pb}" fill="${o.bg[j0]}"/>`; j0 = i } }
   (o.bands || []).forEach(b => { const y1 = YL(b.to), y2 = YL(b.from); s += `<rect x="${pl}" y="${y1}" width="${W - pl - pr}" height="${y2 - y1}" fill="${b.fill}"/>` });
   (o.leftTicks).forEach(v => { s += `<line x1="${pl}" x2="${W - pr}" y1="${YL(v)}" y2="${YL(v)}" stroke="var(--line)"/><text x="${pl - 6}" y="${YL(v) + fs * .36}" text-anchor="end" style="fill:${o.leftColor || "var(--muted)"}">${o.leftFmt(v)}</text>` });
-  const rt = []; const st = niceStep((r1 - r0) * 0.8); for (let v = Math.ceil(r0 / st) * st; v <= r1; v += st) rt.push(v);
+  const rt = []; const st = niceStep((r1 - r0) * (H < 200 ? 1.6 : 0.8));   // 图矮时右轴少几个刻度 for (let v = Math.ceil(r0 / st) * st; v <= r1; v += st) rt.push(v);
   rt.forEach(v => { s += `<text x="${W - pr + 6}" y="${YR(v) + fs * .36}" text-anchor="start" style="fill:${o.right.c}">${o.right.fmt ? o.right.fmt(v) : Math.round(v)}</text>` });
   // 横轴按月：每个月一个小刻度；标签每 1/2/3/6/12 个月一个，按图的宽度自动选，保证不挤
   const ms = []; let last = "";
