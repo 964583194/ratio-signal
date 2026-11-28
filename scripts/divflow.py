@@ -19,7 +19,7 @@ CACHE = os.path.join(ROOT, "data", "raw", "div_etf.json")
 OUT = os.path.join(ROOT, "data", "divflow.json")
 SINCE = "2023-01-03"
 BAD = ("港", "恒生", "香港", "标普", "中概", "海外", "亚太", "美国", "沪港深", "港股通")
-SSE_PER_RUN, SZSE_PER_RUN = 250, 12
+SSE_PER_RUN, SZSE_PER_RUN = 60, 12   # 上交所抓太快会被封（403），连带国家队那几只 ETF 也取不到：每次少抓一点、慢一点
 
 
 def _a_share(nm):
@@ -35,6 +35,7 @@ def _sse(d):
         j = json.loads(t[t.index("(") + 1:t.rindex(")")])
         return d, (j.get("pageHelp") or {}).get("data") or j.get("result") or []
     except Exception as e:  # noqa: BLE001
+        S._last_err = str(e)
         print("  上交所", d, e)
         return d, None
 
@@ -58,8 +59,14 @@ def fetch(Z):
     recent = wd[-5:]                                   # 最近几天每次都重抓（当天可能还没发布）
     todo = recent + [d for d in reversed(wd[:-5]) if d not in done][:SSE_PER_RUN]
     t0 = time.time()
-    with ThreadPoolExecutor(8) as ex:
-        res = list(ex.map(_sse, todo))
+    res = []
+    for d in todo:                                     # 一个一个抓，中间停一下；遇到 403 就停，下次再补
+        r = _sse(d)
+        res.append(r)
+        if r[1] is None and getattr(S, "_last_err", "") and "403" in S._last_err:
+            print("  上交所拒绝访问（403），这次先停，下次再补")
+            break
+        time.sleep(0.3)
     ok = 0
     for d, rows in res:
         if not rows:
@@ -109,7 +116,7 @@ def fetch(Z):
         except Exception as e:  # noqa: BLE001
             print("  净值", c, e)
             return c, None
-    with ThreadPoolExecutor(6) as ex:
+    with ThreadPoolExecutor(3) as ex:
         for c, v in ex.map(one, list(names)):
             if v:
                 nav[c] = v

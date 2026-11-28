@@ -268,7 +268,7 @@ def collect(prev):
         if not d:
             continue
         state, now, act, tab = fn(d)
-        out[name] = {"state": state, "now": now, "act": act, "tab": tab, "date": d["latest"]["date"]}
+        out[name] = {"state": state, "now": now, "act": act, "tab": tab, "date": (d.get("latest") or {}).get("date") or d.get("date")}
         if name == "纳指100":
             out[name]["prem"] = state.split("溢价")[-1]
     mf = load("myfunds.json")
@@ -510,6 +510,12 @@ def headline():
     nj = ntf_judge()
     if nj:
         out.insert(1, f"- **国家队**：{nj}")
+    ov, dj = load("overall.json"), load("divjudge.json")   # 和总览同一份：大方向、宽基、红利
+    if ov:
+        out.insert(0, f"- **大方向：{ov['dir']}**（{ov['score']:+d}）→ {ov['dtext']}（实验）")
+        out.insert(3, f"- **宽基**：{ov['kuanji']['key']} · {ov['kuanji']['act'].lstrip('⚠ ')}（实验，下单清单不变）")
+    if dj:
+        out.insert(4, f"- **红利**：{dj['head']}，便宜灯 {dj['n']}/6（实验）")
     if mf:
         c = mf["count"]
         add = [short(f["name"]) for f in mf["funds"] if f["tag"] == "add"]
@@ -530,7 +536,7 @@ def main():
     rem = load("reminders.json") or []
     due = [r for r in rem if not r.get("done") and r["date"] <= TODAY]
     # 周报：周四收盘后的第一次更新就发（周四 17 点后，或周五全天），每周只发一次；不再只靠周五 08:13 那次定时（GitHub 常晚几个小时）
-    bj = dt.datetime.utcnow() + dt.timedelta(hours=8)
+    bj = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None) + dt.timedelta(hours=8)
     wk = "%d-W%02d" % bj.isocalendar()[:2]
     RJ = os.path.join(DATA, "report.json")
     sent = (load("report.json") or {}).get("week")
@@ -575,7 +581,9 @@ def main():
             tt.append("到期复盘")
         body = (chg + (f"\n\n## 到期复盘\n\n{dues}" if dues else "")
                 + ("" if G.get("今天就做") else "\n\n今天没有要马上做的事，定投照常等下一封周报（周四收盘后发）。")).lstrip()
-        warn = "⚠ " if any(n == "国家队场景（实验）" and SCN_LV.get(b) == "重点" for n, _, b in changes) else ""
+        warn = "⚠ " if any((n == "国家队场景（实验）" and SCN_LV.get(b) == "重点")
+                           or (n == "红利综合判断（实验）" and str(b).startswith(("突发大额", "红利流出 + 国家队", "大盘资金躲进红利", "跌透转头", "很便宜")))
+                           or (n == "宽基加大 / 暂停（实验）" and str(b).startswith(("快速加大", "暂停"))) for n, _, b in changes) else ""
         post(f"【{'要操作' if G.get('今天就做') else '提醒'}】{TODAY} {warn}" + "；".join(tt), body, ("【提醒】", "【要操作】", "【信号提醒】"))
     else:
         print("信号没有变化，不发提醒")

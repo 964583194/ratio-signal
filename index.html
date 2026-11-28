@@ -1206,13 +1206,17 @@ function loadOverview(){
 }
 // ---------------- 每个页签最上面："现在怎么做"一张卡（和总览、周报同一份 state.json），下面才是分析和指标
 const TOPMAP={rotation:"创业板轮动",kc:"科创板轮动",dividend:"红利打分",broad:"A500 / 沪深300",gold:"黄金",bond:"债基",ndx:"纳指100"};
-let TOPST=null,TOPVD=null,TOPT=null;
+let TOPST=null,TOPVD=null,TOPT=null,TOPOV=null,TOPDJ=null;
 function renderTop(k){
   const box=$("topCard");if(!box)return;
   if(k==="overview"){box.hidden=true;return}
   const go=()=>{
     const vd=TOPVD&&TOPVD.latest,C={g2:"var(--grow)",g1:"var(--grow)",c0:"var(--ink)",h1:"var(--div)",r1:"var(--mark)"};
-    const sig=vd?`<div class="note" style="margin:8px 0 0">组合信号：<a href="#overview" style="color:${C[vd.cls]};font-weight:700">${vd.title}</a> · ${vd.act}</div>`:"";
+    const O=TOPOV,DJ=TOPDJ;
+    // 各页签都写大方向；宽基页加"宽基加大 / 暂停"，红利页加"红利综合判断"——和总览同一份数据
+    const sig=(O?`<div class="note" style="margin:8px 0 0">大方向（实验）：<a href="#overview" style="color:${C[O.dcls]};font-weight:700">${O.dir}</a>（${O.score>0?"+":""}${O.score}）${vd?` · 组合信号 <b style="color:${C[vd.cls]}">${vd.title}</b>`:""}</div>`:vd?`<div class="note" style="margin:8px 0 0">组合信号：<a href="#overview" style="color:${C[vd.cls]};font-weight:700">${vd.title}</a> · ${vd.act}</div>`:"")
+      +(k==="broad"&&O?`<div class="note" style="margin:4px 0 0">宽基（实验）：<b>${O.kuanji.key}</b> · ${O.kuanji.act.replace(/^⚠ /,"")}</div>`:"")
+      +(k==="dividend"&&DJ?`<div class="note" style="margin:4px 0 0">红利综合判断（实验）：<b>${DJ.head}</b> · 便宜灯 ${DJ.n}/6 <a href="#djPanel">看 ›</a></div>`:"");
     if(k==="temp"){const L=TOPT&&TOPT.latest;if(!L){box.hidden=true;return}
       box.innerHTML=`<div class="label">现在怎么做 · ${L.date}</div><div class="tc-main">${L.action}</div>
         <div><span class="lv ${L.cls}">${L.zone}</span> <span class="note" style="margin:0">${L.verdict.split("→")[0].trim()}</span></div>${sig}`;
@@ -1226,11 +1230,12 @@ function renderTop(k){
       <div class="note" style="margin:6px 0 0">下面是原因、指标和回测。<a href="#overview">本周下单清单在总览 ›</a></div>`;
     box.hidden=false};
   if(TOPST&&TOPT)return go();
-  Promise.all([getJ("state.json"),getJ("verdict.json"),getJ("temp.json")]).then(([s,v,tt])=>{TOPST=s;TOPVD=v;TOPT=tt;go()});
+  Promise.all([getJ("state.json"),getJ("verdict.json"),getJ("temp.json"),getJ("overall.json"),getJ("divjudge.json")]).then(([s,v,tt,o,dj])=>{TOPST=s;TOPVD=v;TOPT=tt;TOPOV=o;TOPDJ=dj;go()});
 }
 // ---------------- 市场温度：五档区间 + 方向（data/temp.json，scripts/temp.py 计算）
 // 取数据；连不上网时 sw.js 会给缓存的旧数据并打上 X-From-Cache，这里在页面顶部提示
-const getJ=f=>fetch("data/"+f+"?t="+Date.now(),{cache:"no-store"}).then(r=>{if(r.headers.get("X-From-Cache"))offlineNote();return r.ok?r.json():null}).catch(()=>null);
+// 同一次打开页面里，同一个文件只取一次：各块用的是同一份数据，前后一致，也省流量
+const _jc={},getJ=f=>_jc[f]||(_jc[f]=fetch("data/"+f+"?t="+Date.now(),{cache:"no-store"}).then(r=>{if(r.headers.get("X-From-Cache"))offlineNote();return r.ok?r.json():null}).catch(()=>{delete _jc[f];return null}));
 function offlineNote(){if($("offline"))return;const d=document.createElement("div");d.id="offline";d.className="panel";d.style.cssText="border-color:var(--div);background:var(--div-soft);padding:10px 14px";
   d.innerHTML="<b>网络没连上，下面显示的是上次存在手机里的旧数据。</b><span class=\"note\" style=\"margin:0\"> 换个网络或稍后下拉刷新。</span>";
   const t=document.querySelector(".tabwrap");t.parentNode.insertBefore(d,t)}
