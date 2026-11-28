@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-28 19:01",
+ "updated": "2026-11-28 19:06",
  "ok": true,
  "items": {
   "cyb50": {
@@ -194,40 +194,31 @@
   },
   "sh510300": {
    "name": "华泰柏瑞沪深300ETF 份额",
-   "source": "本地缓存",
-   "mode": "缓存",
+   "source": "上交所",
+   "mode": "增量",
    "last": "2026-11-27",
    "days": 2892,
-   "failed": [
-    "上交所：RuntimeError 没有取到",
-    "AKShare：RuntimeError 没有取到"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": true
   },
   "sh510310": {
    "name": "易方达沪深300ETF 份额",
-   "source": "本地缓存",
-   "mode": "缓存",
+   "source": "上交所",
+   "mode": "增量",
    "last": "2026-11-27",
    "days": 2892,
-   "failed": [
-    "上交所：RuntimeError 没有取到",
-    "AKShare：RuntimeError 没有取到"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": true
   },
   "sh510330": {
    "name": "华夏沪深300ETF 份额",
-   "source": "本地缓存",
-   "mode": "缓存",
+   "source": "上交所",
+   "mode": "增量",
    "last": "2026-11-27",
    "days": 2892,
-   "failed": [
-    "上交所：RuntimeError 没有取到",
-    "AKShare：RuntimeError 没有取到"
-   ],
+   "failed": [],
    "stale_days": 1,
    "ref": true
   },
