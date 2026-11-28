@@ -47,7 +47,7 @@ GROUPS = [  # 先匹配到的算（顺序有讲究：行业在宽基前，"创�
     # 宽基（国家队常买的那几类），放最后
     ("A500", ("A500",)),
     ("科创50", ("科创50", "科创板50", "科创ETF", "科创100", "科创板")),
-    ("创业板", ("创业板",)),
+    ("创业板", ("创业板", "创50", "创业")),
     ("沪深300", ("沪深300", "300ETF")),
     ("中证1000", ("中证1000", "1000ETF")),
     ("中证500", ("中证500", "500ETF")),
@@ -95,12 +95,14 @@ def fetch(Z):
     except Exception:  # noqa: BLE001
         ak = None
     if ak:
-        mdone = set(Z.setdefault("szse_months", []))
-        months = sorted({d[:7] for d in wd})
-        for m in months[-2:] + [m for m in reversed(months[:-2]) if m not in mdone][:6]:
-            a = dt.date.fromisoformat(m + "-01")
-            b = min(dt.date.today(), (a.replace(day=28) + dt.timedelta(days=4)).replace(day=1) - dt.timedelta(days=1))
-            df = _timed(lambda: ak.fund_scale_daily_szse(start_date=a.strftime("%Y%m%d"), end_date=b.strftime("%Y%m%d")), 90)
+        # 深交所按周取（按月一次取太大容易超时）；先取最近的，再往回补
+        mdone = set(Z.setdefault("szse_weeks", []))
+        mons = sorted({(dt.date.fromisoformat(d) - dt.timedelta(days=dt.date.fromisoformat(d).weekday())).isoformat() for d in wd})
+        todo_w = mons[-2:] + [m for m in reversed(mons[:-2]) if m not in mdone][:int(os.environ.get("SEC_SZ_PER_RUN", 8))]
+        for m in todo_w:
+            a = dt.date.fromisoformat(m)
+            b = min(dt.date.today(), a + dt.timedelta(days=4))
+            df = _timed(lambda: ak.fund_scale_daily_szse(start_date=a.strftime("%Y%m%d"), end_date=b.strftime("%Y%m%d")), 60)
             if df is None:
                 print("  深交所", m, "超时，下次再补")
                 break
@@ -110,7 +112,7 @@ def fetch(Z):
                 names[c] = str(r[col])
                 sh.setdefault(c, {})[str(r["日期"])[:10]] = float(r["基金份额"])
             mdone.add(m)
-        Z["szse_months"] = sorted(mdone)
+        Z["szse_weeks"] = sorted(mdone)
     # 每组份额最大的几只拿净值
     top = _tops(Z)
     last = max((max(v) for v in sh.values() if v), default="")
