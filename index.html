@@ -315,7 +315,7 @@
 <section class="panel" id="djPanel" hidden>
   <h2>红利综合判断：便宜灯 + 资金 <span class="exptag">实验</span></h2>
   <p class="concl" id="djNow"></p>
-  <div id="djLights" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:13px;margin-top:8px"></div>
+  <div id="djLights"></div>
   <p class="note" id="djFlow" style="margin-top:8px"></p>
   <details style="margin-top:6px"><summary>亮几个灯，之后怎么样（回测）</summary>
     <div class="scroll"><table id="djTab"><thead><tr><th>亮几个灯</th><th class="r">一年后</th><th class="r">一年后上涨</th><th class="r">再跌 平均/最坏</th><th class="r">跌超10%</th></tr></thead><tbody></tbody></table></div>
@@ -1631,8 +1631,10 @@ function renderDiv(d){
     // 实验：红利综合判断
     getJ("divjudge.json").then(J=>{if(!J)return;$("djPanel").hidden=false;
       $("djNow").innerHTML=`<span class="lv ${J.cls}">${J.head}</span> <b>${J.act}</b>`;
-      $("djLights").innerHTML=`<div style="grid-column:1/-1"><b>便宜灯 ${J.n} / 6 亮</b>（${J.lv}）</div>`+J.lights.map(x=>`<div style="${x.on?"":"color:var(--muted)"}"><b style="color:${x.on?"var(--grow)":"var(--muted)"}">${x.on?"●":"○"}</b> ${x.on?`<b>${x.name}</b>`:x.name}<br><small class="note" style="margin:0">${x.text}</small></div>`).join("");
-      $("djFlow").innerHTML=J.flow?`红利 ETF 资金：近 20 天净流入占规模 ${J.flow.f20>0?"+":""}${J.flow.f20}%${J.flow.burst>=.3?`，近 3 天单日最多流入 ${J.flow.burst}%`:""}${J.flow.dump<=-.3?`，近 3 天单日最多流出 ${J.flow.dump}%`:""} → ${J.flow.text}。${J.right?"":""}`:"";
+      // 和市场温度"见底信号灯"同一个样子
+      $("djLights").innerHTML=`<div style="display:flex;gap:14px;align-items:center;margin-top:10px"><div class="big num">${J.n}<small style="font-size:20px"> / 6</small></div><div><span class="lv ${J.n>=3?"g2":J.n>=2?"g1":"c0"}">${J.lv}</span><div class="note" style="margin:4px 0 0">便宜灯 · ${J.date}</div></div></div>
+        <div class="lights">${J.lights.map(x=>`<div style="background:${x.on?"var(--grow-soft)":"var(--panel)"}"><div class="hd"><span class="dot" style="${x.on?"background:var(--grow)":""}"></span><b style="font-size:14px">${x.name}</b><span class="note" style="margin:0">${x.on?"亮":"未亮"}</span></div><div class="note">${x.text}</div></div>`).join("")}</div>`;
+      $("djFlow").innerHTML=J.flow?`红利 ETF 资金：近 20 天净流入占规模 ${J.flow.f20>0?"+":""}${J.flow.f20}%${J.flow.burst>=.3?`，近 3 天单日最多流入 ${J.flow.burst}%`:""}${J.flow.dump<=-.3?`，近 5 天单日最多流出 ${J.flow.dump}%`:""}${J.act===J.flow.text?"（见上面结论）":` → ${J.flow.text}`}。${J.right?"":""}`:"";
       $("djTab").tBodies[0].innerHTML=J.stats.map(s=>`<tr><td>${s.n}</td><td class="r num">+${s.y1}%</td><td class="r num">${s.up}%</td><td class="r num">${s.dd}% / ${s.worst}%</td><td class="r num">${s.p10}%</td></tr>`).join("");
       $("dFlow").innerHTML=`综合判断（实验）：便宜灯 <b>${J.n}/6</b> → ${J.head} <a href="#djPanel">看 ›</a>`;$("dFlow").style.display=""});
     // 实验：红利 ETF 资金
