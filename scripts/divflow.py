@@ -39,6 +39,16 @@ def _sse(d):
         return d, None
 
 
+def _timed(fn, sec):
+    """在后台线程里跑，超过 sec 秒就放弃（接口偶尔卡住不返回，会拖住整个更新）"""
+    import threading  # noqa: PLC0415
+    box = {}
+    th = threading.Thread(target=lambda: box.setdefault("v", fn()), daemon=True)
+    th.start()
+    th.join(sec)
+    return box.get("v")
+
+
 def fetch(Z):
     if os.environ.get("NO_FETCH"):
         return
@@ -75,7 +85,10 @@ def fetch(Z):
             a = dt.date.fromisoformat(m + "-01")
             b = min(dt.date.today(), (a.replace(day=28) + dt.timedelta(days=4)).replace(day=1) - dt.timedelta(days=1))
             try:
-                df = ak.fund_scale_daily_szse(start_date=a.strftime("%Y%m%d"), end_date=b.strftime("%Y%m%d"))
+                df = _timed(lambda: ak.fund_scale_daily_szse(start_date=a.strftime("%Y%m%d"), end_date=b.strftime("%Y%m%d")), 90)
+                if df is None:
+                    print("  深交所", m, "超时，下次再补")
+                    break
                 col = "基金简称" if "基金简称" in df.columns else [c for c in df.columns if "简称" in c][0]
                 x = df[df[col].astype(str).map(_a_share)]
                 for _, r in x.iterrows():
